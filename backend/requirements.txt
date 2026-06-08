@@ -1,10 +1,11 @@
 fastapi==0.111.0
 uvicorn==0.30.1
-langchain
+langchain==0.2.1
 langchain-groq
 fastembed
 langchain-community
-chromadb>=0.5.3
+chromadb==0.5.0
 pypdf==4.2.0
 python-dotenv==1.0.1
 protobuf==3.20.3
+numpy<2
