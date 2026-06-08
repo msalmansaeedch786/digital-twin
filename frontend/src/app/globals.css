@@ -548,3 +548,26 @@ p {
     padding: 1.5rem !important;
   }
 }
+
+/* ==========================================
+   AVATAR / CHAT MOBILE DESIGN
+========================================== */
+
+.avatar-message-bubble {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 768px) {
+  .avatar-chat-container {
+    padding: 80px 1rem 1rem 1rem !important;
+    gap: 1rem !important;
+  }
+  .avatar-input-wrapper {
+    padding: 0 1rem 1rem 1rem !important;
+  }
+  .avatar-message-bubble {
+    padding: 0.8rem 1rem !important;
+    font-size: 0.95rem !important;
+  }
+}

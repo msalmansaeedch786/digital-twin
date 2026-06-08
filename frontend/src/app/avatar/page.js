@@ -209,7 +209,7 @@ export default function AvatarMode() {
       </div>
 
       {/* ChatGPT-style Chat History */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "100px 2rem 2rem 2rem", display: "flex", flexDirection: "column", gap: "2rem", maxWidth: "800px", margin: "0 auto", width: "100%", scrollBehavior: "smooth", zIndex: 1 }}>
+      <div className="avatar-chat-container" style={{ flex: 1, overflowY: "auto", padding: "100px 2rem 2rem 2rem", display: "flex", flexDirection: "column", gap: "2rem", maxWidth: "800px", margin: "0 auto", width: "100%", scrollBehavior: "smooth", zIndex: 1 }}>
         
         {/* The elegant minimal visualizer at the top of the chat */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "2rem" }}>
@@ -250,7 +250,7 @@ export default function AvatarMode() {
                <img src="/salman-avatar.jpg" alt="AI" style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover", objectPosition: "center 20%", flexShrink: 0, border: "1px solid rgba(0, 242, 254, 0.3)" }} />
             )}
             
-            <div className={msg.role === "bot" ? "markdown-body" : ""} style={{
+            <div className={`avatar-message-bubble ${msg.role === "bot" ? "markdown-body" : ""}`} style={{
               padding: "1rem 1.5rem",
               borderRadius: "16px",
               background: msg.role === "user" ? "rgba(0, 242, 254, 0.08)" : "rgba(255, 255, 255, 0.03)",
@@ -302,7 +302,7 @@ export default function AvatarMode() {
       )}
 
       {/* Input Area */}
-      <div style={{ padding: "0 2rem 2rem 2rem", zIndex: 10, display: "flex", justifyContent: "center", flexDirection: "column", alignItems: "center" }}>
+      <div className="avatar-input-wrapper" style={{ padding: "0 2rem 2rem 2rem", zIndex: 10, display: "flex", justifyContent: "center", flexDirection: "column", alignItems: "center" }}>
         <form onSubmit={handleFormSubmit} style={{ display: "flex", gap: "0.5rem", maxWidth: "800px", width: "100%", alignItems: "center", background: "#0D1322", padding: "0.6rem 0.6rem 0.6rem 1.5rem", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
           
           <input
