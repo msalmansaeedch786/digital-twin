@@ -11,9 +11,10 @@ export default function Portfolio() {
   const [theme, setTheme] = useState("dark");
 
   useEffect(() => {
-    // Read theme from html attribute set by layout.js script
-    const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
-    setTheme(currentTheme);
+    // Read theme from localStorage or default to dark
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    setTheme(savedTheme);
+    document.documentElement.setAttribute("data-theme", savedTheme);
   }, []);
 
   const toggleTheme = () => {
