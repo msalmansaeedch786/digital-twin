@@ -54,29 +54,21 @@ The following diagram illustrates the complete RAG (Retrieval-Augmented Generati
 
 ```mermaid
 flowchart TD
-    %% Define Styles
-    classDef user fill:#2d3748,stroke:#4a5568,stroke-width:2px,color:#fff
-    classDef frontend fill:#00f2fe,stroke:#00a3ff,stroke-width:2px,color:#000
-    classDef backend fill:#48bb78,stroke:#2f855a,stroke-width:2px,color:#fff
-    classDef model fill:#ed8936,stroke:#dd6b20,stroke-width:2px,color:#fff
-    classDef db fill:#9f7aea,stroke:#805ad5,stroke-width:2px,color:#fff
-    classDef external fill:#e53e3e,stroke:#c53030,stroke-width:2px,color:#fff
-
     %% Components
-    User(("👤 Recruiter / User\n(Web Browser)")):::user
+    User(("👤 Recruiter / User<br/>(Web Browser)"))
     
     subgraph Vercel ["🌐 Frontend Hosting (Vercel)"]
-        UI["💻 Next.js React UI\n(salman.dev)"]:::frontend
+        UI["💻 Next.js React UI<br/>(salman.dev)"]
     end
     
     subgraph Render ["☁️ Backend Server (Render)"]
-        API["⚙️ FastAPI Python Server"]:::backend
-        EmbedModel["🧠 Embedding Model\n(all-MiniLM-L6-v2)"]:::model
-        DB[("🗄️ ChromaDB\n(SQLite Vector DB)")]:::db
+        API["⚙️ FastAPI Python Server"]
+        EmbedModel["🧠 Embedding Model<br/>(all-MiniLM-L6-v2)"]
+        DB[("🗄️ ChromaDB<br/>(SQLite Vector DB)")]
     end
     
     subgraph GroqCloud ["⚡ Groq Cloud (External API)"]
-        LLM["🗣️ Llama-3.3-70b-versatile\n(Running on LPUs)"]:::external
+        LLM["🗣️ Llama-3.3-70b-versatile<br/>(Running on LPUs)"]
     end
 
     %% Workflow Steps
@@ -86,7 +78,7 @@ flowchart TD
     EmbedModel -- "4. Returns Number Vector" --> API
     API -- "5. Searches Database" --> DB
     DB -- "6. Returns Resume Facts" --> API
-    API -- "7. Sends Question + Facts\n+ API Key" --> LLM
+    API -- "7. Sends Question + Facts<br/>+ API Key" --> LLM
     LLM -- "8. Generates Human Response" --> API
     API -- "9. Returns JSON Response" --> UI
     UI -- "10. Renders Markdown & Speech" --> User
