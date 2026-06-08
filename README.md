@@ -54,32 +54,30 @@ The following diagram illustrates the complete RAG (Retrieval-Augmented Generati
 
 ```mermaid
 flowchart TD
-    %% Components
-    User(("👤 Recruiter / User<br/>(Web Browser)"))
+    User(Recruiter / Web Browser)
     
-    subgraph Vercel ["🌐 Frontend Hosting (Vercel)"]
-        UI["💻 Next.js React UI<br/>(salman.dev)"]
+    subgraph Vercel [Frontend Hosting]
+        UI[Next.js React UI]
     end
     
-    subgraph Render ["☁️ Backend Server (Render)"]
-        API["⚙️ FastAPI Python Server"]
-        EmbedModel["🧠 Embedding Model<br/>(all-MiniLM-L6-v2)"]
-        DB[("🗄️ ChromaDB<br/>(SQLite Vector DB)")]
+    subgraph Render [Backend Server]
+        API[FastAPI Python Server]
+        EmbedModel[Embedding Model]
+        DB[(ChromaDB Vector DB)]
     end
     
-    subgraph GroqCloud ["⚡ Groq Cloud (External API)"]
-        LLM["🗣️ Llama-3.3-70b-versatile<br/>(Running on LPUs)"]
+    subgraph GroqCloud [External AI API]
+        LLM[Llama 3.3 LLM]
     end
 
-    %% Workflow Steps
-    User -- "1. Asks: 'Do you know AWS?'" --> UI
-    UI -- "2. HTTP POST Request" --> API
-    API -- "3. Sends user text" --> EmbedModel
-    EmbedModel -- "4. Returns Number Vector" --> API
-    API -- "5. Searches Database" --> DB
-    DB -- "6. Returns Resume Facts" --> API
-    API -- "7. Sends Question + Facts<br/>+ API Key" --> LLM
-    LLM -- "8. Generates Human Response" --> API
-    API -- "9. Returns JSON Response" --> UI
-    UI -- "10. Renders Markdown & Speech" --> User
+    User -->|1. Asks Question| UI
+    UI -->|2. HTTP POST Request| API
+    API -->|3. Sends user text| EmbedModel
+    EmbedModel -->|4. Returns Vector| API
+    API -->|5. Searches Database| DB
+    DB -->|6. Returns Resume Facts| API
+    API -->|7. Sends Question and Facts| LLM
+    LLM -->|8. Generates Response| API
+    API -->|9. Returns JSON| UI
+    UI -->|10. Renders UI| User
 ```
