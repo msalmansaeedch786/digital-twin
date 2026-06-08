@@ -4,11 +4,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from typing import List
 
 from langchain_groq import ChatGroq
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage, AIMessage
+from langchain_classic.chains.history_aware_retriever import create_history_aware_retriever
 from langchain_classic.chains.retrieval import create_retrieval_chain
 from langchain_classic.chains.combine_documents.stuff import create_stuff_documents_chain
 
@@ -46,7 +49,24 @@ async def startup_event():
         # Initialize Groq LLM
         llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.3, api_key=os.getenv("GROQ_API_KEY"))
         
-        # Create the System Prompt for the Persona
+        # 1. Create History-Aware Retriever
+        contextualize_q_system_prompt = (
+            "Given a chat history and the latest user question "
+            "which might reference context in the chat history, "
+            "formulate a standalone question which can be understood "
+            "without the chat history. Do NOT answer the question, "
+            "just reformulate it if needed and otherwise return it as is."
+        )
+        contextualize_q_prompt = ChatPromptTemplate.from_messages([
+            ("system", contextualize_q_system_prompt),
+            MessagesPlaceholder("chat_history"),
+            ("human", "{input}"),
+        ])
+        history_aware_retriever = create_history_aware_retriever(
+            llm, retriever, contextualize_q_prompt
+        )
+        
+        # 2. Create the QA Chain
         system_prompt = (
             "You are the digital twin of Muhammad Salman, a Senior Infrastructure Consultant and 6x AWS Certified professional. "
             "You must speak entirely in the first person as Muhammad Salman ('I', 'my', 'me'). "
@@ -61,18 +81,27 @@ async def startup_event():
             "Facts about Muhammad Salman:\n{context}"
         )
         
-        prompt = PromptTemplate.from_template(system_prompt + "\n\nQuestion: {input}\nAnswer:")
+        qa_prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            MessagesPlaceholder("chat_history"),
+            ("human", "{input}"),
+        ])
         
         # Create the RAG chain
-        question_answer_chain = create_stuff_documents_chain(llm, prompt)
-        rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+        question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+        rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
         
         print("AI Engine successfully loaded and ready!")
     except Exception as e:
         print(f"Failed to load AI components: {e}")
 
+class Message(BaseModel):
+    role: str
+    content: str
+
 class ChatRequest(BaseModel):
     message: str
+    history: List[Message] = []
 
 class ChatResponse(BaseModel):
     reply: str
@@ -83,7 +112,17 @@ async def chat_endpoint(request: ChatRequest):
         raise HTTPException(status_code=500, detail="AI Engine not initialized. Did you run the ingest script and set the API key?")
         
     try:
-        response = rag_chain.invoke({"input": request.message})
+        chat_history = []
+        for msg in request.history:
+            if msg.role == "user":
+                chat_history.append(HumanMessage(content=msg.content))
+            elif msg.role == "bot":
+                chat_history.append(AIMessage(content=msg.content))
+
+        response = rag_chain.invoke({
+            "input": request.message,
+            "chat_history": chat_history
+        })
         return ChatResponse(reply=response["answer"])
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -139,7 +139,11 @@ export default function AvatarMode() {
       const response = await fetch(`${apiUrl}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMsg }),
+        // Send previous messages as history so AI remembers the context
+        body: JSON.stringify({ 
+          message: userMsg,
+          history: messages.map(m => ({ role: m.role, content: m.content }))
+        }),
       });
 
       if (!response.ok) throw new Error("Network error");
