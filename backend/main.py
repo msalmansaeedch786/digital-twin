@@ -47,7 +47,7 @@ async def startup_event():
         vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
         retriever = vectorstore.as_retriever(search_kwargs={"k": 5}) # Get top 5 relevant chunks
         # Initialize Groq LLM
-        llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.3, api_key=os.getenv("GROQ_API_KEY"))
+        llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0.3, api_key=os.getenv("GROQ_API_KEY"))
         
         # 1. Create History-Aware Retriever
         contextualize_q_system_prompt = (
