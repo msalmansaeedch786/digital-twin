@@ -3,7 +3,7 @@ os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_community.vectorstores import Chroma
 import time
 
@@ -14,11 +14,6 @@ DATA_DIR = "../data"
 CHROMA_DB_DIR = "./chroma_db"
 
 def main():
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        print("ERROR: GEMINI_API_KEY is not set in .env")
-        return
-
     print("Starting data ingestion process...")
     
     # 1. Load PDFs (Only from the root of DATA_DIR to avoid reading textbooks in repos)
@@ -67,12 +62,10 @@ def main():
     print(f"Created {len(chunks)} text chunks.")
 
     # 4. Create Embeddings and store in ChromaDB
-    print("Generating embeddings (using local AI model) and storing in ChromaDB...")
-    embeddings = HuggingFaceEmbeddings(
-        model_name="all-MiniLM-L6-v2"
-    )
+    print("Generating embeddings (using fastembed) and storing in ChromaDB...")
+    embeddings = FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
     
-    # Process in batches to avoid API rate limits and timeouts
+    # Process in batches to avoid timeouts
     batch_size = 20
     vectorstore = None
     
