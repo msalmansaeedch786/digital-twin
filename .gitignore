@@ -6,3 +6,6 @@ __pycache__/
 *.pyc
 .next/
 data/
+chroma_db/
+*.log
+backend/chroma_db/
