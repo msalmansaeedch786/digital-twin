@@ -18,14 +18,17 @@
 - GitLab CI/CD (Expert — built Fleeting Runner architecture)
 - GitHub Actions (Advanced — reusable workflows across multi-account)
 - AWS CodePipeline / CodeBuild / CodeDeploy
+- Jenkins (Used for CI/CD implementation at Amway)
 - Octopus Deploy (Past experience at NorthBay)
-- I have NOT used Jenkins, CircleCI, or ArgoCD.
+- I have NOT used CircleCI or ArgoCD.
 
 ## Containers & Orchestration
 - Docker (Expert)
 - Kubernetes / EKS (Advanced)
+- Minikube & Kubectl (Local k8s development)
 - GKE (Basic — one project)
 - AWS ECS / ECR / Fargate (Advanced)
+- AWS Elastic Beanstalk (Multi-container docker environments)
 - Helmfile
 - I have NOT used Docker Swarm, Nomad, or OpenShift.
 
@@ -51,10 +54,17 @@
 - Angular 6 (Past — CodeFreak project)
 - Solidity / Smart Contracts (Past — Keyless project)
 
-## Security & Access
+## Security, Databases & Access
+- Databases: DocumentDB, Oracle (On-premises), MS SQL Server
+- Database Tools: SQL Server Management Studio, MySQL Workbench, DBeaver
 - AWS IAM (Advanced access optimization and ISMS reporting)
 - HashiCorp Vault
 - Black Duck
 - SonarQube
 - Harbor (Container registry)
 - Pritunl VPN
+
+## Other Tools
+- Configuration Management: Chef (OpsWorks)
+- IDEs: Visual Studio, PyCharm, Android Studio, Netbeans
+- Collaboration: JIRA, Slack, Zoom, RingCentral, Bitbucket
