@@ -1,83 +1,166 @@
-# Digital Twin Portfolio
+# 🤖 AI Digital Twin — Open Source RAG Architecture
 
-Welcome to the repository for **SALMAN.DEV**, the personal portfolio and AI Digital Twin for Muhammad Salman, a Senior Infrastructure Consultant and 6x AWS Certified professional.
+Welcome to the **AI Digital Twin** project! This repository contains a production-ready Retrieval-Augmented Generation (RAG) system that powers a conversational AI avatar. 
 
-This project is a modern, decoupled web application that combines a stunning Next.js frontend with a powerful, RAG-enabled Python AI backend.
+This project demonstrates how to build, secure, and deploy a decoupled architecture using **Next.js (Frontend)** and **FastAPI + Langchain (Backend)**, running entirely on free-tier cloud providers (Vercel & Render) with zero hallucination guarantees.
 
-## Architecture
+---
 
-The application is split into two distinct parts:
+## 🌟 Key Features
 
-1. **Frontend (`/frontend`)**: A React/Next.js application responsible for the beautiful, animated user interface and the Chatbot UI. It features Markdown rendering, Speech-to-Text, and Text-to-Speech capabilities.
-2. **Backend (`/backend`)**: A Python/FastAPI application that serves as the "AI Brain". It utilizes Langchain, a local ChromaDB vector database containing Salman's resume data, and the Groq LLM API to process natural language queries and respond as Salman's digital twin.
+- **Strict Anti-Hallucination Guardrails**: The LLM is strictly constrained by a prompt system that forces it to refuse questions outside its factual database.
+- **GitOps Data Pipeline**: Vector database (ChromaDB) generation is fully automated during the CI/CD build phase.
+- **Enterprise-Grade Security**: Includes rate limiting, CORS whitelisting, prompt injection defenses, and strict payload validation.
+- **"2 LLMs, 1 Embedding" Workflow**: Uses conversational history to rewrite queries before factual retrieval.
 
-## Deployment
+---
 
-This project is configured for a zero-cost, enterprise-grade deployment:
-* **Frontend**: Hosted on [Vercel](https://vercel.com) for global CDN edge caching and instant CI/CD.
-* **Backend**: Hosted on [Render](https://render.com) using the included `render.yaml` configuration for seamless Web Service deployment.
+## 🏛️ System Architecture
 
-## Local Development
+The system is decoupled into two independent services:
 
-To run this project locally, you will need to start both the frontend and the backend servers.
+1. **Frontend (Vercel)**: A static Next.js React application that provides the glassmorphism UI and Markdown-rendered chat interface.
+2. **Backend API (Render)**: A Python FastAPI application that orchestrates the Langchain RAG pipeline.
 
-### 1. Start the AI Backend
+```mermaid
+graph TD
+    subgraph "Frontend (Vercel)"
+        UI[Next.js React UI]
+        MD[React Markdown Renderer]
+    end
+
+    subgraph "Backend (Render)"
+        API[FastAPI Server]
+        RAG[Langchain RAG Engine]
+        DB[(ChromaDB Vector Store)]
+        SEC[Security Layer: slowapi, CORS]
+    end
+
+    subgraph "External AI Services"
+        GROQ[Groq Cloud: Llama 3]
+        EMB[FastEmbed: BAAI/bge-small]
+    end
+
+    User((User)) -->|HTTPS POST| UI
+    UI -->|JSON Request| SEC
+    SEC --> API
+    API --> RAG
+    RAG <--> DB
+    RAG <--> GROQ
+    RAG <--> EMB
+```
+
+---
+
+## 🔄 The CI/CD Data Pipeline (The "Brain" Build)
+
+To avoid bloating the Git repository with massive binary vector databases, the data ingestion process is fully automated during the **Render Build Phase**. 
+
+**How it works:**
+1. Maintainers update simple `.txt` files in the `data/` directory.
+2. Code is pushed to GitHub.
+3. Render catches the webhook and runs the build command (`pip install && python ingest.py`).
+4. The Python script slices the text files, generates mathematical vectors using FastEmbed, and builds a fresh ChromaDB snapshot on the server.
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant Git as GitHub
+    participant Render as Render Build Server
+    participant Chroma as Local ChromaDB
+
+    Dev->>Git: git push (Update data/*.txt files)
+    Git->>Render: Webhook Trigger
+    Note over Render: Build Phase Starts
+    Render->>Render: pip install dependencies
+    Render->>Render: python ingest.py
+    Render->>Chroma: Chunk & Embed Text Data
+    Note over Render: Build Successful
+    Render->>Render: Bake ChromaDB into Image
+    Note over Render: Start Phase Starts
+    Render->>Render: uvicorn main:app
+```
+
+---
+
+## 💬 The Request Lifecycle (Step-by-Step RAG)
+
+When a user asks a question, the system must translate natural language into a mathematical search, retrieve facts, and generate a conversational response.
+
+**The "2 LLMs, 1 Embedding" Workflow:**
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Vercel as Frontend (Next.js)
+    participant FastAPI as Backend (Render)
+    participant Llama1 as Groq LLM (Query Rewrite)
+    participant Embed as FastEmbed
+    participant DB as ChromaDB
+    participant Llama2 as Groq LLM (Generator)
+
+    User->>Vercel: "How long were you there?"
+    Vercel->>FastAPI: POST /chat + History
+    
+    Note over FastAPI: Security Checks (CORS, Rate Limit)
+    
+    FastAPI->>Llama1: History + "How long were you there?"
+    Llama1-->>FastAPI: "How long did Salman work at MBition?"
+    
+    FastAPI->>Embed: Embed Rewritten Question
+    Embed-->>FastAPI: [0.012, -0.045, 0.88...] (Math Vector)
+    
+    FastAPI->>DB: Search for closest vectors
+    DB-->>FastAPI: Top 5 Text Chunks (Facts)
+    
+    FastAPI->>Llama2: System Prompt + Facts + Question
+    
+    Note over Llama2: "Generate answer using ONLY provided facts"
+    
+    Llama2-->>FastAPI: Stream response tokens
+    FastAPI-->>Vercel: Stream response chunks
+    Vercel-->>User: Rendered Markdown UI
+```
+
+---
+
+## 🛡️ Security Measures
+
+This API is hardened against both traditional web vulnerabilities and AI-specific attack vectors:
+
+- **CORS Restriction**: `ALLOWED_ORIGINS` strictly limits API access to the Vercel frontend.
+- **Rate Limiting**: `slowapi` restricts users to 15 requests per minute per IP address.
+- **Input Validation**: Pydantic models cap message lengths (1000 chars) and chat history size.
+- **Prompt Injection Defense**: Explicit system directives prevent the LLM from revealing its instructions or assuming different personas.
+- **Strict Ignorance Guardrail**: The LLM is instructed to explicitly say "I don't know" rather than hallucinate technologies or tools not found in the vector database.
+
+---
+
+## 🚀 Getting Started Locally
+
+### 1. Backend Setup
 ```bash
 cd backend
-python3 -m venv venv
+python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# Create a .env file and add your GROQ_API_KEY
-echo "GROQ_API_KEY=your_api_key_here" > .env
+# Create .env based on .env.example
+cp .env.example .env
+# Edit .env and add your GROQ_API_KEY
 
-# Start the FastAPI server
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+# Ingest your personal data
+python ingest.py
+
+# Start the server
+uvicorn main:app --reload
 ```
 
-### 2. Start the Frontend UI
+### 2. Frontend Setup
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Open `http://localhost:3000` in your browser. The frontend will automatically route chat requests to `http://localhost:8000`.
 
-## Tech Stack
-* **UI**: Next.js, React, Framer Motion, Vanilla CSS
-* **AI Engine**: Langchain, HuggingFace Embeddings, Groq (Llama 3)
-* **Vector DB**: ChromaDB
-* **API**: FastAPI, Python
-
-## System Design & Architecture Flow
-The following diagram illustrates the complete RAG (Retrieval-Augmented Generation) workflow:
-
-```mermaid
-flowchart TD
-    User(Recruiter / Web Browser)
-    
-    subgraph Vercel [Frontend Hosting]
-        UI[Next.js React UI]
-    end
-    
-    subgraph Render [Backend Server]
-        API[FastAPI Python Server]
-        EmbedModel[Embedding Model]
-        DB[(ChromaDB Vector DB)]
-    end
-    
-    subgraph GroqCloud [External AI API]
-        LLM[Llama 3.3 LLM]
-    end
-
-    User -->|1. Asks Question| UI
-    UI -->|2. HTTP POST Request| API
-    API -->|3. Sends user text| EmbedModel
-    EmbedModel -->|4. Returns Vector| API
-    API -->|5. Searches Database| DB
-    DB -->|6. Returns Resume Facts| API
-    API -->|7. Sends Question and Facts| LLM
-    LLM -->|8. Generates Response| API
-    API -->|9. Returns JSON| UI
-    UI -->|10. Renders UI| User
-```
+Visit `http://localhost:3000` to interact with your local Digital Twin.
