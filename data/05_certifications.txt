@@ -1,0 +1,17 @@
+# Certifications
+
+## Amazon Web Services (AWS)
+I am a 6x AWS Certified professional:
+1. AWS Certified Solutions Architect - Professional
+2. AWS Certified DevOps Engineer - Professional
+3. AWS Certified Developer - Associate
+4. AWS Certified Solutions Architect - Associate
+5. AWS Certified SysOps Administrator - Associate
+6. AWS Certified Cloud Practitioner
+
+## HashiCorp
+1. HashiCorp Certified: Terraform Associate (003)
+2. HashiCorp Certified: Terraform Associate (002)
+
+## Docker
+1. Docker Certified Associate
