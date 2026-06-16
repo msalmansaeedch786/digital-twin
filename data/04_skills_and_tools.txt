@@ -18,9 +18,10 @@
 - GitLab CI/CD (Expert — built Fleeting Runner architecture)
 - GitHub Actions (Advanced — reusable workflows across multi-account)
 - AWS CodePipeline / CodeBuild / CodeDeploy
+- CircleCI & Concourse CI (Past experience)
 - Jenkins (Used for CI/CD implementation at Amway)
 - Octopus Deploy (Past experience at NorthBay)
-- I have NOT used CircleCI or ArgoCD.
+- I have NOT used ArgoCD.
 
 ## Containers & Orchestration
 - Docker (Expert)
@@ -35,9 +36,9 @@
 ## Monitoring & Observability
 - Amazon CloudWatch (Extensive use)
 - Datadog
-- Prometheus
+- Prometheus & Grafana (Configured via Terraform)
+- ELK Stack (Elasticsearch, Logstash, Kibana)
 - New Relic
-- I have NOT used Grafana, Splunk, or ELK stack extensively.
 
 ## Generative AI Infrastructure
 - Model Context Protocol (MCP) integrations
@@ -65,6 +66,6 @@
 - Pritunl VPN
 
 ## Other Tools
-- Configuration Management: Chef (OpsWorks)
+- Configuration Management: Ansible (Jinja2, Playbooks), Chef (OpsWorks)
 - IDEs: Visual Studio, PyCharm, Android Studio, Netbeans
 - Collaboration: JIRA, Slack, Zoom, RingCentral, Bitbucket
