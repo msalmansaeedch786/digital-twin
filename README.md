@@ -1,4 +1,4 @@
-# 🤖 AI Digital Twin — Open Source RAG Architecture
+# AI Digital Twin — Open Source RAG Architecture
 
 Welcome to the **AI Digital Twin** project! This repository contains a production-ready Retrieval-Augmented Generation (RAG) system that powers a conversational AI avatar. 
 
@@ -6,7 +6,7 @@ This project demonstrates how to build, secure, and deploy a decoupled architect
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
 - **Strict Anti-Hallucination Guardrails**: The LLM is strictly constrained by a prompt system that forces it to refuse questions outside its factual database.
 - **GitOps Data Pipeline**: Vector database (ChromaDB) generation is fully automated during the CI/CD build phase.
@@ -15,7 +15,7 @@ This project demonstrates how to build, secure, and deploy a decoupled architect
 
 ---
 
-## 🏛️ System Architecture
+## System Architecture
 
 The system is decoupled into two independent services:
 
@@ -52,7 +52,7 @@ graph TD
 
 ---
 
-## 🔄 The CI/CD Data Pipeline (The "Brain" Build)
+## The CI/CD Data Pipeline (The "Brain" Build)
 
 To avoid bloating the Git repository with massive binary vector databases, the data ingestion process is fully automated during the **Render Build Phase**. 
 
@@ -83,7 +83,7 @@ sequenceDiagram
 
 ---
 
-## 💬 The Request Lifecycle (Step-by-Step RAG)
+## The Request Lifecycle (Step-by-Step RAG)
 
 When a user asks a question, the system must translate natural language into a mathematical search, retrieve facts, and generate a conversational response.
 
@@ -124,7 +124,7 @@ sequenceDiagram
 
 ---
 
-## 🛡️ Security Measures
+## Security Measures
 
 This API is hardened against both traditional web vulnerabilities and AI-specific attack vectors:
 
@@ -136,7 +136,7 @@ This API is hardened against both traditional web vulnerabilities and AI-specifi
 
 ---
 
-## 🚀 Getting Started Locally
+## Getting Started Locally
 
 ### 1. Backend Setup
 ```bash
