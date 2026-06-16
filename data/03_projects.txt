@@ -45,16 +45,19 @@ Client: Amway (via NorthBay Solutions)
 - Configured AWS Elastic Beanstalk high availability multi-container Docker environments with ELB and ASG.
 - Managed microservices deployments using AWS ECS with Fargate and locally using Kubernetes via Minikube and Kubectl.
 - Implemented Infrastructure as Code using AWS CloudFormation and Terraform.
-- Headed up CI/CD implementation using Terraform and Jenkins.
+- Headed up CI/CD implementation using Jenkins and CircleCI.
+- Used Ansible Jinja2 templates for dynamic templating and built Ansible playbook Docker images via CircleCI.
 - Set up CloudFront distributions with custom SSL certificates and WAF ACLs to secure the application.
-- Technologies: AWS CloudFormation, Lambda, CloudFront, WAF, Elastic Beanstalk, ECS, Fargate, Kubernetes (Minikube), Terraform, Jenkins, Oracle
+- Technologies: AWS CloudFormation, Lambda, CloudFront, WAF, Elastic Beanstalk, ECS, Fargate, Kubernetes (Minikube), Terraform, Jenkins, CircleCI, Ansible, Oracle
 
 ## NorthBay Labs (Internal)
 Duration: July 2019 - September 2019
 - Developed a collection of CloudFormation Custom Resources to simplify CloudFormation template development
 - Built Lambda handlers in NodeJS to automatically index CloudWatch logs into Elasticsearch
-- Visualized logs via Kibana dashboards
-- Technologies: AWS SAM, NodeJS, Elasticsearch, Kibana, CloudFormation Custom Resources, Lambda
+- Visualized logs via Kibana dashboards and built the ELK stack architecture.
+- Instituted Linux shell scripting for automated log cleaning in the ELK stack.
+- Installed and configured Grafana on Ubuntu using Terraform Grafana Provider.
+- Technologies: AWS SAM, NodeJS, Elasticsearch, Kibana, Logstash, Grafana, CloudFormation Custom Resources, Lambda, Shell Scripting
 
 ## CodeFreak Programming Platform
 Duration: January 2019 - June 2019
