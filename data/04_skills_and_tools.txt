@@ -1,0 +1,60 @@
+# Skills and Technologies
+
+## Cloud Platforms
+- AWS (Primary — 6+ years of deep hands-on experience, 6x Certified)
+- GCP (Limited — 3-month project at Orbem using GKE only)
+- I do NOT have experience with Azure.
+
+## Infrastructure as Code
+- Terraform (Expert — daily use, Terraform Cloud/Enterprise)
+- AWS CloudFormation (Advanced — nested stacks, custom resources)
+- AWS CDK (Familiar)
+- Packer (AMI building)
+- Serverless Framework (Used for Lambda deployments)
+- AWS SAM (Used for Lambda development)
+- I have NOT used Pulumi or Crossplane.
+
+## CI/CD
+- GitLab CI/CD (Expert — built Fleeting Runner architecture)
+- GitHub Actions (Advanced — reusable workflows across multi-account)
+- AWS CodePipeline / CodeBuild / CodeDeploy
+- Octopus Deploy (Past experience at NorthBay)
+- I have NOT used Jenkins, CircleCI, or ArgoCD.
+
+## Containers & Orchestration
+- Docker (Expert)
+- Kubernetes / EKS (Advanced)
+- GKE (Basic — one project)
+- AWS ECS / ECR / Fargate (Advanced)
+- Helmfile
+- I have NOT used Docker Swarm, Nomad, or OpenShift.
+
+## Monitoring & Observability
+- Amazon CloudWatch (Extensive use)
+- Datadog
+- Prometheus
+- New Relic
+- I have NOT used Grafana, Splunk, or ELK stack extensively.
+
+## Generative AI Infrastructure
+- Model Context Protocol (MCP) integrations
+- Vector Databases (DocumentDB)
+- AI Agent Infrastructure (Platypus)
+- Building infrastructure to support LLM workflows
+
+## Programming & Scripting
+- Python (Scripting & automation)
+- Bash scripting
+- PowerShell scripting
+- JavaScript / NodeJS (Lambda functions)
+- C# / ASP.NET Core (Past — CodeFreak project)
+- Angular 6 (Past — CodeFreak project)
+- Solidity / Smart Contracts (Past — Keyless project)
+
+## Security & Access
+- AWS IAM (Advanced access optimization and ISMS reporting)
+- HashiCorp Vault
+- Black Duck
+- SonarQube
+- Harbor (Container registry)
+- Pritunl VPN

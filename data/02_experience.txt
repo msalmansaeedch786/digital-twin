@@ -1,0 +1,120 @@
+# Work Experience
+
+## Thoughtworks — Senior Infrastructure Consultant (promoted January 2025)
+Duration: April 2022 - Present
+Location: Munich, Bavaria, Germany
+Total tenure: 4+ years
+
+### Client: Mercedes-Benz AG — OTR (April 2025 - Present)
+- Engineered infrastructure for AI and Chatbot capabilities using Model Context Protocol (MCP) skills and Platypus
+- Configured Kubernetes CSI drivers for persistent storage
+- Secured DocumentDB access via in-database gateways and VPC endpoints
+- Technologies used: Kubernetes, AWS, DocumentDB, MCP, Platypus
+
+### Client: MBition — SWF GitLab CI Runners (July 2023 - January 2025)
+- Designed a "Fleeting Runner" architecture for GitLab CI/CD to optimize build times
+- Automated Base AMI processes using Packer and Terraform to dynamically scale self-hosted runners based on pipeline demand
+- Technologies used: Terraform, Packer, AWS EC2, GitLab CI/CD, EC2 Image Builder
+
+### Client: Porsche AG — Cloud Infrastructure (January 2023 - June 2023)
+- Standardized cloud infrastructure through reusable automation
+- Developed AWS base infrastructure tools
+- Implemented automated IAM role management, observability, and shared secrets management across development teams
+- Technologies used: AWS, Terraform, GitHub Actions
+
+### General Responsibilities at Thoughtworks:
+- Spearheaded infrastructure provisioning and management using Terraform Cloud and Terraform Enterprise
+- Designed and implemented CI/CD pipelines using GitLab CI and GitHub Actions
+- Built and managed self-hosted GitLab and GitHub Runners to optimize build and deployment processes
+- Developed and deployed containerized applications on Kubernetes (EKS), managing clusters for high availability and scalability
+- Utilized GitHub Actions Workflows for GitOps-based continuous delivery to Kubernetes environments
+- Collaborated with cross-functional teams to automate infrastructure workflows
+
+---
+
+## receeve GmbH — DevOps Engineer
+Duration: June 2021 - November 2022
+Location: Hamburg, Germany
+
+- Provisioned Infrastructure as Code with AWS CloudFormation, creating and modifying cloud resources
+- Managed Continuous Deployment CI/CD CodePipelines, building and releasing across Dev, QA, Staging, and Production AWS environments
+- Setup secured AWS Cloud environments, maintaining IAM user permissions, reviewing user and permission lists monthly for access optimization
+- Created monthly reports for ISMS (Information Security Management System)
+- Audited and logged AWS resources monthly for cost optimization and created monthly cost analysis reports
+- Created and maintained Dockerized containers in AWS ECS Fargate
+- Ran security patches and vulnerability tests on Docker containers
+- Technologies used: AWS CloudFormation, AWS CodePipeline, AWS ECS Fargate, Docker, IAM, CloudWatch
+
+---
+
+## Orbem GmbH — DevOps Engineer
+Duration: October 2021 - December 2021 (3 months)
+Location: Munich, Bavaria, Germany
+
+- Provisioned Infrastructure as Code using Terraform with modular structure alongside GitLab CI/CD Pipelines for infrastructure deployment
+- Configured GKE clusters on Google Cloud Platform (GCP) for staging environments
+- Deployed and maintained Kubernetes services using Helmfile through secure connection using Pritunl VPN
+- Maintained and resolved on-premises IT infrastructure and deployment issues
+- Technologies used: Terraform, GitLab CI/CD, GKE, Kubernetes, Helmfile, GCP, Pritunl VPN
+- NOTE: This was my only GCP project. My GCP experience is limited to GKE cluster configuration during this 3-month engagement. I do NOT have experience with other GCP services like Cloud Run, Cloud Functions, Cloud SQL, Cloud Storage, BigQuery, or Pub/Sub.
+
+---
+
+## Zameen.com — DevOps Engineer
+Duration: January 2021 - June 2021 (6 months)
+Location: Lahore, Pakistan
+
+- Constructed logging and monitoring dashboards using AWS CloudWatch for server and application metrics and logs
+- Constructed on-demand CloudFormation stacks to deploy ECS services and task definitions on ECS clusters using Fargate
+- Production experience with large-scale distributed systems and applications, including debugging, failure handling, and advanced performance tuning
+- Technologies used: AWS CloudWatch, AWS CloudFormation, AWS ECS Fargate
+
+---
+
+## NorthBay Solutions — Software Engineer (DevOps focus)
+Duration: July 2019 - December 2020 (1 year 6 months)
+Location: Lahore, Pakistan
+
+- Provisioned and maintained Infrastructure as Code using Terraform modules with Terraform Cloud and CloudFormation nested stacks
+- Improved automated deployment processes with CI/CD pipelines using Octopus Deploy, GitLab, AWS CodePipeline, CodeBuild, and CodeDeploy
+- Led complex "lift and shift" cloud migrations from on-premises and third-party cloud (RackSpace) to AWS for application, utility, file, and SFTP servers
+- Developed serverless microservices using AWS Lambda, API Gateway, Serverless Framework, and AWS SAM
+- Headed containerization solutions using Docker, Docker-Compose, and AWS ECS/ECR
+- Maintained source code repositories using GitHub, BitBucket, GitLab, and AWS CodeCommit
+- Implemented monitoring and logging with CloudWatch metrics, events, and alarms
+- Maintained high availability using AWS AutoScaling Groups and Load Balancers with Route53 HostedZone and RecordSet
+- Developed automation scripts using Bash, PowerShell, and Python
+- Built a Warm Standby Disaster Recovery environment for a client
+- Technologies used: Terraform, Terraform Cloud, CloudFormation, Octopus Deploy, GitLab CI, AWS CodePipeline, AWS Lambda, API Gateway, Docker, ECS, ECR, Route53, CloudWatch, AWS SAM
+
+---
+
+## Artificial Intelligence and Multidisciplinary Research Lab — Full Stack Developer
+Duration: January 2019 - June 2019 (6 months)
+Location: Lahore, Pakistan (University research lab)
+
+Project: CodeFreak — An interactive programming competition platform
+- Led and mentored team mates ensuring all were trained in technical knowledge
+- Developed a server handling user information, code compilation, test case application, and result generation
+- Developed the administration end and RESTful APIs in ASP.NET Core with routing for CRUD operations
+- Built a Code Compiler using Microsoft Process Class
+- Implemented real-time Chat Module using ASP.NET SignalR
+- Developed interactive GUI in Angular 6 including admin and user panels for profile management, problem management, event management, and embedded code editor
+- Designed database schemas using MS SQL Server
+- Implemented security using Docker Containers to isolate compilation processes
+- Integrated the compiler with a mobile app for code submission and result generation
+- Technologies used: ASP.NET Core, Angular 6, Docker, MS SQL Server, SignalR, C#
+
+---
+
+## AUTOMATA THE PLATFORM — Blockchain and Application Developer
+Duration: August 2018 - January 2019 (6 months)
+Location: Lahore, Pakistan
+
+Project: Keyless — A permissionless decentralized peer-to-peer biometric authentication network
+- Developed a fully decentralized solution with two-step biometric authentication (mobile app + decentralized protocol)
+- Developed Ethereum Wallet Application with biometric authentication, replacing private keys with biometrics for sending and receiving Ether and digital assets
+- Built Ethereum DApps and Smart Contracts (ERC-20 Tokens)
+- Developed modular authentication layer with PIN-based, face recognition, and password-based authentication via the platform SDK
+- Researched blockchain and Bitcoin core concepts and solved real-time problems with blockchain solutions
+- Technologies used: Ethereum, Solidity, Smart Contracts, ERC-20, Biometrics, DApp Development

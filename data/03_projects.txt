@@ -1,0 +1,71 @@
+# Projects
+
+## Mercedes-Benz AG — OTR
+Duration: April 2025 - Present
+Client: Mercedes-Benz AG (via Thoughtworks)
+- Engineered infrastructure for AI and Chatbot capabilities using Model Context Protocol (MCP) skills and Platypus
+- Configured Kubernetes CSI drivers for persistent storage
+- Secured DocumentDB access via in-database gateways
+- Technologies: Kubernetes, AWS, AI Integration, DocumentDB, MCP
+
+## MBition — SWF GitLab CI Runners
+Duration: July 2023 - January 2025
+Client: MBition / Mercedes-Benz (via Thoughtworks)
+- Designed a "Fleeting Runner" architecture for GitLab CI/CD to optimize build times
+- Automated Base AMI processes using Packer and Terraform to dynamically scale self-hosted runners based on pipeline demand
+- Technologies: Terraform, Packer, AWS EC2, GitLab CI/CD, EC2 Image Builder
+
+## Porsche AG — Cloud Infrastructure
+Duration: January 2023 - June 2023
+Client: Porsche AG (via Thoughtworks)
+- Standardized cloud infrastructure through reusable automation
+- Developed AWS base infrastructure tools
+- Implemented automated IAM role management, observability, and shared secrets management across development teams
+- Technologies: AWS, Terraform, GitHub Actions
+
+## DealerMeter
+Duration: March 2021 - April 2021
+- Built a personalized market data terminal processing vendor data via S3, Lambda, and Glue into Parquet format
+- Visualized performance and inventory data using Apache Superset querying Athena directly
+- Technologies: AWS Lambda, AWS Glue, Amazon Athena, S3, Apache Superset, Parquet
+
+## Vector Solutions
+Duration: December 2019 - December 2020
+Client: Vector Solutions (via NorthBay Solutions)
+- Provided AWS DevOps Architecture to migrate a RackSpace Production Environment to AWS using Lift, Shift, and Shape strategy
+- Built a Warm Standby Disaster Recovery (DR) environment
+- Led CI/CD implementation using Terraform Cloud and Octopus Deploy
+- Technologies: AWS, Terraform, Terraform Cloud, Octopus Deploy, RackSpace Migration
+
+## Amway
+Duration: September 2019 - December 2019
+Client: Amway (via NorthBay Solutions)
+- Maintained Batch Ingestion, Streamed Data, and Curation pipelines on AWS
+- Developed Serverless Lambda functions
+- Set up CloudFront distributions with custom SSL certificates and WAF ACLs to secure the application
+- Technologies: AWS CloudFormation, Lambda, CloudFront, WAF, SSL
+
+## NorthBay Labs (Internal)
+Duration: July 2019 - September 2019
+- Developed a collection of CloudFormation Custom Resources to simplify CloudFormation template development
+- Built Lambda handlers in NodeJS to automatically index CloudWatch logs into Elasticsearch
+- Visualized logs via Kibana dashboards
+- Technologies: AWS SAM, NodeJS, Elasticsearch, Kibana, CloudFormation Custom Resources, Lambda
+
+## CodeFreak Programming Platform
+Duration: January 2019 - June 2019
+University Final Year Project at AI & Multidisciplinary Research Lab
+- Developed a programming competition platform with embedded code editor
+- Built isolated Docker containers for secure code compilation
+- Implemented real-time chat using ASP.NET SignalR
+- Developed RESTful APIs in ASP.NET Core
+- Built frontend in Angular 6
+- Technologies: Angular 6, ASP.NET Core, Docker, MS SQL Server, SignalR, C#
+
+## Keyless Decentralized Network
+Duration: August 2018 - January 2019
+Company: AUTOMATA THE PLATFORM
+- Built an Ethereum DApp and wallet with biometric authentication
+- Created a decentralized peer-to-peer network without private keys
+- Developed Ethereum Smart Contracts and ERC-20 Tokens
+- Technologies: Ethereum, Smart Contracts, Solidity, Biometrics, ERC-20
