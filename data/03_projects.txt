@@ -32,10 +32,13 @@ Duration: March 2021 - April 2021
 ## Vector Solutions
 Duration: December 2019 - December 2020
 Client: Vector Solutions (via NorthBay Solutions)
-- Provided AWS DevOps Architecture to migrate a RackSpace Production Environment to AWS using Lift, Shift, and Shape strategy
-- Built a Warm Standby Disaster Recovery (DR) environment
-- Led CI/CD implementation using Terraform Cloud and Octopus Deploy
-- Technologies: AWS, Terraform, Terraform Cloud, Octopus Deploy, RackSpace Migration
+- Provided AWS DevOps Architecture to migrate a RackSpace Production Environment to AWS using Lift, Shift, and Shape strategy.
+- Built a Warm Standby Disaster Recovery (DR) environment.
+- Lifted and shifted File Servers using AWS FSx with Amazon Managed Active Directory, migrating data using Robocopy.
+- Lifted and shifted SFTP Servers using AWS Transfer for SFTP with Custom Identity Providers (API Gateway, Lambda).
+- Baked custom Windows AMIs using Sysprep to lower boot times for Application & Utility servers.
+- Led CI/CD implementation using Terraform Cloud and Octopus Deploy.
+- Technologies: AWS, Terraform, Terraform Cloud, Octopus Deploy, RackSpace Migration, AWS FSx, AWS Transfer for SFTP, Sysprep, Robocopy
 
 ## Amway
 Duration: September 2019 - December 2019
