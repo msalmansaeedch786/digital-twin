@@ -1,5 +1,6 @@
 import os
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
+from pathlib import Path
 from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -10,8 +11,8 @@ import time
 # Load environment variables (API keys)
 load_dotenv()
 
-DATA_DIR = "../data"
-CHROMA_DB_DIR = "./chroma_db"
+DATA_DIR = str(Path(__file__).parent.parent / "data")
+CHROMA_DB_DIR = str(Path(__file__).parent / "chroma_db")
 
 def main():
     print("Starting data ingestion process...")
@@ -39,8 +40,8 @@ def main():
                     try:
                         loader = TextLoader(readme_path)
                         md_documents.extend(loader.load())
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"Warning: Failed to load {readme_path}: {e}")
                         
     print(f"Loaded {len(md_documents)} README documents from your projects.")
 

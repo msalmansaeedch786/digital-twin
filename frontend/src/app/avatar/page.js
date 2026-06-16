@@ -31,7 +31,7 @@ export default function AvatarMode() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      const query = params.get("q");
+      const query = params.get("q")?.slice(0, 500)?.replace(/[<>]/g, "");
       if (query) {
         setInputText(query);
       }
