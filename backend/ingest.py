@@ -17,8 +17,12 @@ CHROMA_DB_DIR = str(Path(__file__).parent / "chroma_db")
 def main():
     print("Starting data ingestion process...")
     
-    # 1. Load PDFs (Only from the root of DATA_DIR to avoid reading textbooks in repos)
-    print("Loading PDFs...")
+    # 1. Load Text files and PDFs (Only from the root of DATA_DIR to avoid reading textbooks in repos)
+    print("Loading Text files and PDFs...")
+    txt_loader = DirectoryLoader(DATA_DIR, glob="*.txt", loader_cls=TextLoader)
+    txt_documents = txt_loader.load()
+    print(f"Loaded {len(txt_documents)} Text documents.")
+
     pdf_loader = DirectoryLoader(DATA_DIR, glob="*.pdf", loader_cls=PyPDFLoader)
     pdf_documents = pdf_loader.load()
     print(f"Loaded {len(pdf_documents)} pages from PDFs.")
@@ -46,7 +50,7 @@ def main():
     print(f"Loaded {len(md_documents)} README documents from your projects.")
 
     # Combine all documents
-    all_docs = pdf_documents + md_documents
+    all_docs = txt_documents + pdf_documents + md_documents
     
     if not all_docs:
         print("No documents found to ingest!")
