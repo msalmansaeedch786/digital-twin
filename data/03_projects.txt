@@ -40,10 +40,14 @@ Client: Vector Solutions (via NorthBay Solutions)
 ## Amway
 Duration: September 2019 - December 2019
 Client: Amway (via NorthBay Solutions)
-- Maintained Batch Ingestion, Streamed Data, and Curation pipelines on AWS
-- Developed Serverless Lambda functions
-- Set up CloudFront distributions with custom SSL certificates and WAF ACLs to secure the application
-- Technologies: AWS CloudFormation, Lambda, CloudFront, WAF, SSL
+- Maintained data pipelines (Batch Ingestion, Streamed Data, Curation) integrating with an on-premises Oracle database.
+- Developed Serverless Lambda functions with API Gateway.
+- Configured AWS Elastic Beanstalk high availability multi-container Docker environments with ELB and ASG.
+- Managed microservices deployments using AWS ECS with Fargate and locally using Kubernetes via Minikube and Kubectl.
+- Implemented Infrastructure as Code using AWS CloudFormation and Terraform.
+- Headed up CI/CD implementation using Terraform and Jenkins.
+- Set up CloudFront distributions with custom SSL certificates and WAF ACLs to secure the application.
+- Technologies: AWS CloudFormation, Lambda, CloudFront, WAF, Elastic Beanstalk, ECS, Fargate, Kubernetes (Minikube), Terraform, Jenkins, Oracle
 
 ## NorthBay Labs (Internal)
 Duration: July 2019 - September 2019
