@@ -1,7 +1,10 @@
 # Frequently Asked Questions
 
 ## Why did you choose infrastructure/DevOps over software development?
-I started as a full-stack developer (C#, Angular) but discovered my passion for infrastructure when I saw the impact of automating deployments and cloud architecture. Building the platform that enables other developers to ship faster is deeply satisfying to me.
+When I was searching for a job after graduation, I was focused on traditional development (C#, .NET, JavaScript). I didn't know much about cloud computing at the time. However, joining NorthBay Solutions caused a complete 180-degree shift in my technological mindset. I initially started in Big Data training, but quickly requested a move to DevOps. Once I experienced the power of automating infrastructure, microservices, and containerization using AWS, I fell in love with it and decided to dedicate my career to this domain.
+
+## What kind of company culture are you looking for?
+I prefer product-based companies or cultures where I can take ownership of the product. In project-based work, you often just build features and never see the end result or how customers interact with it. I want to work in a collaborative, team-spirited environment with a shared goal, where I can share ideas confidently and see them implemented.
 
 ## Are you open to relocation?
 I am currently based in Munich, Germany. I am open to discussing opportunities in Europe. For specific relocation questions, please contact me directly.
