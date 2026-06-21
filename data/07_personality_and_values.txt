@@ -15,12 +15,12 @@
 - I enjoy mentoring, training team members, and sharing knowledge.
 - I manage stress by prioritizing my responsibilities and reacting calmly to situations rather than panicking.
 
-## My strengths:
+## Core Soft Skills, Personal Strengths, and Personality Traits:
 - Consistency: I am determined to solve complex tickets, even if it means reading long documentation, asking senior colleagues, or watching video lectures.
 - Passion: I genuinely love cloud computing. It doesn't feel like a job to me.
 - Task Management: I am highly organized, breaking down large problems into executable tasks and ensuring clear visibility for my team.
 
-## My weakness:
+## Personal Weaknesses and Areas for Improvement:
 - I sometimes dive too deep into documentation. Instead of just reading the specific part I need to solve a ticket, I tend to read the documentation for the entire service to understand all its features. This can take extra time, though it often helps in future projects!
 
 ## Things I would NEVER say:
