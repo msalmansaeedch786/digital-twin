@@ -138,29 +138,45 @@ This API is hardened against both traditional web vulnerabilities and AI-specifi
 
 ## Getting Started Locally
 
-### 1. Backend Setup
+### 1. First-Time Setup
 ```bash
+# Clone repository
+git clone https://github.com/msalmansaeedch786/digital-twin.git
+cd digital-twin
+
+# Set up Python backend dependencies
 cd backend
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-
-# Create .env based on .env.example
 cp .env.example .env
-# Edit .env and add your GROQ_API_KEY
 
-# Ingest your personal data
-python ingest.py
-
-# Start the server
-uvicorn main:app --reload
-```
-
-### 2. Frontend Setup
-```bash
-cd frontend
+# Set up Node.js frontend dependencies
+cd ../frontend
 npm install
-npm run dev
+cd ..
 ```
 
+### 2. Run the Application
+We have built custom automation scripts to eliminate the need for managing multiple terminal tabs and finding hanging process IDs.
+
+To start both the frontend and backend simultaneously in the background:
+```bash
+./start.sh
+```
 Visit `http://localhost:3000` to interact with your local Digital Twin.
+
+When you are finished testing, cleanly shut down all local servers by running:
+```bash
+./stop.sh
+```
+
+---
+
+## 🔒 100% Offline Mode (Local LLM)
+As an Infrastructure Engineer, sometimes you want to run everything entirely on your own hardware without relying on cloud APIs. 
+
+This architecture supports bypassing Groq entirely and running the RAG pipeline on your local Mac using **Ollama**.
+1. Install [Ollama](https://ollama.com/) and download the Llama 3.1 model: `ollama run llama3.1`
+2. Open your `backend/.env` file and set `USE_LOCAL_LLM=true`.
+3. Start the application (`./start.sh`). The Python backend will now automatically route all inference to your local Apple Silicon chip.
