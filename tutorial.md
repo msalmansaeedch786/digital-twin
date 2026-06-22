@@ -656,6 +656,29 @@ app = FastAPI(
 
 ---
 
+## Local Development & Automation
+
+To make local development and testing effortless, this repository includes two bash scripts in the root directory that automate the entire process of spinning up and tearing down the application.
+
+### Starting the Environment
+Instead of opening multiple terminal tabs and activating virtual environments, simply run:
+```bash
+./start.sh
+```
+This script will:
+1. Automatically hunt down and kill any ghost processes running on ports `3000` and `8000`.
+2. Activate the Python virtual environment and start the FastAPI backend in the background.
+3. Start the Next.js frontend in the background.
+
+### Stopping the Environment
+When you are done testing, you do not need to manually find process IDs to kill them. Just run:
+```bash
+./stop.sh
+```
+This script will cleanly terminate both the frontend and backend processes, instantly freeing up your system resources.
+
+---
+
 ## Summary
 
 This project demonstrates a production-ready, enterprise-grade RAG system built entirely on free-tier infrastructure:
