@@ -19,7 +19,7 @@ from slowapi.errors import RateLimitExceeded
 from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_classic.chains.history_aware_retriever import create_history_aware_retriever
