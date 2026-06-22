@@ -650,15 +650,7 @@ app = FastAPI(
 **Problem:** The original `ingest.py` was hardcoded to only load `.pdf` files. Even after adding `.txt` files, they were silently ignored.
 **Solution:** Added a `DirectoryLoader` with `glob="*.txt"` to explicitly load text files.
 
-### Pitfall 3: Data Folder Was in .gitignore
-**Problem:** The `.gitignore` file contained `data/`, which meant none of the text files were being pushed to GitHub, and therefore Render's build could not find them.
-**Solution:** Changed `.gitignore` from `data/` to `data/*.pdf` and `data/digital-twin-repos/`, allowing `.txt` files to be tracked.
-
-### Pitfall 4: Massive Headings in Chat
-**Problem:** The global CSS set `h1 { font-size: 4.5rem }` for the portfolio hero section. When the LLM returned markdown with `# Heading`, it rendered at the same massive size inside the chat bubble.
-**Solution:** Added scoped CSS rules (`.markdown-body h1 { font-size: 1.5rem }`) to constrain headings only inside the chat interface.
-
-### Pitfall 5: LLM Hallucinating GCP Services
+### Pitfall 3: LLM Hallucinating GCP Services
 **Problem:** The data mentioned "GCP" once. The LLM assumed the user was an expert in Cloud Run, Cloud SQL, BigQuery, etc.
 **Solution:** Added explicit negative statements ("I have NOT used Cloud Run, Cloud SQL...") and lowered the LLM temperature from 0.3 to 0.1 to reduce creative guessing.
 
