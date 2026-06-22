@@ -17,6 +17,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from langchain_groq import ChatGroq
+from langchain_ollama import ChatOllama
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -55,8 +56,14 @@ class AIEngine:
             vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
             retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
 
-            # Initialize Groq LLM (auto-reads GROQ_API_KEY from environment)
-            llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0.1)
+            # Initialize LLM based on environment variable
+            use_local = os.getenv("USE_LOCAL_LLM", "false").lower() == "true"
+            if use_local:
+                logger.info("Using local Ollama model (llama3.1)")
+                llm = ChatOllama(model="llama3.1", temperature=0.1)
+            else:
+                logger.info("Using Groq API (llama-3.1-8b-instant)")
+                llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0.1)
 
             # 1. Create History-Aware Retriever
             contextualize_q_system_prompt = (
