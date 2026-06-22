@@ -10,3 +10,4 @@ data/digital-twin-repos/
 chroma_db/
 *.log
 backend/chroma_db/
+.vscode/
