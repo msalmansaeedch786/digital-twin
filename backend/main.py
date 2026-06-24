@@ -135,9 +135,9 @@ class AIEngine:
             )
             retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
 
-            # 3. Bedrock LLM — Llama 3
+            # 3. Bedrock LLM — Nova Lite
             llm = ChatBedrock(
-                model_id="meta.llama3-1-8b-instruct-v1:0",
+                model_id="eu.amazon.nova-lite-v1:0",
                 region_name=region,
                 model_kwargs={"temperature": 0.1, "max_gen_len": 512},
                 config=_boto_config,
@@ -306,9 +306,17 @@ async def chat_endpoint(request: Request, chat_request: ChatRequest):
         chat_history = []
         for msg in chat_request.history:
             if msg.role == "user":
-                chat_history.append(HumanMessage(content=msg.content))
+                if chat_history and isinstance(chat_history[-1], HumanMessage):
+                    chat_history[-1].content += "\n" + msg.content
+                else:
+                    chat_history.append(HumanMessage(content=msg.content))
             elif msg.role == "bot":
-                chat_history.append(AIMessage(content=msg.content))
+                if not chat_history:
+                    continue  # Converse API cannot start with an AI message
+                if isinstance(chat_history[-1], AIMessage):
+                    chat_history[-1].content += "\n" + msg.content
+                else:
+                    chat_history.append(AIMessage(content=msg.content))
 
         response = _engine.rag_chain.invoke({
             "input": chat_request.message,

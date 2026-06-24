@@ -69,7 +69,8 @@ resource "aws_iam_policy" "lambda_api_custom" {
         ]
         Resource = [
           "arn:aws:bedrock:${var.aws_region}::foundation-model/amazon.titan-embed-text-v2:0",
-          "arn:aws:bedrock:${var.aws_region}::foundation-model/meta.llama3-1-8b-instruct-v1:0"
+          "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/eu.amazon.nova-lite-v1:0",
+          "arn:aws:bedrock:*::foundation-model/amazon.nova-lite-v1:0"
         ]
       }
     ]
