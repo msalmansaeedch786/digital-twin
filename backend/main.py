@@ -1,32 +1,26 @@
 import os
-os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
-
-import re
-import time
+import json
 import logging
+import urllib.parse
 from contextlib import asynccontextmanager
+from typing import List
+import boto3
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
-from dotenv import load_dotenv
-from typing import List
 
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
+# Mangum for AWS Lambda adapter
+from mangum import Mangum
 
-from langchain_groq import ChatGroq
-from langchain_ollama import ChatOllama
-from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
-from langchain_chroma import Chroma
+# Langchain imports
+from langchain_aws import ChatBedrock, BedrockEmbeddings
+from langchain_postgres import PGVector
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
-from langchain_classic.chains.history_aware_retriever import create_history_aware_retriever
-from langchain_classic.chains.retrieval import create_retrieval_chain
-from langchain_classic.chains.combine_documents.stuff import create_stuff_documents_chain
-
-load_dotenv()
+from langchain.chains.history_aware_retriever import create_history_aware_retriever
+from langchain.chains.retrieval import create_retrieval_chain
+from langchain.chains.combine_documents.stuff import create_stuff_documents_chain
 
 # --- Structured Logging ---
 logging.basicConfig(
@@ -35,8 +29,26 @@ logging.basicConfig(
 )
 logger = logging.getLogger("digital-twin")
 
-# --- Rate Limiter ---
-limiter = Limiter(key_func=get_remote_address)
+# --- AWS Clients ---
+secrets_client = boto3.client('secretsmanager')
+
+def get_db_connection_string():
+    secret_arn = os.environ.get('DB_SECRET_ARN')
+    db_host = os.environ.get('DB_HOST')
+    db_name = os.environ.get('DB_NAME')
+    
+    if not secret_arn:
+        # Fallback for local development if not in Lambda
+        return os.environ.get("DATABASE_URL")
+        
+    response = secrets_client.get_secret_value(SecretId=secret_arn)
+    secret = json.loads(response['SecretString'])
+    
+    username = secret['username']
+    password = secret['password']
+    
+    password_encoded = urllib.parse.quote_plus(password)
+    return f"postgresql+psycopg://{username}:{password_encoded}@{db_host}:5432/{db_name}"
 
 # --- AI Engine Singleton ---
 class AIEngine:
@@ -45,27 +57,34 @@ class AIEngine:
         self.rag_chain = None
         self.is_ready = False
 
-    async def initialize(self):
-        if not os.getenv("GROQ_API_KEY"):
-            logger.warning("GROQ_API_KEY not set — AI engine will not be available.")
-            return
-
+    def initialize(self):
         try:
-            # Load the embeddings and VectorDB
-            embeddings = FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
-            vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
+            # 1. Setup Bedrock Embeddings
+            region = os.environ.get('AWS_REGION', 'eu-central-1')
+            embeddings = BedrockEmbeddings(
+                model_id="amazon.titan-embed-text-v2:0",
+                region_name=region
+            )
+            
+            # 2. Setup PGVector VectorDB
+            conn_string = get_db_connection_string()
+            vectorstore = PGVector(
+                embeddings=embeddings,
+                collection_name="digital_twin_docs",
+                connection=conn_string,
+                use_jsonb=True,
+            )
             retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
 
-            # Initialize LLM based on environment variable
-            use_local = os.getenv("USE_LOCAL_LLM", "false").lower() == "true"
-            if use_local:
-                logger.info("Using local Ollama model (llama3.1)")
-                llm = ChatOllama(model="llama3.1", temperature=0.1)
-            else:
-                logger.info("Using Groq API (llama-3.1-8b-instant)")
-                llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0.1)
+            # 3. Setup ChatBedrock Llama 3 Model
+            logger.info("Using AWS Bedrock Llama 3 model")
+            llm = ChatBedrock(
+                model_id="meta.llama3-1-8b-instruct-v1:0",
+                region_name=region,
+                model_kwargs={"temperature": 0.1, "max_gen_len": 512}
+            )
 
-            # 1. Create History-Aware Retriever
+            # 4. Create History-Aware Retriever
             contextualize_q_system_prompt = (
                 "Given a chat history and the latest user question "
                 "which might reference context in the chat history, "
@@ -82,7 +101,7 @@ class AIEngine:
                 llm, retriever, contextualize_q_prompt
             )
 
-            # 2. Create the QA Chain with hardened system prompt
+            # 5. Create the QA Chain with hardened system prompt
             system_prompt = (
                 "You are the digital twin of Muhammad Salman, a Senior Infrastructure Consultant and 6x AWS Certified professional. "
                 "You must speak entirely in the first person as Muhammad Salman ('I', 'my', 'me'). "
@@ -117,13 +136,13 @@ class AIEngine:
 
 engine = AIEngine()
 
-# --- Application Lifespan (replaces deprecated @app.on_event) ---
+# --- Application Lifespan ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    await engine.initialize()
+    # Startup (for local running)
+    if os.environ.get("AWS_EXECUTION_ENV") is None:
+        engine.initialize()
     yield
-    # Shutdown (cleanup if needed)
     logger.info("Application shutting down.")
 
 # --- Determine environment ---
@@ -134,28 +153,18 @@ app = FastAPI(
     title="Digital Twin API",
     version="1.0",
     lifespan=lifespan,
-    # Disable Swagger/OpenAPI docs in production
     docs_url=None if IS_PRODUCTION else "/docs",
     redoc_url=None if IS_PRODUCTION else "/redoc",
     openapi_url=None if IS_PRODUCTION else "/openapi.json",
 )
 
-# Register rate limiter
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-# --- CORS — Restricted to known origins ---
-ALLOWED_ORIGINS = os.getenv(
-    "ALLOWED_ORIGINS",
-    "http://localhost:3000"
-).split(",")
-
+# --- CORS ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"], # In API Gateway we can handle this, or allow frontend domains
     allow_credentials=True,
     allow_methods=["POST", "GET", "OPTIONS"],
-    allow_headers=["Content-Type"],
+    allow_headers=["*"],
 )
 
 # --- Request Models with Validation ---
@@ -179,15 +188,16 @@ class ChatResponse(BaseModel):
 
 # --- Endpoints ---
 @app.post("/chat", response_model=ChatResponse)
-@limiter.limit("15/minute")
 async def chat_endpoint(request: Request, chat_request: ChatRequest):
     if not engine.is_ready:
-        raise HTTPException(
-            status_code=503,
-            detail="AI Engine is not available. Please try again later."
-        )
+        # In Lambda cold start, initialize lazily
+        engine.initialize()
+        if not engine.is_ready:
+            raise HTTPException(
+                status_code=503,
+                detail="AI Engine is not available. Please try again later."
+            )
 
-    start_time = time.time()
     logger.info(
         f"Chat request: {len(chat_request.message)} chars, "
         f"{len(chat_request.history)} history messages"
@@ -206,9 +216,6 @@ async def chat_endpoint(request: Request, chat_request: ChatRequest):
             "chat_history": chat_history
         })
 
-        elapsed = time.time() - start_time
-        logger.info(f"Chat response generated in {elapsed:.2f}s")
-
         return ChatResponse(reply=response["answer"])
     except Exception as e:
         logger.error(f"Chat error: {e}", exc_info=True)
@@ -224,3 +231,6 @@ async def health_check():
         "ai_loaded": engine.is_ready,
         "environment": "production" if IS_PRODUCTION else "development"
     }
+
+# Mangum wrapper for AWS Lambda
+handler = Mangum(app)
