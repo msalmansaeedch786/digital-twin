@@ -6,5 +6,6 @@ langchain==0.3.14
 langchain-core==0.3.29
 langchain-aws==0.2.11
 langchain-postgres==0.0.12
-psycopg-binary==3.2.4
+psycopg==3.1.18
+psycopg-binary==3.1.18
 boto3==1.35.91
