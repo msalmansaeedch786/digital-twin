@@ -135,6 +135,28 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   tags                = { Name = "${var.project_name}-secretsmanager-endpoint" }
 }
 
+# CloudWatch Logs Interface Endpoint (for Lambda → CloudWatch without internet)
+resource "aws_vpc_endpoint" "cloudwatch_logs" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.logs"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  tags                = { Name = "${var.project_name}-cloudwatch-logs-endpoint" }
+}
+
+# X-Ray Interface Endpoint (for Lambda tracing without internet)
+resource "aws_vpc_endpoint" "xray" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.xray"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  tags                = { Name = "${var.project_name}-xray-endpoint" }
+}
+
 # ---------------------------------------------------------------------------
 # Security Groups
 # ---------------------------------------------------------------------------
@@ -145,32 +167,50 @@ resource "aws_security_group" "vpc_endpoints" {
   description = "Allow Lambda to reach VPC endpoints via HTTPS"
   vpc_id      = aws_vpc.main.id
 
-  ingress {
-    description     = "HTTPS from Lambda"
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    security_groups = [aws_security_group.lambda.id]
-  }
-
   tags = { Name = "${var.project_name}-vpce-sg" }
 }
 
+resource "aws_security_group_rule" "vpc_endpoints_ingress_lambda" {
+  type                     = "ingress"
+  description              = "HTTPS from Lambda"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.vpc_endpoints.id
+  source_security_group_id = aws_security_group.lambda.id
+}
+
 # Security Group for Lambda functions
+# HARDENED: Egress scoped to only what Lambda actually needs
+# - Port 5432 → RDS PostgreSQL
+# - Port 443  → VPC endpoints (Bedrock, Secrets Manager, CloudWatch, X-Ray)
+# This follows AWS Well-Architected Security Pillar: least-privilege networking
 resource "aws_security_group" "lambda" {
   name        = "${var.project_name}-lambda-sg"
   description = "Security group for Lambda functions"
   vpc_id      = aws_vpc.main.id
 
-  # Lambda needs outbound to reach RDS, VPC endpoints, etc.
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = { Name = "${var.project_name}-lambda-sg" }
+}
+
+resource "aws_security_group_rule" "lambda_egress_rds" {
+  type                     = "egress"
+  description              = "PostgreSQL to RDS"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.lambda.id
+  source_security_group_id = aws_security_group.rds.id
+}
+
+resource "aws_security_group_rule" "lambda_egress_vpce" {
+  type                     = "egress"
+  description              = "HTTPS to VPC endpoints"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.lambda.id
+  source_security_group_id = aws_security_group.vpc_endpoints.id
 }
 
 # Security Group for RDS — ONLY accepts traffic from Lambda SG
@@ -179,20 +219,18 @@ resource "aws_security_group" "rds" {
   description = "Security group for RDS PostgreSQL - Lambda access only"
   vpc_id      = aws_vpc.main.id
 
-  ingress {
-    description     = "PostgreSQL from Lambda only"
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.lambda.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = { Name = "${var.project_name}-rds-sg" }
 }
+
+resource "aws_security_group_rule" "rds_ingress_lambda" {
+  type                     = "ingress"
+  description              = "PostgreSQL from Lambda only"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.rds.id
+  source_security_group_id = aws_security_group.lambda.id
+}
+
+
+
