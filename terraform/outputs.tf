@@ -32,12 +32,28 @@ output "lambda_security_group_id" {
   value       = aws_security_group.lambda.id
 }
 
-output "lambda_role_arn" {
-  description = "The ARN of the Lambda execution IAM role"
-  value       = aws_iam_role.lambda_exec.arn
+output "lambda_api_role_arn" {
+  description = "The ARN of the API Lambda execution IAM role"
+  value       = aws_iam_role.lambda_api.arn
+}
+
+output "lambda_ingestion_role_arn" {
+  description = "The ARN of the Ingestion Lambda execution IAM role"
+  value       = aws_iam_role.lambda_ingestion.arn
+}
+
+output "sns_alerts_topic_arn" {
+  description = "SNS topic ARN for operational alerts"
+  value       = aws_sns_topic.alerts.arn
+}
+
+output "cloudtrail_bucket" {
+  description = "S3 bucket storing CloudTrail audit logs"
+  value       = aws_s3_bucket.cloudtrail.id
 }
 
 output "api_gateway_url" {
   value       = aws_apigatewayv2_api.main.api_endpoint
   description = "The HTTP API Gateway URL"
 }
+

@@ -15,5 +15,6 @@ backend/build/
 backend/*.zip
 terraform/lambda_ingestion/build/
 terraform/lambda_ingestion/*.zip
+terraform.tfvars
 terraform/tfplan
 output.json
