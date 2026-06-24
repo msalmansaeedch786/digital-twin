@@ -11,3 +11,9 @@ chroma_db/
 *.log
 backend/chroma_db/
 .vscode/
+backend/build/
+backend/*.zip
+terraform/lambda_ingestion/build/
+terraform/lambda_ingestion/*.zip
+terraform/tfplan
+output.json
