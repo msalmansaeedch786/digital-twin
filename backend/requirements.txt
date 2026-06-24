@@ -8,8 +8,8 @@ langchain-postgres==0.0.12
 langchain-community==0.3.14
 
 # Database
-psycopg==3.1.18
-psycopg-binary==3.1.18
+psycopg==3.2.13
+psycopg-binary==3.2.13
 
 # Web framework
 fastapi==0.111.0
