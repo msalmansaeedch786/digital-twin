@@ -120,6 +120,10 @@ resource "aws_security_group" "lambda" {
   }
 
   tags = { Name = "${var.project_name}-lambda-sg" }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # RDS Security Group
@@ -137,6 +141,10 @@ resource "aws_security_group" "rds" {
   }
 
   tags = { Name = "${var.project_name}-rds-sg" }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # VPC Endpoints Security Group
