@@ -759,20 +759,15 @@ resource "aws_cloudwatch_event_rule" "lambda_warmup" {
 
 Every 5 minutes, EventBridge sends a synthetic request to the `/warmup` endpoint. This keeps the Lambda container alive, eliminating cold starts for real users.
 
-### 8.6 The Zero-Cost Architecture Hack
+### 8.6 Architecture Trade-Offs: Cost vs. Security
 
-When first designing a secure AWS architecture, best practice dictates placing Lambda functions and the Database inside **Private Subnets** with **VPC Endpoints** (PrivateLink) to securely connect to AWS services like Bedrock and Secrets Manager without internet exposure.
+When designing this AWS architecture, we faced a classic engineering trilemma: balancing Serverless compute, $0.00 Cost, and Enterprise Security.
 
-However, VPC Endpoints carry a flat hourly fee of ~$0.01/hr per endpoint. With 4 endpoints, this results in a strict baseline cost of **$1.92/day** (about $58/month), entirely defeating the "Free Tier" goal of a hobby project.
-
-To achieve a strictly **$0.00/month** baseline, we implemented an advanced architectural hack:
-
-1. **Destroyed VPC Endpoints**: Eliminated the Bedrock, Secrets Manager, X-Ray, and CloudWatch Endpoints, dropping the hourly networking cost to absolute zero.
-2. **Exposed the Private Subnets**: We kept the Private Subnets to prevent AWS ENI (Elastic Network Interface) locking bugs, but attached an Internet Gateway route to them, practically converting them into "Public Subnets".
-3. **Public RDS Endpoint**: We enabled `publicly_accessible = true` on the RDS PostgreSQL instance. While exposing a database to the internet is generally an anti-pattern, it is secure in this specific hobby context because AWS Secrets Manager generates and enforces a massive, cryptographically complex random password that prevents brute-force attacks.
-4. **Decoupled Compute**: We removed the VPC network configuration from both Lambda functions. The Lambdas now execute on the free public AWS managed network. They access Bedrock via public AWS APIs and connect to the RDS database using its newly public IP address.
-
-By decoupling the compute layer from the VPC and removing the PrivateLink endpoints, we successfully bypassed all AWS baseline networking charges while keeping the AI application 100% functional and performant!
+To achieve a **Production-Ready, Enterprise-Grade** baseline, this architecture consciously implements the following high-security patterns, despite them carrying an hourly AWS networking fee (~$58/month):
+1. **Isolated Subnets**: The PostgreSQL database and Compute Lambdas reside strictly in Private Subnets with no Internet Gateway route, rendering them completely inaccessible from the public internet. This is the gold standard for database security.
+2. **AWS PrivateLink (VPC Endpoints)**: Because the Lambdas are in a dark subnet, they cannot use the public internet to reach AWS Services. We provisioned secure, private tunnels (VPC Endpoints) for Amazon Bedrock, AWS Secrets Manager, Amazon CloudWatch, and AWS X-Ray. API traffic to these services never traverses the public internet, ensuring maximum data compliance.
+3. **Least Privilege IAM**: Every Lambda function executes under a tightly scoped IAM role, granting exact permissions (e.g., the Ingestion Lambda can generate Bedrock embeddings, but is explicitly denied access to the Bedrock LLM).
+4. **Encrypted Secrets**: The database master password is auto-generated and rotated by AWS Secrets Manager. Lambda functions dynamically fetch this secret at runtime, meaning no passwords ever exist in the source code.
 
 ---
 

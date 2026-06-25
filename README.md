@@ -38,7 +38,7 @@ The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline
 ## Key Features
 
 - **Serverless RAG Pipeline**: Combines Amazon Bedrock's Foundation Models (Titan Embeddings V2 & Nova Lite) with PostgreSQL (pgvector) for accurate, hallucination-free responses based strictly on ingested documents.
-- **Strictly $0.00/Month Baseline**: Implements an advanced architectural workaround to decouple VPC Endpoints, achieving enterprise-grade security on a pure Free Tier budget.
+- **Enterprise-Grade Security**: Implements a strict Zero-Trust network topology using AWS PrivateLink (VPC Endpoints) to ensure all database and AI API traffic never traverses the public internet.
 - **Infrastructure as Code (IaC)**: 100% of the AWS infrastructure is codified in Terraform, allowing for reproducible and automated deployments.
 - **Event-Driven Data Ingestion**: Simply uploading a PDF or Text file to an S3 bucket automatically triggers an asynchronous Lambda pipeline that chunks, embeds, and stores the knowledge in the database.
 - **History-Aware Conversations**: Employs an LLM-driven query rewriting step that maintains context across long conversational threads.
@@ -50,17 +50,15 @@ The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline
 
 ![Digital Twin AWS Architecture](frontend/public/architecture.png)
 
-### The Zero-Cost Hack
+### Enterprise-Grade Security Architecture
 
-Best practice dictates placing Lambda functions and Databases inside **Private Subnets** with **VPC Endpoints** (PrivateLink) to securely connect to AWS services without internet exposure. However, VPC Endpoints carry a flat fee of ~$0.01/hr per endpoint, resulting in a strict baseline cost of **$1.92/day** ($58/month), defeating the goal of a hobby project.
+Best practice dictates placing Lambda functions and Databases inside **Private Subnets** with **VPC Endpoints** (PrivateLink) to securely connect to AWS services without internet exposure. 
 
-To achieve a **$0.00/month** baseline, this architecture implements a workaround:
-1. **Destroyed VPC Endpoints**: Eliminated Bedrock, Secrets Manager, X-Ray, and CloudWatch Endpoints.
-2. **Exposed the Private Subnets**: Retained Private Subnets to prevent AWS ENI locking bugs, but attached an Internet Gateway route.
-3. **Public RDS Endpoint**: Enabled `publicly_accessible = true` on the PostgreSQL instance, secured by a complex AWS Secrets Manager generated password to prevent brute-force attacks.
-4. **Decoupled Compute**: Removed the VPC configuration from the Lambda functions. They now execute on the free public AWS managed network, accessing Bedrock via public AWS APIs and connecting to the RDS database via its public IP.
-
-This bypasses all AWS baseline networking charges while keeping the AI application fully functional.
+To achieve a **Production-Ready** baseline, this architecture implements the following enterprise patterns:
+1. **Isolated Subnets**: The PostgreSQL database and Compute Lambdas reside strictly in Private Subnets with no Internet Gateway route, rendering them inaccessible from the public internet.
+2. **AWS PrivateLink (VPC Endpoints)**: Secure, private tunnels are provisioned for Amazon Bedrock, AWS Secrets Manager, Amazon CloudWatch, and AWS X-Ray. API traffic to these services never traverses the public internet.
+3. **Least Privilege IAM**: Every Lambda function executes under a tightly scoped IAM role, granting exact permissions (e.g., the Ingestion Lambda can generate Bedrock embeddings, but is explicitly denied access to the Bedrock LLM).
+4. **Encrypted Secrets**: The database master password is auto-generated and rotated by AWS Secrets Manager. Lambda functions dynamically fetch this secret at runtime.
 
 <details>
 <summary><strong>View Detailed Sequence Diagrams</strong></summary>
