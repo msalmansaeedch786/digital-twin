@@ -36,9 +36,15 @@ jobs:
         with:
           terraform_version: "1.5.0"
 
-      - name: Build Python Lambda Package
+      - name: Build Python Lambda Packages
         run: |
+          # Build the API Lambda
           cd backend
+          ./build.sh
+          cd ..
+
+          # Build the Ingestion Lambda
+          cd terraform/lambda_ingestion
           ./build.sh
 
       - name: Terraform Init
