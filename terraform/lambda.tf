@@ -85,10 +85,7 @@ resource "aws_lambda_function" "ingestion" {
     mode = "Active"
   }
 
-  vpc_config {
-    subnet_ids         = [aws_subnet.private_1.id, aws_subnet.private_2.id]
-    security_group_ids = [aws_security_group.lambda.id]
-  }
+
 
   environment {
     variables = {

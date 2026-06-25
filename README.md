@@ -46,21 +46,18 @@ graph TB
     end
 
     subgraph "AWS Cloud — eu-central-1"
-        subgraph "VPC (10.0.0.0/16)"
-            subgraph "Private Subnets"
-                LAMBDA_API["AWS Lambda<br/>(API — FastAPI/Mangum)<br/>Python 3.12 · ARM64"]
-                LAMBDA_ING["AWS Lambda<br/>(Ingestion Pipeline)<br/>Python 3.12 · ARM64"]
-                RDS["Amazon RDS<br/>PostgreSQL 16 + pgvector<br/>db.t4g.micro"]
-            end
-
-            subgraph "VPC Endpoints (PrivateLink)"
-                VPCE_BR["Bedrock Runtime"]
-                VPCE_SM["Secrets Manager"]
-                VPCE_CW["CloudWatch Logs"]
-                VPCE_XR["X-Ray"]
-                VPCE_S3["S3 (Gateway)"]
-            end
+    
+    subgraph VPC [Amazon VPC (10.0.0.0/16)]
+        subgraph PUBLIC_SUBNETS [Public Subnets (10.0.1.0/24, 10.0.2.0/24)]
+            IGW[Internet Gateway]
+            RDS[(Amazon RDS<br/>PostgreSQL + pgvector)]
         end
+    end
+    
+    subgraph COMPUTE [AWS Compute Network]
+        LAMBDA_API["AWS Lambda<br/>(API — FastAPI/Mangum)<br/>Python 3.12 · ARM64"]
+        LAMBDA_ING["AWS Lambda<br/>(Ingestion Pipeline)<br/>Python 3.12 · ARM64"]
+    end
 
         subgraph "AI Services"
             BEDROCK_EMB["Amazon Bedrock<br/>Titan Embeddings V2"]
@@ -90,11 +87,11 @@ graph TB
     BROWSER -->|"HTTPS POST /chat"| APIGW
     APIGW -->|"AWS_PROXY"| LAMBDA_API
     LAMBDA_API -->|"Port 5432"| RDS
-    LAMBDA_API -->|"PrivateLink"| VPCE_BR --> BEDROCK_EMB
-    LAMBDA_API -->|"PrivateLink"| VPCE_BR --> BEDROCK_LLM
-    LAMBDA_API -->|"PrivateLink"| VPCE_SM --> SM
-    LAMBDA_API -->|"PrivateLink"| VPCE_CW --> CW
-    LAMBDA_API -->|"PrivateLink"| VPCE_XR --> XRAY
+    LAMBDA_API -->|"Public AWS API"| BEDROCK_EMB
+    LAMBDA_API -->|"Public AWS API"| BEDROCK_LLM
+    LAMBDA_API -->|"Public AWS API"| SM
+    LAMBDA_API -->|"Public AWS API"| CW
+    LAMBDA_API -->|"Public AWS API"| XRAY
 
     S3_KB -->|"S3 Event Notification"| LAMBDA_ING
     LAMBDA_ING -->|"Embed & Store"| BEDROCK_EMB

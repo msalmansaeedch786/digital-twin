@@ -35,10 +35,7 @@ resource "aws_iam_role_policy_attachment" "api_basic" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "aws_iam_role_policy_attachment" "api_vpc" {
-  role       = aws_iam_role.lambda_api.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
-}
+
 
 resource "aws_iam_role_policy_attachment" "api_xray" {
   role       = aws_iam_role.lambda_api.name
@@ -98,10 +95,7 @@ resource "aws_iam_role_policy_attachment" "ingestion_basic" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "aws_iam_role_policy_attachment" "ingestion_vpc" {
-  role       = aws_iam_role.lambda_ingestion.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
-}
+
 
 resource "aws_iam_role_policy_attachment" "ingestion_xray" {
   role       = aws_iam_role.lambda_ingestion.name
