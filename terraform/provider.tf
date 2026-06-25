@@ -18,13 +18,11 @@ terraform {
     region         = "eu-central-1"
     dynamodb_table = "digital-twin-terraform-locks"
     encrypt        = true
-    profile        = "digital-twin"
   }
 }
 
 provider "aws" {
-  region  = var.aws_region
-  profile = var.aws_profile
+  region = var.aws_region
 
   default_tags {
     tags = {
