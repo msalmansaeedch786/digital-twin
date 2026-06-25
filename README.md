@@ -11,14 +11,13 @@
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Python_3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
-  <img src="https://img.shields.io/badge/Cost-$0.00/Month-brightgreen?style=for-the-badge" alt="Cost: $0.00" />
 </p>
 
 <p align="center">
   <a href="#overview">Overview</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#architecture">Architecture</a> •
-  <a href="#the-zero-cost-hack">Zero-Cost Hack</a> •
+  <a href="#enterprise-grade-security-architecture">Enterprise Security</a> •
   <a href="#project-structure">Project Structure</a> •
   <a href="#getting-started">Getting Started</a>
 </p>
