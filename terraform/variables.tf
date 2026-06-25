@@ -19,13 +19,11 @@ variable "project_name" {
 variable "amplify_domain" {
   description = "The Amplify frontend domain (e.g. main.xxxxx.amplifyapp.com) — used for CORS allow_origins"
   type        = string
-  # Set in terraform.tfvars or via TF_VAR_amplify_domain env var
-  # DO NOT commit real domain to version control if it changes per env
+  default     = "*" # Default allow all for development. Override in production.
 }
 
 variable "alert_email" {
   description = "Email address to receive CloudWatch alarm notifications"
   type        = string
-  # Set in terraform.tfvars: alert_email = "your@email.com"
-  # After apply, confirm the SNS subscription from your inbox
+  default     = "alerts@example.com" # Dummy email. Override via TF_VAR_alert_email in production.
 }
