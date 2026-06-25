@@ -50,43 +50,7 @@ Think of it like this:
 
 Here's the entire system at a glance:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        USER'S BROWSER                          │
-│                                                                │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │            Next.js Frontend (React)                      │  │
-│  │  • Portfolio page (page.js)                              │  │
-│  │  • Chat interface (avatar/page.js)                       │  │
-│  │  • Hosted on AWS Amplify                                 │  │
-│  └─────────────────────────┬────────────────────────────────┘  │
-│                            │ HTTPS POST /chat                  │
-└────────────────────────────┼───────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     AWS CLOUD (eu-central-1)                   │
-│                                                                │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────────┐  │
-│  │ API Gateway  │───▶│   Lambda     │───▶│  Amazon Bedrock  │  │
-│  │ (HTTP API)   │    │ (Python/     │    │  (Nova Lite LLM) │  │
-│  │              │    │  FastAPI)    │    │                  │  │
-│  └──────────────┘    └──────┬───────┘    └──────────────────┘  │
-│                             │                                  │
-│                      ┌──────▼───────┐                          │
-│                      │  RDS         │                          │
-│                      │  PostgreSQL  │                          │
-│                      │  + pgvector  │                          │
-│                      └──────────────┘                          │
-│                                                                │
-│  ┌──────────┐  ┌────────────┐  ┌──────────┐  ┌─────────────┐  │
-│  │ S3       │  │ Secrets    │  │ CloudWatch│  │ CloudTrail  │  │
-│  │ (Files)  │  │ Manager    │  │ (Logs)    │  │ (Audit)     │  │
-│  └──────────┘  └────────────┘  └──────────┘  └─────────────┘  │
-│                                                                │
-│  All inside a VPC (Virtual Private Cloud) — isolated network   │
-└─────────────────────────────────────────────────────────────────┘
-```
+![Digital Twin AWS Architecture](frontend/public/architecture.png)
 
 ### In Plain English
 
