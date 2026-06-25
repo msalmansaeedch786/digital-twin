@@ -1,6 +1,3 @@
-<p align="center">
-  <img src="frontend/public/salman-avatar.jpg" alt="Digital Twin" width="120" height="120" style="border-radius: 50%;" />
-</p>
 
 <h1 align="center">AI Digital Twin</h1>
 
