@@ -689,6 +689,23 @@ VPC (10.0.0.0/16) — The entire building
 | `xray` | Lambda → X-Ray (send performance traces) |
 | `s3` (Gateway) | Lambda → S3 (read knowledge base files) — free! |
 
+#### Understanding IP Addresses, CIDR Blocks, and Subnet Gaps
+
+When configuring a VPC, we use **CIDR notation** (like `/16` or `/24`) to define network sizes:
+
+- **VPC (`10.0.0.0/16`)**: The `/16` means the first two numbers (`10.0`) are locked. The last two can change, giving us **65,536** available IP addresses. This is our entire building.
+- **Subnet (`10.0.1.0/24`)**: The `/24` means the first three numbers (`10.0.1`) are locked. Only the last number changes, giving us **256** IP addresses per subnet. This is a single room in the building.
+
+**Why do we skip numbers? (Why `10.0.10.x` instead of `10.0.3.x`?)**
+You might notice we used `.1` and `.2` for Public subnets, but skipped to `.10` and `.11` for Private subnets. 
+
+This is an enterprise networking best practice for **logical separation and future-proofing**:
+- **`10.0.1.x` to `10.0.9.x`**: Reserved for Public Subnets.
+- **`10.0.10.x` to `10.0.19.x`**: Reserved for Private Subnets (Application tier).
+- **`10.0.20.x` to `10.0.29.x`**: Reserved for Database Subnets (Data tier).
+
+If we used `.1, .2, .3, .4` sequentially, what happens if we expand to a 3rd Availability Zone next year? We would need a 3rd public subnet. If `.3` was already taken by a private subnet, our numbering would become messy (`.1, .2, .5` for public; `.3, .4` for private). By leaving mathematical "gaps" between tiers, our network remains organized, predictable, and ready to scale.
+
 ### 8.2 RDS PostgreSQL — Your Database (`terraform/rds.tf`)
 
 ```hcl
