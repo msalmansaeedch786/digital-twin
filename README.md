@@ -44,14 +44,14 @@ graph TB
 
     subgraph "AWS Cloud — eu-central-1"
     
-    subgraph VPC [Amazon VPC (10.0.0.0/16)]
-        subgraph PUBLIC_SUBNETS [Public Subnets (10.0.1.0/24, 10.0.2.0/24)]
+    subgraph VPC ["Amazon VPC (10.0.0.0/16)"]
+        subgraph PUBLIC_SUBNETS ["Public Subnets (10.0.1.0/24, 10.0.2.0/24)"]
             IGW[Internet Gateway]
             RDS[(Amazon RDS<br/>PostgreSQL + pgvector)]
         end
     end
     
-    subgraph COMPUTE [AWS Compute Network]
+    subgraph COMPUTE ["AWS Compute Network"]
         LAMBDA_API["AWS Lambda<br/>(API — FastAPI/Mangum)<br/>Python 3.12 · ARM64"]
         LAMBDA_ING["AWS Lambda<br/>(Ingestion Pipeline)<br/>Python 3.12 · ARM64"]
     end
