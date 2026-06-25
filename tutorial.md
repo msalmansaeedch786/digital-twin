@@ -795,6 +795,21 @@ resource "aws_cloudwatch_event_rule" "lambda_warmup" {
 
 Every 5 minutes, EventBridge sends a synthetic request to the `/warmup` endpoint. This keeps the Lambda container alive, eliminating cold starts for real users.
 
+### 8.6 The Zero-Cost Architecture Hack
+
+When first designing a secure AWS architecture, best practice dictates placing Lambda functions and the Database inside **Private Subnets** with **VPC Endpoints** (PrivateLink) to securely connect to AWS services like Bedrock and Secrets Manager without internet exposure.
+
+However, VPC Endpoints carry a flat hourly fee of ~$0.01/hr per endpoint. With 4 endpoints, this results in a strict baseline cost of **$1.92/day** (about $58/month), entirely defeating the "Free Tier" goal of a hobby project.
+
+To achieve a strictly **$0.00/month** baseline, we implemented an advanced architectural hack:
+
+1. **Destroyed VPC Endpoints**: Eliminated the Bedrock, Secrets Manager, X-Ray, and CloudWatch Endpoints, dropping the hourly networking cost to absolute zero.
+2. **Exposed the Private Subnets**: We kept the Private Subnets to prevent AWS ENI (Elastic Network Interface) locking bugs, but attached an Internet Gateway route to them, practically converting them into "Public Subnets".
+3. **Public RDS Endpoint**: We enabled `publicly_accessible = true` on the RDS PostgreSQL instance. While exposing a database to the internet is generally an anti-pattern, it is secure in this specific hobby context because AWS Secrets Manager generates and enforces a massive, cryptographically complex random password that prevents brute-force attacks.
+4. **Decoupled Compute**: We removed the VPC network configuration from both Lambda functions. The Lambdas now execute on the free public AWS managed network. They access Bedrock via public AWS APIs and connect to the RDS database using its newly public IP address.
+
+By decoupling the compute layer from the VPC and removing the PrivateLink endpoints, we successfully bypassed all AWS baseline networking charges while keeping the AI application 100% functional and performant!
+
 ---
 
 ## 9. Terraform — Infrastructure as Code
