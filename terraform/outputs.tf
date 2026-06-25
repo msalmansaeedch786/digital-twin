@@ -48,4 +48,3 @@ output "api_gateway_url" {
   value       = aws_apigatewayv2_api.main.api_endpoint
   description = "The HTTP API Gateway URL"
 }
-

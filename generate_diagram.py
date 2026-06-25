@@ -17,13 +17,13 @@ with Diagram("Digital Twin Architecture (Enterprise Secure)", show=False, filena
     with Cluster("AWS Cloud - eu-central-1"):
         apigw = APIGateway("API Gateway")
         eventbridge = Eventbridge("EventBridge\n(Warm-Up)")
-        
+
         with Cluster("Amazon VPC (10.0.0.0/16)"):
             with Cluster("Private Subnets"):
                 lambda_api = Lambda("API Backend\n(FastAPI)")
                 lambda_ingest = Lambda("Ingestion Pipeline")
                 rds = RDS("PostgreSQL 16\n+ pgvector")
-                
+
                 # VPC Endpoints
                 vpce_bedrock = Endpoint("Bedrock Endpoint")
                 vpce_secrets = Endpoint("Secrets Endpoint")
@@ -47,21 +47,21 @@ with Diagram("Digital Twin Architecture (Enterprise Secure)", show=False, filena
     user >> browser
     browser >> Edge(label="HTTPS POST /chat") >> apigw
     apigw >> Edge(label="AWS Proxy") >> lambda_api
-    
+
     # API Backend flows (Internal VPC)
     lambda_api >> Edge(label="Port 5432 (Internal)") >> rds
-    
+
     # API Backend flows (VPC Endpoints)
     lambda_api >> vpce_bedrock >> bedrock_llm
     lambda_api >> vpce_bedrock >> bedrock_emb
     lambda_api >> vpce_secrets >> secrets
     lambda_api >> vpce_cw >> cw
-    
+
     # Ingestion flows
     s3_kb >> Edge(label="S3 Event") >> lambda_ingest
     lambda_ingest >> vpce_s3 >> s3_kb
     lambda_ingest >> vpce_bedrock >> bedrock_emb
     lambda_ingest >> Edge(label="Port 5432 (Internal)") >> rds
-    
+
     # EventBridge
     eventbridge >> Edge(label="rate(5 min)") >> lambda_api

@@ -661,7 +661,7 @@ When configuring a VPC, we use **CIDR notation** (like `/16` or `/24`) to define
 - **Subnet (`10.0.1.0/24`)**: The `/24` means the first three numbers (`10.0.1`) are locked. Only the last number changes, giving us **256** IP addresses per subnet. This is a single room in the building.
 
 **Why do we skip numbers? (Why `10.0.10.x` instead of `10.0.3.x`?)**
-You might notice we used `.1` and `.2` for Public subnets, but skipped to `.10` and `.11` for Private subnets. 
+You might notice we used `.1` and `.2` for Public subnets, but skipped to `.10` and `.11` for Private subnets.
 
 This is an enterprise networking best practice for **logical separation and future-proofing**:
 - **`10.0.1.x` to `10.0.9.x`**: Reserved for Public Subnets.
