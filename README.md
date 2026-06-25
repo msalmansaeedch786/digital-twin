@@ -40,6 +40,7 @@ The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline
 - **Enterprise-Grade Security**: Implements a strict Zero-Trust network topology using AWS PrivateLink (VPC Endpoints) to ensure all database and AI API traffic never traverses the public internet.
 - **Infrastructure as Code (IaC)**: 100% of the AWS infrastructure is codified in Terraform, allowing for reproducible and automated deployments.
 - **Event-Driven Data Ingestion**: Simply uploading a PDF or Text file to an S3 bucket automatically triggers an asynchronous Lambda pipeline that chunks, embeds, and stores the knowledge in the database.
+- **Automated CI/CD Pipeline**: Employs GitHub Actions to automatically run `terraform plan` and `terraform apply` on Pull Requests and commits, using AWS OpenID Connect (OIDC) for passwordless, secure deployments.
 - **History-Aware Conversations**: Employs an LLM-driven query rewriting step that maintains context across long conversational threads.
 - **Hardened Security**: Features rate limiting, payload sanitization, AWS Secrets Manager integration, and IAM Least Privilege policies.
 
