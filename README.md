@@ -26,7 +26,7 @@
 
 ## Overview
 
-**AI Digital Twin** is a fully serverless conversational AI system that acts as a personalized digital avatar. It is capable of answering detailed questions about a professional's background, experience, and skills in real-time. 
+**AI Digital Twin** is a fully serverless conversational AI system that acts as a personalized digital avatar. It is capable of answering detailed questions about a professional's background, experience, and skills in real-time.
 
 The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline backed by Amazon Bedrock, PostgreSQL with pgvector, and a hardened FastAPI backend. All infrastructure is deployed and managed deterministically via Terraform. The frontend is a highly responsive Next.js application hosted on AWS Amplify, featuring a ChatGPT-style chat interface with integrated voice capabilities.
 
@@ -52,7 +52,7 @@ The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline
 
 ### Enterprise-Grade Security Architecture
 
-Best practice dictates placing Lambda functions and Databases inside **Private Subnets** with **VPC Endpoints** (PrivateLink) to securely connect to AWS services without internet exposure. 
+Best practice dictates placing Lambda functions and Databases inside **Private Subnets** with **VPC Endpoints** (PrivateLink) to securely connect to AWS services without internet exposure.
 
 To achieve a **Production-Ready** baseline, this architecture implements the following enterprise patterns:
 1. **Isolated Subnets**: The PostgreSQL database and Compute Lambdas reside strictly in Private Subnets with no Internet Gateway route, rendering them inaccessible from the public internet.
@@ -208,6 +208,19 @@ The architecture integrates deeply with AWS native observability tools:
 - **Amazon CloudWatch**: Captures structured JSON logs from the Lambda functions for easy parsing and debugging.
 - **AWS X-Ray**: Provides end-to-end distributed tracing to identify performance bottlenecks in the RAG pipeline.
 - **AWS CloudTrail**: Audits all API calls made within the AWS account for compliance and security monitoring.
+
+## Developer Guide
+
+### Pre-Commit Hooks
+This repository enforces formatting and syntax checks locally before code is committed using `pre-commit`.
+
+To install the hooks locally:
+1. Install pre-commit: `brew install pre-commit` (macOS) or `pip install pre-commit`
+2. Install the git hook scripts:
+   ```bash
+   pre-commit install
+   ```
+From now on, every time you run `git commit`, tools like `terraform fmt` and `terraform validate` will automatically execute to ensure your code is perfectly styled!
 
 ## License
 

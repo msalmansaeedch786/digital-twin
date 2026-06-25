@@ -16,7 +16,7 @@ export default function AvatarMode() {
     { role: "bot", content: "Hello. I am Salman's Digital Twin. Speak into the microphone or type a message below." }
   ]);
   const [voices, setVoices] = useState([]);
-  
+
   const recognitionRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -106,15 +106,15 @@ export default function AvatarMode() {
 
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    
+
     // Try to find a good English male voice
-    const preferredVoice = voices.find(v => 
+    const preferredVoice = voices.find(v =>
       v.lang.includes('en-') && (v.name.includes('Male') || v.name.includes('Google UK English Male') || v.name.includes('Daniel'))
     );
     if (preferredVoice) {
       utterance.voice = preferredVoice;
     }
-    
+
     utterance.rate = 1.0;
     utterance.pitch = 0.9;
 
@@ -127,27 +127,27 @@ export default function AvatarMode() {
 
   const handleSendText = async (text) => {
     if (!text.trim()) return;
-    
+
     const userMsg = text.trim();
     setInputText("");
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
-    
+
     setIsSpeaking(true); // Simulate thinking animation
-    
+
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const response = await fetch(`${apiUrl}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // Send previous messages as history so AI remembers the context
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           message: userMsg,
           history: messages.map(m => ({ role: m.role, content: m.content }))
         }),
       });
 
       if (!response.ok) throw new Error("Network error");
-      
+
       const data = await response.json();
       setMessages(prev => [...prev, { role: "bot", content: data.reply }]);
       if (!isMuted) {
@@ -180,7 +180,7 @@ export default function AvatarMode() {
 
   return (
     <div style={{ backgroundColor: "#080C16", height: "100vh", color: "white", display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", fontFamily: "'Outfit', sans-serif" }}>
-      
+
       {/* Subtle Dot Pattern Background */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px)", backgroundSize: "24px 24px", zIndex: 0, pointerEvents: "none" }} />
 
@@ -190,9 +190,9 @@ export default function AvatarMode() {
           <Home size={18} />
           <span>PORTFOLIO</span>
         </Link>
-        
+
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <button 
+          <button
             onClick={() => {
               setIsMuted(!isMuted);
               if (!isMuted) {
@@ -210,7 +210,7 @@ export default function AvatarMode() {
 
       {/* ChatGPT-style Chat History */}
       <div className="avatar-chat-container" style={{ flex: 1, overflowY: "auto", padding: "100px 2rem 2rem 2rem", display: "flex", flexDirection: "column", gap: "2rem", maxWidth: "800px", margin: "0 auto", width: "100%", scrollBehavior: "smooth", zIndex: 1 }}>
-        
+
         {/* The elegant minimal visualizer at the top of the chat */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "2rem" }}>
           <div style={{ position: "relative", width: "140px", height: "140px", display: "flex", justifyContent: "center", alignItems: "center" }}>
@@ -234,10 +234,10 @@ export default function AvatarMode() {
         </div>
 
         {messages.map((msg, index) => (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            key={index} 
+            key={index}
             style={{
               alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
               maxWidth: msg.role === "user" ? "75%" : "90%",
@@ -249,7 +249,7 @@ export default function AvatarMode() {
             {msg.role === "bot" && (
                <img src="/salman-avatar.jpg" alt="AI" style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover", objectPosition: "center 20%", flexShrink: 0, border: "1px solid rgba(0, 242, 254, 0.3)" }} />
             )}
-            
+
             <div className={`avatar-message-bubble ${msg.role === "bot" ? "markdown-body" : ""}`} style={{
               padding: "1rem 1.5rem",
               borderRadius: "16px",
@@ -272,7 +272,7 @@ export default function AvatarMode() {
             </div>
           </motion.div>
         ))}
-        
+
         {isSpeaking && messages[messages.length - 1]?.role === "user" && (
            <div style={{ alignSelf: "flex-start", display: "flex", gap: "1rem", maxWidth: "90%" }}>
              <img src="/salman-avatar.jpg" alt="AI" style={{ width: "30px", height: "30px", borderRadius: "50%", objectFit: "cover", objectPosition: "center 20%", flexShrink: 0, marginTop: "2px", border: "1px solid rgba(0, 242, 254, 0.3)" }} />
@@ -304,7 +304,7 @@ export default function AvatarMode() {
       {/* Input Area */}
       <div className="avatar-input-wrapper" style={{ padding: "0 2rem 2rem 2rem", zIndex: 10, display: "flex", justifyContent: "center", flexDirection: "column", alignItems: "center" }}>
         <form onSubmit={handleFormSubmit} style={{ display: "flex", gap: "0.5rem", maxWidth: "800px", width: "100%", alignItems: "center", background: "#0D1322", padding: "0.6rem 0.6rem 0.6rem 1.5rem", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
-          
+
           <input
             type="text"
             value={inputText}
@@ -360,7 +360,7 @@ export default function AvatarMode() {
           </button>
         </form>
       </div>
-      
+
       {/* Footer text */}
       <div style={{ textAlign: "center", paddingBottom: "1rem", color: "rgba(255,255,255,0.3)", fontSize: "0.75rem", zIndex: 10 }}>
         AI can make mistakes. Consider verifying important information.

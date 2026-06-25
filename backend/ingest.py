@@ -36,7 +36,7 @@ def init_db(connection_string: str):
 
 def main():
     logger.info("Starting local data ingestion process...")
-    
+
     # 1. Load Text files and PDFs
     logger.info("Loading Text files and PDFs from data directory...")
     txt_loader = DirectoryLoader(DATA_DIR, glob="*.txt", loader_cls=TextLoader)
@@ -48,7 +48,7 @@ def main():
     logger.info(f"Loaded {len(pdf_documents)} pages from PDFs.")
 
     all_docs = txt_documents + pdf_documents
-    
+
     if not all_docs:
         logger.warning("No documents found to ingest!")
         return
@@ -69,7 +69,7 @@ def main():
         model_id="amazon.titan-embed-text-v2:0",
         region_name=region,
     )
-    
+
     conn_string = get_db_connection_string()
     init_db(conn_string)
 
@@ -82,16 +82,16 @@ def main():
 
     # 4. Store in PostgreSQL
     logger.info("Generating embeddings via Amazon Bedrock and storing in PostgreSQL (pgvector)...")
-    
+
     # Process in batches to avoid rate limits
     batch_size = 20
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i:i+batch_size]
         logger.info(f"Processing batch {i//batch_size + 1}/{(len(chunks)-1)//batch_size + 1}...")
-        
+
         vector_store.add_documents(batch)
         time.sleep(1) # Small delay to respect API rate limits
-    
+
     logger.info(f"Successfully ingested all data into PostgreSQL Database.")
 
 if __name__ == "__main__":

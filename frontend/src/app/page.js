@@ -86,11 +86,11 @@ export default function Portfolio() {
       </nav>
 
       <div className="container">
-        
+
         {/* HERO SECTION */}
         <section id="home" className="section" style={{ paddingTop: "6rem", minHeight: "80vh", display: "flex", alignItems: "center" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "4rem", width: "100%", alignItems: "center" }}>
-            
+
             {/* LEFT COLUMN: Main Intro */}
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
               <h1>Hi, I'm <span className="text-accent">Muhammad Salman</span></h1>
@@ -107,9 +107,9 @@ export default function Portfolio() {
             </motion.div>
 
             {/* RIGHT COLUMN: Digital Twin Widget */}
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }} 
-              animate={{ opacity: 1, scale: 1 }} 
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               style={{
                 background: "rgba(0, 242, 254, 0.03)",
@@ -126,10 +126,10 @@ export default function Portfolio() {
                 margin: "0 auto"
               }}
             >
-              <img 
-                src="/salman-avatar.jpg" 
-                alt="Digital Twin" 
-                style={{ width: "90px", height: "90px", borderRadius: "50%", objectFit: "cover", objectPosition: "center 20%", border: "2px solid rgba(0, 242, 254, 0.4)", marginBottom: "1.5rem" }} 
+              <img
+                src="/salman-avatar.jpg"
+                alt="Digital Twin"
+                style={{ width: "90px", height: "90px", borderRadius: "50%", objectFit: "cover", objectPosition: "center 20%", border: "2px solid rgba(0, 242, 254, 0.4)", marginBottom: "1.5rem" }}
               />
               <h3 style={{ fontSize: "1.6rem", fontWeight: 500, marginBottom: "0.5rem", letterSpacing: "0.5px" }}>
                 I'm Salman's <span style={{ fontStyle: "italic", color: "#00f2fe", fontWeight: 600 }}>digital twin</span>.
@@ -140,7 +140,7 @@ export default function Portfolio() {
               <p style={{ fontSize: "0.95rem", color: "var(--text-secondary)", marginBottom: "2rem", maxWidth: "90%" }}>
                 I know Salman's complete background, projects, and tech stack. I can also put you in touch directly.
               </p>
-              
+
               <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "0.8rem", width: "100%" }}>
                 <Link href="/avatar" style={{ fontSize: "1rem", fontWeight: 600, padding: "0.8rem 1.8rem", borderRadius: "25px", background: "linear-gradient(135deg, #00f2fe, #4facfe)", border: "none", color: "#000", textDecoration: "none", transition: "all 0.2s", marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }} onMouseOver={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(0, 242, 254, 0.4)" }} onMouseOut={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none" }}>
                   <MessageSquare size={20} />
@@ -157,8 +157,8 @@ export default function Portfolio() {
           <h2>Experience</h2>
           <div className="timeline">
             {experiences.map((exp, index) => (
-              <motion.div 
-                key={index} 
+              <motion.div
+                key={index}
                 className="timeline-item"
                 initial={{ opacity: 0, x: -50 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -180,9 +180,9 @@ export default function Portfolio() {
           <h2>Education</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             {education.map((edu, index) => (
-              <motion.div 
+              <motion.div
                 key={index}
-                className="glass-panel" 
+                className="glass-panel"
                 style={{ padding: "2rem" }}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -210,7 +210,7 @@ export default function Portfolio() {
           <div className="projects-grid">
             {projects.map((project, index) => (
               <Tilt key={index} tiltMaxAngleX={5} tiltMaxAngleY={5} scale={1.02} transitionSpeed={2000}>
-                <motion.div 
+                <motion.div
                   className="project-card glass-panel"
                   initial={{ opacity: 0, scale: 0.9 }}
                   whileInView={{ opacity: 1, scale: 1 }}
@@ -242,11 +242,11 @@ export default function Portfolio() {
           <h2>Certifications & Badges</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem" }}>
             {certifications.map((cert, index) => (
-              <motion.a 
+              <motion.a
                 href={cert.url}
                 target="_blank"
                 rel="noreferrer"
-                key={index} 
+                key={index}
                 className="glass-panel"
                 style={{ padding: "2rem", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", textDecoration: "none", color: "var(--text-primary)", position: "relative" }}
                 initial={{ opacity: 0, y: 30 }}
@@ -274,7 +274,7 @@ export default function Portfolio() {
       {/* Main Call to Action: Talk to Digital Twin */}
       <div style={{ display: "flex", justifyContent: "center", padding: "4rem 0 6rem 0" }}>
         <Link href="/avatar" style={{ textDecoration: "none" }}>
-          <motion.div 
+          <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             style={{
