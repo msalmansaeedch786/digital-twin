@@ -67,7 +67,7 @@ resource "aws_s3_object" "lambda_ingestion_zip" {
 
 resource "aws_lambda_function" "ingestion" {
   function_name = "${var.project_name}-ingestion"
-  role          = aws_iam_role.lambda_ingestion.arn  # Dedicated ingestion role
+  role          = aws_iam_role.lambda_ingestion.arn # Dedicated ingestion role
   handler       = "lambda_function.lambda_handler"
 
   # Deploy via S3 to bypass the 50MB API limit
@@ -77,7 +77,7 @@ resource "aws_lambda_function" "ingestion" {
 
   runtime       = "python3.12"
   architectures = ["arm64"]
-  timeout       = 300  # 5 minutes for document parsing and embedding
+  timeout       = 300 # 5 minutes for document parsing and embedding
   memory_size   = 1024
 
   # AWS X-Ray Active Tracing — trace embedding calls to Bedrock and PGVector
@@ -125,7 +125,7 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
     lambda_function_arn = aws_lambda_function.ingestion.arn
     events              = ["s3:ObjectCreated:*"]
     # Only trigger on document files — ignore other objects
-    filter_suffix       = ""
+    filter_suffix = ""
   }
 
   depends_on = [aws_lambda_permission.allow_s3]
