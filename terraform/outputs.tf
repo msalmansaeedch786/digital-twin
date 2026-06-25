@@ -7,10 +7,6 @@ output "vpc_id" {
   value       = aws_vpc.main.id
 }
 
-output "private_subnet_ids" {
-  description = "IDs of the private subnets (for Lambda and RDS)"
-  value       = [aws_subnet.private_1.id, aws_subnet.private_2.id]
-}
 
 output "rds_endpoint" {
   description = "The connection endpoint for the RDS PostgreSQL instance"
@@ -27,10 +23,6 @@ output "s3_bucket_name" {
   value       = aws_s3_bucket.knowledge_base.id
 }
 
-output "lambda_security_group_id" {
-  description = "The security group ID for Lambda functions"
-  value       = aws_security_group.lambda.id
-}
 
 output "lambda_api_role_arn" {
   description = "The ARN of the API Lambda execution IAM role"
