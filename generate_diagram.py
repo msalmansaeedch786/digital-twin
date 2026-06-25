@@ -1,40 +1,41 @@
 from diagrams import Diagram, Cluster, Edge
 from diagrams.aws.compute import Lambda
 from diagrams.aws.database import RDS
-from diagrams.aws.network import APIGateway, InternetGateway, VPC, PublicSubnet
+from diagrams.aws.network import APIGateway, VPC, PrivateSubnet, Endpoint
 from diagrams.aws.security import SecretsManager
 from diagrams.aws.ml import Bedrock
 from diagrams.aws.storage import S3
-from diagrams.aws.management import Cloudwatch, Cloudtrail
+from diagrams.aws.management import Cloudwatch
 from diagrams.aws.integration import Eventbridge, SNS
 from diagrams.onprem.client import User
 from diagrams.programming.framework import React
 
-with Diagram("Digital Twin Architecture", show=False, filename="frontend/public/architecture", outformat="png", direction="TB"):
+with Diagram("Digital Twin Architecture (Enterprise Secure)", show=False, filename="frontend/public/architecture", outformat="png", direction="TB"):
     user = User("End User")
     browser = React("Browser (Next.js)")
 
     with Cluster("AWS Cloud - eu-central-1"):
         apigw = APIGateway("API Gateway")
-        eventbridge = Eventbridge("EventBridge\n(Warm-Up Scheduler)")
+        eventbridge = Eventbridge("EventBridge\n(Warm-Up)")
         
-        with Cluster("Serverless Compute (Public Network)"):
-            lambda_api = Lambda("API Backend\n(FastAPI)")
-            lambda_ingest = Lambda("Ingestion Pipeline")
+        with Cluster("Amazon VPC (10.0.0.0/16)"):
+            with Cluster("Private Subnets"):
+                lambda_api = Lambda("API Backend\n(FastAPI)")
+                lambda_ingest = Lambda("Ingestion Pipeline")
+                rds = RDS("PostgreSQL 16\n+ pgvector")
+                
+                # VPC Endpoints
+                vpce_bedrock = Endpoint("Bedrock Endpoint")
+                vpce_secrets = Endpoint("Secrets Endpoint")
+                vpce_cw = Endpoint("Logs Endpoint")
 
         with Cluster("AI & Machine Learning"):
             bedrock_llm = Bedrock("Nova Lite\nLLM")
             bedrock_emb = Bedrock("Titan\nEmbeddings V2")
 
-        with Cluster("Amazon VPC"):
-            igw = InternetGateway("Internet Gateway")
-            with Cluster("Public Subnets"):
-                rds = RDS("PostgreSQL 16\n+ pgvector")
-                igw >> Edge(color="transparent") >> rds
-
         with Cluster("Storage & Knowledge Base"):
             s3_kb = S3("Knowledge Base\nDocuments")
-            s3_deploy = S3("Deployment\nArtifacts")
+            vpce_s3 = Endpoint("S3 Gateway Endpoint")
 
         with Cluster("Security & Observability"):
             secrets = SecretsManager("RDS Credentials")
@@ -47,18 +48,20 @@ with Diagram("Digital Twin Architecture", show=False, filename="frontend/public/
     browser >> Edge(label="HTTPS POST /chat") >> apigw
     apigw >> Edge(label="AWS Proxy") >> lambda_api
     
-    # API Backend flows
-    lambda_api >> Edge(label="Port 5432 (Public IP)") >> rds
-    lambda_api >> Edge(label="Public AWS API") >> bedrock_llm
-    lambda_api >> Edge(label="Public AWS API") >> bedrock_emb
-    lambda_api >> Edge(label="Public AWS API") >> secrets
-    lambda_api >> Edge(label="Public AWS API") >> cw
+    # API Backend flows (Internal VPC)
+    lambda_api >> Edge(label="Port 5432 (Internal)") >> rds
+    
+    # API Backend flows (VPC Endpoints)
+    lambda_api >> vpce_bedrock >> bedrock_llm
+    lambda_api >> vpce_bedrock >> bedrock_emb
+    lambda_api >> vpce_secrets >> secrets
+    lambda_api >> vpce_cw >> cw
     
     # Ingestion flows
-    s3_kb >> Edge(label="S3 Event Notification") >> lambda_ingest
-    lambda_ingest >> Edge(label="Fetch Document") >> s3_kb
-    lambda_ingest >> Edge(label="Embed") >> bedrock_emb
-    lambda_ingest >> Edge(label="Store Vector") >> rds
+    s3_kb >> Edge(label="S3 Event") >> lambda_ingest
+    lambda_ingest >> vpce_s3 >> s3_kb
+    lambda_ingest >> vpce_bedrock >> bedrock_emb
+    lambda_ingest >> Edge(label="Port 5432 (Internal)") >> rds
     
     # EventBridge
     eventbridge >> Edge(label="rate(5 min)") >> lambda_api
