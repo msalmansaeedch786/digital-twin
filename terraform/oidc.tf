@@ -24,7 +24,7 @@ resource "aws_iam_role" "github_actions" {
         Condition = {
           StringLike = {
             "token.actions.githubusercontent.com:sub" : [
-              "repo:msalmansaeedch786/digital-twin:ref:refs/heads/main",
+              "repo:msalmansaeedch786/digital-twin:ref:refs/heads/feature/aws-enterprise-migration",
               "repo:msalmansaeedch786/digital-twin:pull_request"
             ]
           }
