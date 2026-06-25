@@ -22,10 +22,10 @@ resource "aws_db_instance" "postgres" {
   engine_version = "16"
   instance_class = "db.t4g.micro" # Free tier eligible
 
-  allocated_storage       = 20  # Free tier limit
-  storage_type            = "gp2"
-  backup_retention_period = 0 # Explicitly disabled for free tier limits
-  storage_encrypted      = true # AWS KMS encryption at rest
+  allocated_storage          = 20 # Free tier limit
+  storage_type               = "gp2"
+  backup_retention_period    = 0    # Explicitly disabled for free tier limits
+  storage_encrypted          = true # AWS KMS encryption at rest
   auto_minor_version_upgrade = true
 
   db_name  = "digitaltwin"
@@ -41,10 +41,10 @@ resource "aws_db_instance" "postgres" {
   publicly_accessible = false
 
   # --- Data Protection ---
-  backup_window             = "02:00-03:00"                 # Low-traffic window (UTC)
+  backup_window             = "02:00-03:00" # Low-traffic window (UTC)
   maintenance_window        = "Mon:03:30-Mon:04:30"
-  deletion_protection       = true                          # Prevents accidental deletion
-  skip_final_snapshot       = false                         # Create snapshot on deletion
+  deletion_protection       = true  # Prevents accidental deletion
+  skip_final_snapshot       = false # Create snapshot on deletion
   final_snapshot_identifier = "${var.project_name}-final-snapshot"
   copy_tags_to_snapshot     = true
 

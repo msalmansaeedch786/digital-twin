@@ -15,8 +15,8 @@ resource "aws_s3_object" "lambda_api_zip" {
 
 resource "aws_lambda_function" "api" {
   function_name = "${var.project_name}-api"
-  role          = aws_iam_role.lambda_api.arn  # Dedicated API role (not shared)
-  handler       = "main.handler"               # Mangum wrapper in main.py
+  role          = aws_iam_role.lambda_api.arn # Dedicated API role (not shared)
+  handler       = "main.handler"              # Mangum wrapper in main.py
 
   # Deploy via S3 to bypass the 50MB API limit
   s3_bucket        = aws_s3_bucket.deployments.id
@@ -25,7 +25,7 @@ resource "aws_lambda_function" "api" {
 
   runtime       = "python3.12"
   architectures = ["arm64"]
-  timeout       = 30   # 30 seconds for API requests
+  timeout       = 30 # 30 seconds for API requests
   memory_size   = 1024
 
   # AWS X-Ray Active Tracing — full distributed trace visibility
@@ -82,7 +82,7 @@ resource "aws_apigatewayv2_stage" "prod" {
   # API Gateway access logs
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api_gateway_access.arn
-    format          = jsonencode({
+    format = jsonencode({
       requestId               = "$context.requestId"
       sourceIp                = "$context.identity.sourceIp"
       requestTime             = "$context.requestTime"
@@ -98,8 +98,8 @@ resource "aws_apigatewayv2_stage" "prod" {
 
   # Default throttling — applies to all routes
   default_route_settings {
-    throttling_burst_limit = 50  # Max concurrent requests
-    throttling_rate_limit  = 20  # Requests per second steady state
+    throttling_burst_limit   = 50 # Max concurrent requests
+    throttling_rate_limit    = 20 # Requests per second steady state
     detailed_metrics_enabled = true
   }
 }
@@ -149,12 +149,12 @@ resource "aws_cloudwatch_event_target" "lambda_warmup" {
   arn       = aws_lambda_function.api.arn
 
   input = jsonencode({
-    source     = "aws.events"
-    warmup     = true
-    routeKey   = "GET /warmup"
-    rawPath    = "/warmup"
+    source         = "aws.events"
+    warmup         = true
+    routeKey       = "GET /warmup"
+    rawPath        = "/warmup"
     rawQueryString = ""
-    headers    = { "content-type" = "application/json" }
+    headers        = { "content-type" = "application/json" }
     requestContext = {
       http = { method = "GET", path = "/warmup" }
     }
