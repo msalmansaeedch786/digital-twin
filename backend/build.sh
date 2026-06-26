@@ -23,8 +23,10 @@ pip3 install \
 echo "Copying function code..."
 cp "$DIR/main.py" "$BUILD_DIR/"
 
-echo "Creating zip file..."
+echo "Creating deterministic zip file..."
 cd "$BUILD_DIR"
-zip -r9q "$ZIP_FILE" .
+# Normalize all file modification times to Jan 1, 2020 to ensure reproducible zip hashes
+find . -exec touch -t 202001010000.00 {} +
+zip -X -r9q "$ZIP_FILE" .
 
 echo "Build complete: $ZIP_FILE"
