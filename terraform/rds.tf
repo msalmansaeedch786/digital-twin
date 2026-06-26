@@ -55,6 +55,9 @@ resource "aws_db_instance" "postgres" {
   # Upgraded certificate authority for stronger TLS
   ca_cert_identifier = "rds-ca-rsa4096-g1"
 
+  # Apply changes immediately to avoid perpetual Terraform drift waiting for maintenance window
+  apply_immediately = true
+
   tags = { Name = "${var.project_name}-postgres" }
 }
 
