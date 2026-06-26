@@ -1,0 +1,50 @@
+name: "Data Sync to S3"
+
+on:
+  push:
+    branches:
+      - feature/aws-enterprise-migration
+    paths:
+      - 'data/**'
+
+permissions:
+  id-token: write # Required for AWS OIDC authentication
+  contents: read  # Required to checkout code
+
+env:
+  AWS_REGION: "eu-central-1"
+  AWS_ROLE_ARN: "arn:aws:iam::231740516864:role/digital-twin-github-actions-role"
+
+jobs:
+  sync:
+    name: "Sync Local Data to S3 Knowledge Base"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.0"
+
+      - name: Sync to S3
+        working-directory: ./terraform
+        run: |
+          # Initialize terraform to pull the remote state
+          terraform init -no-color
+
+          # Fetch the dynamically generated bucket name from Terraform outputs
+          BUCKET_NAME=$(terraform output -raw s3_bucket_name)
+
+          echo "Syncing data/ to s3://$BUCKET_NAME/"
+
+          # Sync the data folder to the bucket
+          aws s3 sync ../data "s3://$BUCKET_NAME/" --delete
