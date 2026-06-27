@@ -47,7 +47,7 @@ resource "aws_lambda_function" "api" {
       DB_SECRET_ARN     = aws_db_instance.postgres.master_user_secret[0].secret_arn
       AWS_EXECUTION_ENV = "AWS_Lambda_python3.12"
       ENVIRONMENT       = "production"
-      ALLOWED_ORIGINS   = "https://${var.amplify_domain}"
+      ALLOWED_ORIGINS   = "https://*.amplifyapp.com,http://localhost:3000"
     }
   }
 
@@ -66,7 +66,7 @@ resource "aws_apigatewayv2_api" "main" {
 
   # CORS: Locked down to the specific Amplify frontend domain only
   cors_configuration {
-    allow_origins     = ["https://${var.amplify_domain}"]
+    allow_origins     = ["https://*.amplifyapp.com", "http://localhost:3000"]
     allow_methods     = ["POST", "GET", "OPTIONS"]
     allow_headers     = ["content-type"]
     allow_credentials = false # No cookies/sessions — credentials not needed
