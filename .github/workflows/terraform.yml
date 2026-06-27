@@ -63,6 +63,7 @@ jobs:
         continue-on-error: true
         env:
           TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
+          TF_VAR_github_token: ${{ secrets.TF_VAR_GITHUB_TOKEN }}
 
       - name: Post Plan to PR
         uses: actions/github-script@v7
@@ -101,3 +102,4 @@ jobs:
         run: terraform apply -auto-approve
         env:
           TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
+          TF_VAR_github_token: ${{ secrets.TF_VAR_GITHUB_TOKEN }}
