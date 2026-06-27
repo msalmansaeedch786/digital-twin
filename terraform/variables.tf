@@ -16,10 +16,10 @@ variable "project_name" {
   default     = "digital-twin"
 }
 
-variable "amplify_domain" {
-  description = "The Amplify frontend domain (e.g. main.xxxxx.amplifyapp.com) — used for CORS allow_origins"
+variable "github_token" {
+  description = "GitHub Personal Access Token for Amplify to access the repo"
   type        = string
-  default     = "*" # Default allow all for development. Override in production.
+  sensitive   = true
 }
 
 variable "alert_email" {

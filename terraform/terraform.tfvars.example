@@ -2,9 +2,9 @@
 # Copy this to terraform.tfvars and fill in your values
 # terraform.tfvars is gitignored — never commit real values
 
-# Your Amplify frontend domain (check AWS Amplify Console)
-# Format: branch.appid.amplifyapp.com
-amplify_domain = "feature.d5kicq590mwz3.amplifyapp.com"
+# GitHub Personal Access Token for AWS Amplify
+# Requires `repo` scope to automatically deploy the frontend.
+github_token = "ghp_xxxxxxxxxxxxxxxxxxxx"
 
 # Email to receive CloudWatch alarm notifications
 # After `terraform apply`, confirm the SNS subscription from your inbox
