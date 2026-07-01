@@ -2,6 +2,9 @@ name: "Terraform CI/CD"
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/aws-enterprise-migration
 
 permissions:
   id-token: write # Required for AWS OIDC authentication
@@ -97,7 +100,7 @@ jobs:
         run: exit 1
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/feature/aws-enterprise-migration' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/feature/aws-enterprise-migration' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         working-directory: ./terraform
         run: terraform apply -auto-approve
         env:
