@@ -24,7 +24,7 @@ resource "aws_db_instance" "postgres" {
 
   allocated_storage          = 20 # Free tier limit
   storage_type               = "gp2"
-  backup_retention_period    = 0    # Explicitly disabled for free tier limits
+  backup_retention_period    = 0    # Explicitly disabled due to strict FreeTierRestrictionError on this account
   storage_encrypted          = true # AWS KMS encryption at rest
   auto_minor_version_upgrade = true
 

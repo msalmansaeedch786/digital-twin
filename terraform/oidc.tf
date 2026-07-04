@@ -24,7 +24,7 @@ resource "aws_iam_role" "github_actions" {
         Condition = {
           StringLike = {
             "token.actions.githubusercontent.com:sub" : [
-              "repo:msalmansaeedch786/digital-twin:ref:refs/heads/feature/aws-enterprise-migration",
+              "repo:msalmansaeedch786/digital-twin:ref:refs/heads/${var.git_branch}",
               "repo:msalmansaeedch786/digital-twin:pull_request"
             ]
           }
@@ -74,7 +74,33 @@ resource "aws_iam_policy" "github_actions_policy" {
           "lambda:*",
           "apigateway:*",
           "s3:*",
-          "iam:*",
+          "iam:GetRole",
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:UpdateRole",
+          "iam:PassRole",
+          "iam:GetRolePolicy",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies",
+          "iam:GetPolicy",
+          "iam:CreatePolicy",
+          "iam:DeletePolicy",
+          "iam:CreatePolicyVersion",
+          "iam:DeletePolicyVersion",
+          "iam:GetPolicyVersion",
+          "iam:ListPolicyVersions",
+          "iam:TagRole",
+          "iam:UntagRole",
+          "iam:TagPolicy",
+          "iam:UntagPolicy",
+          "iam:GetOpenIDConnectProvider",
+          "iam:CreateOpenIDConnectProvider",
+          "iam:DeleteOpenIDConnectProvider",
+          "iam:ListOpenIDConnectProviders",
           "logs:*",
           "events:*",
           "secretsmanager:*",
