@@ -82,3 +82,14 @@ resource "aws_amplify_branch" "feature" {
     NEXT_PUBLIC_API_URL = aws_apigatewayv2_stage.prod.invoke_url
   }
 }
+
+# Automatically trigger a build when a new branch is created
+resource "terraform_data" "trigger_amplify_build" {
+  triggers_replace = [
+    aws_amplify_branch.feature.arn
+  ]
+
+  provisioner "local-exec" {
+    command = "aws amplify start-job --app-id ${aws_amplify_app.frontend.id} --branch-name ${aws_amplify_branch.feature.branch_name} --job-type RELEASE --region ${var.aws_region}"
+  }
+}
