@@ -83,7 +83,8 @@ resource "aws_iam_policy" "github_actions_policy" {
           "cloudwatch:*",
           "kms:*",
           "xray:*",
-          "bedrock:*"
+          "bedrock:*",
+          "amplify:*"
         ]
         Resource = "*"
       }
