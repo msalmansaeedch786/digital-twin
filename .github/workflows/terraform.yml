@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - feature/aws-enterprise-migration
+      - feature/aws-enterprise-migration # Update GIT_BRANCH env var below when changing branch
 
 permissions:
   id-token: write # Required for AWS OIDC authentication
@@ -15,6 +15,9 @@ env:
   AWS_REGION: "eu-central-1"
   # This role ARN will be created by the OIDC Terraform module
   AWS_ROLE_ARN: "arn:aws:iam::231740516864:role/digital-twin-github-actions-role"
+  # Update this when switching branches — also update 'on: push: branches' above and terraform.tfvars
+  GIT_BRANCH: "feature/aws-enterprise-migration"
+  TF_VAR_git_branch: "feature/aws-enterprise-migration"
 
 jobs:
   terraform:

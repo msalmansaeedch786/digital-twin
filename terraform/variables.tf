@@ -27,3 +27,9 @@ variable "alert_email" {
   type        = string
   default     = "alerts@example.com" # Dummy email. Override via TF_VAR_alert_email in production.
 }
+
+variable "git_branch" {
+  description = "The Git branch this infrastructure is deployed from. Used for OIDC trust, Amplify branch, and CORS locking."
+  type        = string
+  default     = "feature/aws-enterprise-migration"
+}

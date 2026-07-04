@@ -73,7 +73,7 @@ resource "aws_amplify_app" "frontend" {
 
 resource "aws_amplify_branch" "feature" {
   app_id            = aws_amplify_app.frontend.id
-  branch_name       = "feature/aws-enterprise-migration"
+  branch_name       = var.git_branch
   enable_auto_build = true
   framework         = "Next.js - SSR"
 

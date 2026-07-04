@@ -3,7 +3,7 @@ name: "Data Sync to S3"
 on:
   push:
     branches:
-      - feature/aws-enterprise-migration
+      - feature/aws-enterprise-migration # Update GIT_BRANCH env var below when changing branch
     paths:
       - 'data/**'
 
@@ -14,6 +14,9 @@ permissions:
 env:
   AWS_REGION: "eu-central-1"
   AWS_ROLE_ARN: "arn:aws:iam::231740516864:role/digital-twin-github-actions-role"
+  # Update this when switching branches — also update 'on: push: branches' above and terraform.tfvars
+  GIT_BRANCH: "feature/aws-enterprise-migration"
+  TF_VAR_git_branch: "feature/aws-enterprise-migration"
 
 jobs:
   sync:
