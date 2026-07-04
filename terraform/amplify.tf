@@ -60,7 +60,6 @@ resource "aws_amplify_app" "frontend" {
 
   # Environment variables injected directly into the frontend build
   environment_variables = {
-    NEXT_PUBLIC_API_URL       = aws_apigatewayv2_stage.prod.invoke_url
     AMPLIFY_MONOREPO_APP_ROOT = "frontend"
     AMPLIFY_DIFF_DEPLOY       = "false"
   }
@@ -77,4 +76,9 @@ resource "aws_amplify_branch" "feature" {
   branch_name       = "feature/aws-enterprise-migration"
   enable_auto_build = true
   framework         = "Next.js - SSR"
+
+  # Environment variables specific to the branch (breaks the API Gateway cycle)
+  environment_variables = {
+    NEXT_PUBLIC_API_URL = aws_apigatewayv2_stage.prod.invoke_url
+  }
 }
