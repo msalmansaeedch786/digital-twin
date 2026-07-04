@@ -39,7 +39,7 @@ jobs:
         with:
           terraform_version: "1.5.0"
 
-      - name: Setup Python & Cache Dependencies
+      - name: Setup Python & Cache pip
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -47,6 +47,18 @@ jobs:
           cache-dependency-path: |
             backend/requirements.txt
             terraform/lambda_ingestion/requirements.txt
+
+      - name: Cache API Build Directory
+        uses: actions/cache@v4
+        with:
+          path: backend/build
+          key: api-build-${{ hashFiles('backend/requirements.txt') }}
+
+      - name: Cache Ingestion Build Directory
+        uses: actions/cache@v4
+        with:
+          path: terraform/lambda_ingestion/build
+          key: ingest-build-${{ hashFiles('terraform/lambda_ingestion/requirements.txt') }}
 
       - name: Build Python Lambda Packages
         run: |
