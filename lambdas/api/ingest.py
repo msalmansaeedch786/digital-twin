@@ -17,7 +17,8 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-DATA_DIR = str(Path(__file__).parent.parent / "data")
+# Repo root is three levels up: lambdas/api/ingest.py -> lambdas/api -> lambdas -> repo root
+DATA_DIR = str(Path(__file__).parent.parent.parent / "data")
 
 def get_db_connection_string() -> str:
     """Gets local or remote PostgreSQL connection string."""
