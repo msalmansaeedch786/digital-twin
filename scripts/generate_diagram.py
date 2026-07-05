@@ -1,3 +1,5 @@
+import os
+
 from diagrams import Diagram, Cluster, Edge
 from diagrams.aws.compute import Lambda
 from diagrams.aws.database import RDS
@@ -19,10 +21,14 @@ graph_attr = {
     "ranksep": "1.0",
 }
 
+# Output relative to the repo root (scripts/ -> repo root) so it renders
+# to frontend/public/ no matter which directory the script is run from.
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 with Diagram(
     "Digital Twin Architecture (Enterprise Secure)",
     show=False,
-    filename="frontend/public/architecture",
+    filename=os.path.join(_ROOT, "frontend/public/architecture"),
     outformat="png",
     direction="TB",
     graph_attr=graph_attr,

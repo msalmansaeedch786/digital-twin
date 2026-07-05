@@ -9,8 +9,8 @@ resource "aws_cloudwatch_log_group" "lambda_api" {
 
 resource "aws_s3_object" "lambda_api_zip" {
   bucket = aws_s3_bucket.deployments.id
-  key    = "lambdas/api-${filemd5("${path.module}/../backend/api_lambda.zip")}.zip"
-  source = "${path.module}/../backend/api_lambda.zip"
+  key    = "lambdas/api-${filemd5("${path.module}/../lambdas/api/api_lambda.zip")}.zip"
+  source = "${path.module}/../lambdas/api/api_lambda.zip"
 }
 
 resource "aws_lambda_function" "api" {
@@ -21,7 +21,7 @@ resource "aws_lambda_function" "api" {
   # Deploy via S3 to bypass the 50MB API limit
   s3_bucket        = aws_s3_bucket.deployments.id
   s3_key           = aws_s3_object.lambda_api_zip.key
-  source_code_hash = filebase64sha256("${path.module}/../backend/api_lambda.zip")
+  source_code_hash = filebase64sha256("${path.module}/../lambdas/api/api_lambda.zip")
 
   runtime       = "python3.12"
   architectures = ["arm64"]

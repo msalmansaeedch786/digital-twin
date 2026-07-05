@@ -45,30 +45,30 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
           cache-dependency-path: |
-            backend/requirements.txt
-            terraform/lambda_ingestion/requirements.txt
+            lambdas/api/requirements.txt
+            lambdas/ingestion/requirements.txt
 
       - name: Cache API Build Directory
         uses: actions/cache@v4
         with:
-          path: backend/build
-          key: api-build-${{ hashFiles('backend/requirements.txt') }}
+          path: lambdas/api/build
+          key: api-build-${{ hashFiles('lambdas/api/requirements.txt') }}
 
       - name: Cache Ingestion Build Directory
         uses: actions/cache@v4
         with:
-          path: terraform/lambda_ingestion/build
-          key: ingest-build-${{ hashFiles('terraform/lambda_ingestion/requirements.txt') }}
+          path: lambdas/ingestion/build
+          key: ingest-build-${{ hashFiles('lambdas/ingestion/requirements.txt') }}
 
       - name: Build Python Lambda Packages
         run: |
           # Build the API Lambda
-          cd backend
+          cd lambdas/api
           ./build.sh
-          cd ..
+          cd ../..
 
           # Build the Ingestion Lambda
-          cd terraform/lambda_ingestion
+          cd lambdas/ingestion
           ./build.sh
 
       - name: Terraform Init
