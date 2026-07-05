@@ -36,11 +36,11 @@ The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline
 
 ## Key Features
 
-- **Serverless RAG Pipeline**: Combines Amazon Bedrock's Foundation Models (Titan Embeddings V2 & Nova Lite) with PostgreSQL (pgvector) for accurate, hallucination-free responses based strictly on ingested documents.
+- **Serverless RAG Pipeline**: Combines Amazon Bedrock's Foundation Models (Titan Embeddings V2 & Nova Lite) with PostgreSQL (pgvector) for accurate responses grounded strictly in ingested documents, minimizing hallucination.
 - **Enterprise-Grade Security**: Implements a strict Zero-Trust network topology using AWS PrivateLink (VPC Endpoints) to ensure all database and AI API traffic never traverses the public internet.
 - **Infrastructure as Code (IaC)**: 100% of the AWS infrastructure is codified in Terraform, allowing for reproducible and automated deployments.
 - **Event-Driven Data Ingestion**: Simply uploading a PDF or Text file to an S3 bucket automatically triggers an asynchronous Lambda pipeline that chunks, embeds, and stores the knowledge in the database.
-- **Automated CI/CD Pipeline**: Employs GitHub Actions to automatically run `terraform plan` and `terraform apply` on Pull Requests and commits, using AWS OpenID Connect (OIDC) for passwordless, secure deployments.
+- **Automated CI/CD Pipeline**: Employs GitHub Actions to automatically build the Lambda packages and run `terraform plan` / `terraform apply` on every push to the deployment branch, using AWS OpenID Connect (OIDC) for passwordless, keyless deployments.
 - **History-Aware Conversations**: Employs an LLM-driven query rewriting step that maintains context across long conversational threads.
 - **Hardened Security**: Features rate limiting, payload sanitization, AWS Secrets Manager integration, and IAM Least Privilege policies.
 
@@ -58,7 +58,7 @@ To achieve a **Production-Ready** baseline, this architecture implements the fol
 1. **Isolated Subnets**: The PostgreSQL database and Compute Lambdas reside strictly in Private Subnets with no Internet Gateway route, rendering them inaccessible from the public internet.
 2. **AWS PrivateLink (VPC Endpoints)**: Secure, private tunnels are provisioned for Amazon Bedrock, AWS Secrets Manager, Amazon CloudWatch, and AWS X-Ray. API traffic to these services never traverses the public internet.
 3. **Least Privilege IAM**: Every Lambda function executes under a tightly scoped IAM role, granting exact permissions (e.g., the Ingestion Lambda can generate Bedrock embeddings, but is explicitly denied access to the Bedrock LLM).
-4. **Encrypted Secrets**: The database master password is auto-generated and rotated by AWS Secrets Manager. Lambda functions dynamically fetch this secret at runtime.
+4. **Encrypted Secrets**: The database master password is auto-generated and managed by AWS Secrets Manager, keeping it out of Terraform state entirely. Lambda functions dynamically fetch this secret at runtime.
 
 <details>
 <summary><strong>View Detailed Sequence Diagrams</strong></summary>
@@ -131,24 +131,31 @@ sequenceDiagram
 
 ```text
 digital-twin/
-├── backend/                   # FastAPI Python Application
-│   ├── main.py                # Core API routes and rate limiting
-│   ├── rag_pipeline.py        # LangChain logic, Prompts, and Bedrock integration
-│   ├── ingestion.py           # S3 event listener for document ingestion
-│   ├── database.py            # PostgreSQL connection pooling and queries
-│   └── requirements.txt       # Python dependencies
-├── frontend/                  # Next.js Application
-│   ├── src/app/               # Application routes (page.tsx, layout.tsx)
-│   ├── src/components/        # Reusable React components (ChatWindow, Sidebar)
-│   ├── src/lib/               # API clients and utility functions
-│   └── package.json           # Node dependencies
-└── terraform/                 # Infrastructure as Code
-    ├── main.tf                # Provider definitions
-    ├── vpc.tf                 # Networking configurations
-    ├── rds.tf                 # PostgreSQL instance provisioning
-    ├── lambda.tf              # Compute layer definitions
-    ├── api.tf                 # API Gateway routing
-    └── iam.tf                 # Security policies and roles
+├── backend/                        # FastAPI backend (deployed as the API Lambda)
+│   ├── main.py                     # API routes, RAG chain, Secrets/DB access, rate limiting, CORS
+│   ├── ingest.py                   # Local one-off ingestion script (dev use)
+│   ├── build.sh                    # Builds the arm64 / manylinux2014 Lambda zip
+│   ├── test_lambda.py              # Backend tests
+│   └── requirements.txt            # Python dependencies (pinned for arm64)
+├── frontend/                       # Next.js app (JavaScript, hosted on AWS Amplify)
+│   └── src/app/                    # App Router: page.js, layout.js, avatar/page.js, globals.css
+├── data/                           # Knowledge-base source documents (synced to S3)
+├── terraform/                      # Infrastructure as Code
+│   ├── provider.tf                 # Provider + S3/DynamoDB remote state backend
+│   ├── vpc.tf                      # VPC, subnets, security groups, VPC endpoints (PrivateLink)
+│   ├── rds.tf                      # PostgreSQL 16 + pgvector instance
+│   ├── lambda.tf                   # Ingestion Lambda, deployment bucket, S3 trigger
+│   ├── api.tf                      # API Lambda, API Gateway (HTTP API), EventBridge warm-up
+│   ├── amplify.tf                  # Amplify frontend hosting
+│   ├── iam.tf                      # Per-Lambda least-privilege execution roles
+│   ├── oidc.tf                     # GitHub Actions OIDC provider + scoped deploy role
+│   ├── cloudtrail.tf               # CloudTrail audit logging + root-usage alarm
+│   ├── alarms.tf                   # CloudWatch alarms + SNS alerts
+│   ├── s3.tf                       # Knowledge-base bucket
+│   ├── variables.tf / outputs.tf   # Input variables and outputs
+│   └── lambda_ingestion/           # Ingestion Lambda source + build script
+│       └── lambda_function.py
+└── .github/workflows/              # CI/CD: terraform.yml (build + deploy), data_sync.yml (S3 sync)
 ```
 
 ---
@@ -157,45 +164,52 @@ digital-twin/
 
 ### Prerequisites
 
-- An AWS Account with Administrator access.
+- An AWS Account. **Administrator access is only required for the initial bootstrap** (creating the OIDC provider and remote-state backend); ongoing deployments run through the scoped GitHub Actions OIDC role.
 - `Terraform` (>= 1.5.0)
 - `Python` (>= 3.12)
 - `Node.js` (>= 18)
 - `AWS CLI` configured with appropriate credentials.
 
-### 1. Provision Infrastructure
+> In normal operation you don't run these steps by hand — pushing to the deployment branch triggers GitHub Actions, which builds the Lambda packages and runs `terraform apply` for you. The steps below are for a manual/local deploy.
 
-Navigate to the terraform directory and apply the configuration to provision the AWS resources.
+### 1. Configure Variables
+
+Copy the example variables file and fill in your values (`terraform.tfvars` is gitignored).
+
+```bash
+cd terraform
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars: set github_token and alert_email
+```
+
+### 2. Build the Lambda Packages
+
+The Lambdas run on **arm64 / manylinux2014**, so the dependencies must be built for that platform (not your host). The provided scripts handle this:
+
+```bash
+# From the repo root
+(cd backend && ./build.sh)
+(cd terraform/lambda_ingestion && ./build.sh)
+```
+
+### 3. Provision Infrastructure
+
+Terraform packages the built zips and deploys everything — VPC, RDS, both Lambdas, API Gateway, and Amplify.
 
 ```bash
 cd terraform
 terraform init
-terraform apply -auto-approve
+terraform apply
 ```
 
-### 2. Deploy Backend Application
+### 4. Run the Frontend Locally
 
-Package the FastAPI backend into a deployment artifact and update the Lambda function.
-
-```bash
-cd backend
-# Create deployment package
-pip install -r requirements.txt -t package/
-cp *.py package/
-cd package && zip -r ../deployment.zip . && cd ..
-
-# Update AWS Lambda
-aws lambda update-function-code --function-name digital-twin-api --zip-file fileb://deployment.zip
-```
-
-### 3. Run Frontend Locally
-
-Configure the frontend to point to your newly deployed API Gateway endpoint, and start the development server.
+Point the frontend at your deployed API Gateway endpoint and start the dev server.
 
 ```bash
 cd frontend
 npm install
-# Add your API Gateway URL to a .env.local file
+# Pull the API URL straight from Terraform outputs
 echo "NEXT_PUBLIC_API_URL=$(cd ../terraform && terraform output -raw api_gateway_url)" > .env.local
 npm run dev
 ```
