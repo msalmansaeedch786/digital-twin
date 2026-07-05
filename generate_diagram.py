@@ -1,67 +1,108 @@
 from diagrams import Diagram, Cluster, Edge
 from diagrams.aws.compute import Lambda
 from diagrams.aws.database import RDS
-from diagrams.aws.network import APIGateway, VPC, PrivateSubnet, Endpoint
+from diagrams.aws.network import APIGateway, Endpoint
 from diagrams.aws.security import SecretsManager
 from diagrams.aws.ml import Bedrock
 from diagrams.aws.storage import S3
-from diagrams.aws.management import Cloudwatch
+from diagrams.aws.management import Cloudwatch, Cloudtrail
+from diagrams.aws.devtools import XRay
 from diagrams.aws.integration import Eventbridge, SNS
+from diagrams.aws.mobile import Amplify
 from diagrams.onprem.client import User
-from diagrams.programming.framework import React
 
-with Diagram("Digital Twin Architecture (Enterprise Secure)", show=False, filename="frontend/public/architecture", outformat="png", direction="TB"):
+graph_attr = {
+    "fontsize": "16",
+    "bgcolor": "white",
+    "splines": "spline",
+    "nodesep": "0.6",
+    "ranksep": "1.0",
+}
+
+with Diagram(
+    "Digital Twin Architecture (Enterprise Secure)",
+    show=False,
+    filename="frontend/public/architecture",
+    outformat="png",
+    direction="TB",
+    graph_attr=graph_attr,
+):
     user = User("End User")
-    browser = React("Browser (Next.js)")
 
-    with Cluster("AWS Cloud - eu-central-1"):
-        apigw = APIGateway("API Gateway")
+    with Cluster("AWS Cloud — eu-central-1"):
+        # --- Edge / entry layer ---
+        amplify = Amplify("AWS Amplify\n(Next.js SSR Hosting)")
+        apigw = APIGateway("API Gateway\n(HTTP API + Throttling)")
         eventbridge = Eventbridge("EventBridge\n(Warm-Up)")
 
+        # --- The network boundary ---
         with Cluster("Amazon VPC (10.0.0.0/16)"):
-            with Cluster("Private Subnets"):
+            with Cluster("Private Subnets (2 AZs — no internet route)"):
                 lambda_api = Lambda("API Backend\n(FastAPI)")
                 lambda_ingest = Lambda("Ingestion Pipeline")
                 rds = RDS("PostgreSQL 16\n+ pgvector")
 
-                # VPC Endpoints
-                vpce_bedrock = Endpoint("Bedrock Endpoint")
-                vpce_secrets = Endpoint("Secrets Endpoint")
-                vpce_cw = Endpoint("Logs Endpoint")
+            # VPC Endpoints live INSIDE the VPC (PrivateLink into AWS services)
+            with Cluster("VPC Endpoints (PrivateLink)"):
+                vpce_bedrock = Endpoint("Bedrock")
+                vpce_secrets = Endpoint("Secrets Manager")
+                vpce_logs = Endpoint("CloudWatch Logs")
+                vpce_xray = Endpoint("X-Ray")
+                vpce_s3 = Endpoint("S3 (Gateway)")
 
-        with Cluster("AI & Machine Learning"):
-            bedrock_llm = Bedrock("Nova Lite\nLLM")
+        # --- AWS-managed services, reached OUT of the VPC via the endpoints ---
+        with Cluster("Amazon Bedrock"):
+            bedrock_llm = Bedrock("Nova Lite\n(LLM)")
             bedrock_emb = Bedrock("Titan\nEmbeddings V2")
 
         with Cluster("Storage & Knowledge Base"):
             s3_kb = S3("Knowledge Base\nDocuments")
-            vpce_s3 = Endpoint("S3 Gateway Endpoint")
 
         with Cluster("Security & Observability"):
-            secrets = SecretsManager("RDS Credentials")
+            secrets = SecretsManager("RDS Credentials\n(auto-managed)")
             cw = Cloudwatch("Logs & Alarms")
-            sns = SNS("Alerts")
-            cw >> sns
+            xray = XRay("Distributed Tracing")
+            trail = Cloudtrail("Audit Logging\n(log-file validation)")
+            sns = SNS("Email Alerts")
 
-    # User flows
-    user >> browser
-    browser >> Edge(label="HTTPS POST /chat") >> apigw
-    apigw >> Edge(label="AWS Proxy") >> lambda_api
+    # =====================================================================
+    # Request path (synchronous)
+    # =====================================================================
+    user >> Edge(label="HTTPS") >> amplify
+    amplify >> Edge(label="POST /chat") >> apigw
+    apigw >> Edge(label="AWS_PROXY") >> lambda_api
+    eventbridge >> Edge(label="rate(5 min) GET /warmup") >> lambda_api
 
-    # API Backend flows (Internal VPC)
-    lambda_api >> Edge(label="Port 5432 (Internal)") >> rds
+    # API Lambda → data + services
+    lambda_api >> Edge(label="5432") >> rds
+    lambda_api >> vpce_bedrock
+    lambda_api >> vpce_secrets
+    lambda_api >> vpce_logs
+    lambda_api >> vpce_xray
 
-    # API Backend flows (VPC Endpoints)
-    lambda_api >> vpce_bedrock >> bedrock_llm
-    lambda_api >> vpce_bedrock >> bedrock_emb
-    lambda_api >> vpce_secrets >> secrets
-    lambda_api >> vpce_cw >> cw
+    # =====================================================================
+    # Ingestion path (event-driven / asynchronous)
+    # =====================================================================
+    s3_kb >> Edge(label="ObjectCreated", style="dashed") >> lambda_ingest
+    lambda_ingest >> Edge(label="5432") >> rds
+    lambda_ingest >> vpce_s3
+    lambda_ingest >> vpce_bedrock
+    lambda_ingest >> vpce_secrets
+    lambda_ingest >> vpce_logs
+    lambda_ingest >> vpce_xray
 
-    # Ingestion flows
-    s3_kb >> Edge(label="S3 Event") >> lambda_ingest
-    lambda_ingest >> vpce_s3 >> s3_kb
-    lambda_ingest >> vpce_bedrock >> bedrock_emb
-    lambda_ingest >> Edge(label="Port 5432 (Internal)") >> rds
+    # =====================================================================
+    # Endpoints → managed services (traffic leaves via PrivateLink, not the internet)
+    # =====================================================================
+    vpce_bedrock >> bedrock_llm
+    vpce_bedrock >> bedrock_emb
+    vpce_secrets >> secrets
+    vpce_logs >> cw
+    vpce_xray >> xray
+    vpce_s3 >> s3_kb
 
-    # EventBridge
-    eventbridge >> Edge(label="rate(5 min)") >> lambda_api
+    # =====================================================================
+    # Observability wiring
+    # =====================================================================
+    cw >> Edge(label="alarm") >> sns
+    trail >> Edge(label="streams", style="dashed") >> cw
