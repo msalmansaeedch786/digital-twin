@@ -131,30 +131,34 @@ sequenceDiagram
 
 ```text
 digital-twin/
-├── backend/                        # FastAPI backend (deployed as the API Lambda)
-│   ├── main.py                     # API routes, RAG chain, Secrets/DB access, rate limiting, CORS
-│   ├── ingest.py                   # Local one-off ingestion script (dev use)
-│   ├── build.sh                    # Builds the arm64 / manylinux2014 Lambda zip
-│   ├── test_lambda.py              # Backend tests
-│   └── requirements.txt            # Python dependencies (pinned for arm64)
+├── lambdas/                        # All AWS Lambda source code lives here
+│   ├── api/                        # Chat API Lambda (FastAPI)
+│   │   ├── main.py                 # API routes, RAG chain, Secrets/DB access, rate limiting, CORS
+│   │   ├── ingest.py               # Local one-off ingestion script (dev use)
+│   │   ├── build.sh                # Builds the arm64 / manylinux2014 Lambda zip
+│   │   ├── test_lambda.py          # Backend tests
+│   │   └── requirements.txt        # Python dependencies (pinned for arm64)
+│   └── ingestion/                  # Document-ingestion Lambda (S3-triggered)
+│       ├── lambda_function.py      # Chunk + embed + store handler
+│       ├── build.sh                # Builds the arm64 Lambda zip
+│       └── requirements.txt
 ├── frontend/                       # Next.js app (JavaScript, hosted on AWS Amplify)
 │   └── src/app/                    # App Router: page.js, layout.js, avatar/page.js, globals.css
 ├── data/                           # Knowledge-base source documents (synced to S3)
-├── terraform/                      # Infrastructure as Code
+├── terraform/                      # Infrastructure as Code (references ../lambdas)
 │   ├── provider.tf                 # Provider + S3/DynamoDB remote state backend
 │   ├── vpc.tf                      # VPC, subnets, security groups, VPC endpoints (PrivateLink)
 │   ├── rds.tf                      # PostgreSQL 16 + pgvector instance
-│   ├── lambda.tf                   # Ingestion Lambda, deployment bucket, S3 trigger
 │   ├── api.tf                      # API Lambda, API Gateway (HTTP API), EventBridge warm-up
+│   ├── lambda.tf                   # Ingestion Lambda, deployment bucket, S3 trigger
 │   ├── amplify.tf                  # Amplify frontend hosting
 │   ├── iam.tf                      # Per-Lambda least-privilege execution roles
 │   ├── oidc.tf                     # GitHub Actions OIDC provider + scoped deploy role
 │   ├── cloudtrail.tf               # CloudTrail audit logging + root-usage alarm
 │   ├── alarms.tf                   # CloudWatch alarms + SNS alerts
 │   ├── s3.tf                       # Knowledge-base bucket
-│   ├── variables.tf / outputs.tf   # Input variables and outputs
-│   └── lambda_ingestion/           # Ingestion Lambda source + build script
-│       └── lambda_function.py
+│   └── variables.tf / outputs.tf   # Input variables and outputs
+├── scripts/                        # Dev helpers: start.sh, stop.sh, generate_diagram.py
 └── .github/workflows/              # CI/CD: terraform.yml (build + deploy), data_sync.yml (S3 sync)
 ```
 
@@ -188,8 +192,8 @@ The Lambdas run on **arm64 / manylinux2014**, so the dependencies must be built 
 
 ```bash
 # From the repo root
-(cd backend && ./build.sh)
-(cd terraform/lambda_ingestion && ./build.sh)
+(cd lambdas/api && ./build.sh)
+(cd lambdas/ingestion && ./build.sh)
 ```
 
 ### 3. Provision Infrastructure

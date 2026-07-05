@@ -9,12 +9,12 @@ data/*.pdf
 data/digital-twin-repos/
 chroma_db/
 *.log
-backend/chroma_db/
+lambdas/api/chroma_db/
 .vscode/
-backend/build/
-backend/*.zip
-terraform/lambda_ingestion/build/
-terraform/lambda_ingestion/*.zip
+lambdas/api/build/
+lambdas/api/*.zip
+lambdas/ingestion/build/
+lambdas/ingestion/*.zip
 terraform.tfvars
 terraform/tfplan
 output.json

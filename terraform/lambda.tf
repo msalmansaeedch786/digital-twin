@@ -61,8 +61,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "deployments" {
 
 resource "aws_s3_object" "lambda_ingestion_zip" {
   bucket = aws_s3_bucket.deployments.id
-  key    = "lambdas/ingestion-${filemd5("${path.module}/lambda_ingestion/lambda_function.zip")}.zip"
-  source = "${path.module}/lambda_ingestion/lambda_function.zip"
+  key    = "lambdas/ingestion-${filemd5("${path.module}/../lambdas/ingestion/lambda_function.zip")}.zip"
+  source = "${path.module}/../lambdas/ingestion/lambda_function.zip"
 }
 
 resource "aws_lambda_function" "ingestion" {
@@ -73,7 +73,7 @@ resource "aws_lambda_function" "ingestion" {
   # Deploy via S3 to bypass the 50MB API limit
   s3_bucket        = aws_s3_bucket.deployments.id
   s3_key           = aws_s3_object.lambda_ingestion_zip.key
-  source_code_hash = filebase64sha256("${path.module}/lambda_ingestion/lambda_function.zip")
+  source_code_hash = filebase64sha256("${path.module}/../lambdas/ingestion/lambda_function.zip")
 
   runtime       = "python3.12"
   architectures = ["arm64"]
