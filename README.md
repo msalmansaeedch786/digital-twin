@@ -184,12 +184,12 @@ Terraform needs two sensitive inputs — `github_token` (so Amplify can pull the
 
 **Automated (GitHub Actions):** add them as **repository secrets** under *GitHub → Settings → Secrets and variables → Actions*. The workflow reads these and passes them to Terraform via `TF_VAR_*` environment variables — no `terraform.tfvars` file is involved (it's gitignored and never reaches CI):
 
-| Repository secret | Purpose |
-|-------------------|---------|
-| `TF_VAR_GITHUB_TOKEN` | GitHub PAT with `repo` scope — lets Amplify pull the repo |
-| `TF_VAR_ALERT_EMAIL`  | Email address for CloudWatch alarm notifications |
+| Repository secret | Maps to Terraform variable | Purpose |
+|-------------------|----------------------------|---------|
+| `TF_VAR_GITHUB_TOKEN` | `github_token` | GitHub PAT with `repo` scope — lets Amplify pull the repo |
+| `ALERT_EMAIL`         | `alert_email`  | Email address for CloudWatch alarm notifications |
 
-> Secret names are case-insensitive, so `TF_VAR_github_token` and `TF_VAR_GITHUB_TOKEN` are the same secret. Terraform automatically turns any `TF_VAR_<name>` env var into the `<name>` variable.
+> The workflow maps each secret to a `TF_VAR_*` env var, which Terraform reads as the matching variable ([terraform.yml](.github/workflows/terraform.yml)). The two secrets are named inconsistently for historical reasons (`TF_VAR_GITHUB_TOKEN` vs `ALERT_EMAIL`) — that's fine, since the workflow references each one explicitly.
 
 **Manual / local:** instead of repo secrets, create a `terraform.tfvars` from the example:
 
