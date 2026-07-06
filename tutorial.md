@@ -112,7 +112,7 @@ Here's the entire system at a glance:
 | **AWS RDS** | Managed database service. AWS handles backups, patching, and scaling for you. | Hiring a DBA (database administrator) from Amazon |
 | **AWS S3** | Object storage. Stores any file (PDFs, images, ZIP files) with 99.999999999% durability. | An infinite hard drive in the cloud |
 | **AWS VPC** | A private network inside AWS. Your resources can talk to each other, but the internet can't reach them directly. | The walls and doors of your office building |
-| **AWS Secrets Manager** | Securely stores sensitive data like database passwords. Rotates them automatically. | A vault with a combination lock that changes daily |
+| **AWS Secrets Manager** | Securely stores sensitive data like database passwords and manages them for you, so they never live in your code. | A vault that holds the key so you never have to write it down |
 | **AWS CloudWatch** | Monitoring and logging. Collects logs, metrics, and sets alarms. | Security cameras and smoke detectors for your infrastructure |
 | **AWS CloudTrail** | Records every API call made in your AWS account. Who did what, when. | A CCTV recording of everyone who enters/exits the building |
 | **AWS X-Ray** | Distributed tracing. Shows exactly how a request travels through your system and where it slows down. | A GPS tracker for your API requests |
@@ -131,50 +131,59 @@ digital-twin/
 │   │   ├── avatar/page.js       # Chat interface (the Digital Twin conversation UI)
 │   │   ├── globals.css          # All styling (colors, animations, layout)
 │   │   └── layout.js            # HTML wrapper with SEO metadata
-│   ├── public/                  # Static files (images, favicon)
+│   ├── public/                  # Static files (images, favicon, architecture.png)
 │   ├── next.config.mjs          # Security headers (HSTS, X-Frame-Options, etc.)
-│   ├── .env.local               # API URL (points to API Gateway)
+│   ├── .env.local               # API URL (points to API Gateway) — created locally
 │   └── package.json             # Node.js dependencies
 │
-├── backend/                     # 🧠 The AI brain (Python FastAPI)
-│   ├── main.py                  # THE core file. API endpoints + AI engine + RAG chain
-│   ├── ingest.py                # Script to load documents into the vector database
-│   ├── build.sh                 # Script to package everything into a Lambda ZIP
-│   ├── requirements.txt         # Python dependencies
-│   ├── api_lambda.zip           # The deployment package (sent to AWS Lambda)
-│   └── .env                     # Local development environment variables
+├── lambdas/                     # 🧠 ALL AWS Lambda code lives here (both functions)
+│   ├── api/                     # The chat API Lambda (Python FastAPI)
+│   │   ├── main.py              # THE core file. API endpoints + AI engine + RAG chain
+│   │   ├── ingest.py            # Local script to load documents into the vector DB
+│   │   ├── build.sh             # Packages the code + deps into an arm64 Lambda ZIP
+│   │   ├── requirements.txt     # Python dependencies
+│   │   └── test_lambda.py       # Backend tests
+│   └── ingestion/               # The document-ingestion Lambda (S3-triggered)
+│       ├── lambda_function.py   # Chunk + embed + store handler
+│       ├── build.sh             # Packages the ingestion Lambda ZIP
+│       └── requirements.txt
 │
 ├── data/                        # 📚 Your knowledge base (text files about YOU)
 │   ├── 01_professional_summary.txt
 │   ├── 02_experience.txt
-│   ├── 03_projects.txt
-│   ├── 04_skills_and_tools.txt
-│   ├── 05_certifications.txt
-│   ├── 06_education.txt
-│   ├── 07_personality_and_values.txt
-│   ├── 08_faq.txt
-│   ├── 09_contact.txt
+│   ├── ... (10 topic files total) ...
 │   └── 10_hobbies_and_interests.txt
 │
-├── terraform/                   # 🏗️ Infrastructure as Code (AWS resources)
+├── terraform/                   # 🏗️ Infrastructure as Code (all AWS resources)
 │   ├── provider.tf              # AWS provider config + S3 backend for state
-│   ├── variables.tf             # Input variables (region, project name, etc.)
-│   ├── terraform.tfvars         # Actual values for the variables
+│   ├── variables.tf             # Input variables (region, branch, tokens, email)
+│   ├── terraform.tfvars         # Actual secret values (gitignored, created locally)
 │   ├── vpc.tf                   # Network: VPC, subnets, security groups, VPC endpoints
 │   ├── rds.tf                   # Database: PostgreSQL with pgvector
 │   ├── s3.tf                    # Storage: Knowledge base S3 bucket
-│   ├── iam.tf                   # Permissions: IAM roles and policies for Lambda
-│   ├── lambda.tf                # Compute: Ingestion Lambda + deployment S3 bucket
-│   ├── api.tf                   # API: API Gateway + API Lambda + warm-up scheduler
-│   ├── alarms.tf                # Monitoring: CloudWatch alarms + SNS notifications
-│   ├── cloudtrail.tf            # Audit: CloudTrail logging + root account alerts
-│   ├── outputs.tf               # Values exported after terraform apply
-│   └── lambda_ingestion/        # Ingestion Lambda code + ZIP
+│   ├── iam.tf                   # Permissions: IAM roles for the two Lambdas
+│   ├── oidc.tf                  # GitHub Actions OIDC provider + scoped deploy role
+│   ├── lambda.tf               # Ingestion Lambda + deployment bucket + S3 trigger
+│   ├── api.tf                   # API Gateway + API Lambda + warm-up scheduler
+│   ├── amplify.tf               # Amplify frontend hosting
+│   ├── alarms.tf                # CloudWatch alarms + SNS notifications
+│   ├── cloudtrail.tf            # CloudTrail audit logging + root account alerts
+│   └── outputs.tf               # Values exported after apply (URLs, bucket name)
 │
-├── start.sh                     # Script to start both frontend and backend locally
-├── stop.sh                      # Script to stop local development servers
+├── scripts/                     # 🛠️ Dev helpers
+│   ├── start.sh                 # Start both frontend and backend locally
+│   ├── stop.sh                  # Stop local development servers
+│   └── generate_diagram.py      # Regenerates the architecture diagram
+│
+├── .github/workflows/           # 🤖 CI/CD pipelines (GitHub Actions)
+│   ├── terraform.yml            # Build Lambdas + terraform apply on every push
+│   └── data_sync.yml            # Sync data/ files to S3 when they change
+│
+├── LICENSE                      # MIT License
 └── README.md                    # Project overview
 ```
+
+> **The most important layout change to know:** both Lambda functions live together under `lambdas/` — the chat API in `lambdas/api/` and the document processor in `lambdas/ingestion/`. Terraform (in `terraform/`) only *describes* the infrastructure; it points at these folders to package and deploy them.
 
 ---
 
@@ -241,7 +250,7 @@ This is the **Digital Twin** chat page — a ChatGPT-like interface where users 
 **Environment Variable:**
 ```bash
 # frontend/.env.local
-NEXT_PUBLIC_API_URL=https://jukwx9moj4.execute-api.eu-central-1.amazonaws.com
+NEXT_PUBLIC_API_URL=https://ke1cezzlq1.execute-api.eu-central-1.amazonaws.com
 ```
 The `NEXT_PUBLIC_` prefix is a Next.js convention — it means this variable is available in the browser (not secret). It points to your API Gateway URL.
 
@@ -275,7 +284,7 @@ The CSS uses:
 
 ## 6. The Backend — The Brain Behind the Twin
 
-The entire backend lives in a single file: **`backend/main.py`** (369 lines). Let's walk through every section.
+The entire backend lives in a single file: **`lambdas/api/main.py`** (369 lines). Let's walk through every section.
 
 ### 6.1 Structured JSON Logging (Lines 28–51)
 
@@ -328,8 +337,8 @@ By caching the secret for 15 minutes, we avoid all three issues. The secret only
 **Why not just put the password in an environment variable?**
 - Environment variables are visible in the Lambda console to anyone with AWS access
 - They're stored in plain text in Terraform state files
-- They can't be rotated automatically
-- Secrets Manager encrypts the password, controls access via IAM, and can auto-rotate it
+- They're hard to rotate safely
+- Secrets Manager encrypts the password, controls access via IAM, and keeps it out of your code and Terraform state entirely
 
 ### 6.3 The AI Engine — The Heart of the System (Lines 109–201)
 
@@ -759,7 +768,7 @@ resource "aws_cloudwatch_event_rule" "lambda_warmup" {
 
 Every 5 minutes, EventBridge sends a synthetic request to the `/warmup` endpoint. This keeps the Lambda container alive, eliminating cold starts for real users.
 
-### 8.6 Architecture Trade-Offs: Cost vs. Security
+### 8.7 Architecture Trade-Offs: Cost vs. Security
 
 When designing this AWS architecture, we faced a classic engineering trilemma: balancing Serverless compute, $0.00 Cost, and Enterprise Security.
 
@@ -767,7 +776,7 @@ To achieve a **Production-Ready, Enterprise-Grade** baseline, this architecture 
 1. **Isolated Subnets**: The PostgreSQL database and Compute Lambdas reside strictly in Private Subnets with no Internet Gateway route, rendering them completely inaccessible from the public internet. This is the gold standard for database security.
 2. **AWS PrivateLink (VPC Endpoints)**: Because the Lambdas are in a dark subnet, they cannot use the public internet to reach AWS Services. We provisioned secure, private tunnels (VPC Endpoints) for Amazon Bedrock, AWS Secrets Manager, Amazon CloudWatch, and AWS X-Ray. API traffic to these services never traverses the public internet, ensuring maximum data compliance.
 3. **Least Privilege IAM**: Every Lambda function executes under a tightly scoped IAM role, granting exact permissions (e.g., the Ingestion Lambda can generate Bedrock embeddings, but is explicitly denied access to the Bedrock LLM).
-4. **Encrypted Secrets**: The database master password is auto-generated and rotated by AWS Secrets Manager. Lambda functions dynamically fetch this secret at runtime, meaning no passwords ever exist in the source code.
+4. **Encrypted Secrets**: The database master password is auto-generated and managed by AWS Secrets Manager (it never lands in Terraform state or source code). Lambda functions dynamically fetch this secret at runtime, meaning no passwords ever exist in the source code.
 
 ---
 
@@ -796,8 +805,16 @@ terraform {
 }
 
 provider "aws" {
-    region  = var.aws_region    # eu-central-1 (Frankfurt)
-    profile = var.aws_profile   # "digital-twin" AWS CLI profile
+    region = var.aws_region     # eu-central-1 (Frankfurt)
+
+    # Every resource is automatically tagged with these
+    default_tags {
+        tags = {
+            Project     = "digital-twin"
+            ManagedBy   = "terraform"
+            Environment = "production"
+        }
+    }
 }
 ```
 
@@ -813,9 +830,15 @@ variable "aws_region" {
     default = "eu-central-1"
 }
 
-variable "amplify_domain" {
-    description = "The Amplify frontend domain — used for CORS"
-    # Set in terraform.tfvars (not committed to Git)
+variable "git_branch" {
+    # Drives the Amplify branch, the OIDC trust, and the CORS-allowed domain
+    description = "The branch this infrastructure is deployed from"
+    default     = "feature/aws-enterprise-migration"
+}
+
+variable "github_token" {
+    description = "GitHub token so Amplify can pull the repo"
+    sensitive   = true
 }
 
 variable "alert_email" {
@@ -823,14 +846,16 @@ variable "alert_email" {
 }
 ```
 
-#### `terraform.tfvars` — "Here are the actual values"
+> Note: the frontend domain used for CORS is **derived automatically** from `git_branch` + the Amplify app's domain — there's no `amplify_domain` variable to keep in sync.
+
+#### `terraform.tfvars` — "Here are the actual (secret) values"
 
 ```hcl
-amplify_domain = "feature-aws-enterprise-migration.d5kicq590mwz3.amplifyapp.com"
-alert_email    = "msalmansaeedch786@gmail.com"
+github_token = "ghp_xxxxxxxxxxxxxxxxxxxx"
+alert_email  = "your@email.com"
 ```
 
-> ⚠️ This file is in `.gitignore` — it contains environment-specific values that should NOT be committed to source control.
+> ⚠️ This file is in `.gitignore` — it holds secrets (like the GitHub token) that must NEVER be committed to source control. Copy `terraform.tfvars.example` to `terraform.tfvars` and fill in your values.
 
 ### 9.3 Terraform Commands Cheat Sheet
 
@@ -948,7 +973,7 @@ Let's trace a single message — "What AWS certifications do you have?" — thro
    └── Frontend (avatar/page.js) captures the input
 
 2. FRONTEND sends HTTP POST to API Gateway
-   └── POST https://jukwx9moj4.execute-api.eu-central-1.amazonaws.com/chat
+   └── POST https://ke1cezzlq1.execute-api.eu-central-1.amazonaws.com/chat
        Body: { "message": "What AWS certifications do you have?", "history": [...] }
 
 3. API GATEWAY receives the request
@@ -1012,15 +1037,10 @@ Total time: ~2-3 seconds (warm Lambda) or ~8-9 seconds (cold start)
 
 ```bash
 cd frontend
-npm install              # Install dependencies
-cp .env.local.example .env.local  # Create environment file
+npm install                                          # Install dependencies
 
-# Edit .env.local:
-# For local development:
-NEXT_PUBLIC_API_URL=http://localhost:8000
-
-# For production (after deploying the backend):
-# NEXT_PUBLIC_API_URL=https://your-api-gateway-url.execute-api.eu-central-1.amazonaws.com
+# Point the frontend at your local backend:
+echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
 
 npm run dev              # Start on http://localhost:3000
 ```
@@ -1028,13 +1048,13 @@ npm run dev              # Start on http://localhost:3000
 ### 12.3 Backend Setup
 
 ```bash
-cd backend
-python3 -m venv .venv           # Create virtual environment
-source .venv/bin/activate        # Activate it
+cd lambdas/api
+python3 -m venv venv            # Create virtual environment
+source venv/bin/activate         # Activate it
 pip install -r requirements.txt  # Install dependencies
 
-# Create .env file:
-DATABASE_URL=postgresql://user:password@localhost:5432/digitaltwin
+# Create a .env file with your local database connection:
+echo "DATABASE_URL=postgresql://user:password@localhost:5432/digitaltwin" > .env
 
 # Run locally:
 uvicorn main:app --reload --port 8000
@@ -1043,18 +1063,20 @@ uvicorn main:app --reload --port 8000
 ### 12.4 Data Ingestion (Local)
 
 ```bash
-cd backend
+cd lambdas/api
 python ingest.py   # Reads data/ folder → creates embeddings via Bedrock → stores in PostgreSQL
 ```
 
 ### 12.5 Quick Start Scripts
 
+The easiest way — one command starts both servers (it even creates the backend virtualenv on first run):
+
 ```bash
-# Start everything:
-./start.sh
+# Start everything (frontend + backend):
+./scripts/start.sh
 
 # Stop everything:
-./stop.sh
+./scripts/stop.sh
 ```
 
 ---
@@ -1098,8 +1120,8 @@ aws dynamodb create-table \
 cd terraform
 
 # Edit terraform.tfvars with your values:
-amplify_domain = "your-branch.your-app-id.amplifyapp.com"
-alert_email    = "your@email.com"
+github_token = "ghp_xxxxxxxxxxxxxxxxxxxx"   # so Amplify can pull the repo
+alert_email  = "your@email.com"
 
 # Initialize Terraform (download providers, connect to S3 backend)
 terraform init
@@ -1111,25 +1133,27 @@ terraform plan
 terraform apply
 ```
 
-### 13.4 Build & Deploy the Backend
+### 13.4 Build & Deploy the Lambdas
+
+Both Lambdas must be packaged for **arm64 / manylinux2014** (the `build.sh` scripts handle that — you can't just `pip install` on your Mac). Build both, then let Terraform pick up the new ZIPs:
 
 ```bash
-cd backend
+# Build both Lambda packages
+(cd lambdas/api && ./build.sh)
+(cd lambdas/ingestion && ./build.sh)
 
-# Build the Lambda deployment package
-./build.sh
-
-# Terraform will automatically detect the new ZIP and deploy it
-cd ../terraform
+# Terraform detects the new ZIPs (via their content hash) and deploys them
+cd terraform
 terraform apply
 ```
 
 ### 13.5 Deploy the Frontend
 
-1. **Connect your GitHub repo to AWS Amplify** (via AWS Console)
-2. Amplify will auto-detect Next.js and build it
-3. Set the environment variable `NEXT_PUBLIC_API_URL` in Amplify's console
-4. Every push to your branch auto-deploys!
+The frontend host is **managed by Terraform** (`amplify.tf`) — you don't wire it up in the Console:
+
+1. `terraform apply` creates the Amplify app and connects it to your GitHub repo (using the `github_token`)
+2. Amplify auto-detects Next.js, sets `NEXT_PUBLIC_API_URL` from the API Gateway output, and builds
+3. Every push to your branch auto-deploys the frontend
 
 ### 13.6 Enable Bedrock Models
 
@@ -1138,6 +1162,48 @@ Before the AI can work, you need to enable the models in the AWS Console:
 2. Enable **Amazon Titan Text Embeddings V2**
 3. Enable **Amazon Nova Lite**
 4. Wait for access to be granted (~1 minute)
+
+### 13.7 Automated Deployment (CI/CD with GitHub Actions)
+
+In practice you **don't run the steps above by hand** every time. The project ships with two automated pipelines in `.github/workflows/` that do it for you whenever you push to GitHub.
+
+#### `terraform.yml` — Build & Deploy
+
+On every push to the deployment branch, GitHub Actions automatically:
+1. Builds both Lambda packages (`build.sh` for `api` and `ingestion`)
+2. Runs `terraform init`, `fmt`, `validate`, and `plan`
+3. Runs `terraform apply` to deploy the changes
+
+So your normal workflow is just: **edit code → `git push` → wait ~2 minutes → it's live.**
+
+#### `data_sync.yml` — Knowledge Sync
+
+Whenever you change a file under `data/`, this pipeline uploads it to the S3 knowledge-base bucket (which then triggers the ingestion Lambda to re-embed it). It finds the bucket name from `terraform output -raw s3_bucket_name`.
+
+#### How GitHub logs into AWS — OIDC (no passwords!)
+
+Here's the clever, secure part. GitHub Actions needs permission to deploy to your AWS account. The **old, insecure way** was to store an AWS access key + secret as GitHub secrets — long-lived credentials that leak badly if exposed.
+
+Instead, this project uses **OIDC (OpenID Connect)**:
+
+```
+GitHub Action starts
+   │
+   ▼
+GitHub hands it a short-lived identity token ("I am a workflow
+run from the digital-twin repo, on this branch")
+   │
+   ▼
+AWS checks: "Is this token really from GitHub, from the repo
+and branch I trust?" (configured in oidc.tf)
+   │
+   ▼
+AWS hands back TEMPORARY credentials that expire in ~1 hour
+```
+
+**Analogy:** Instead of giving GitHub a permanent house key (that could be copied), you give the doorman a photo ID. Each time GitHub shows up, the doorman verifies the ID and issues a visitor badge that self-destructs in an hour. Nothing permanent to steal.
+
+That temporary identity is also **scoped to least privilege** — the deploy role (`oidc.tf`) can only touch this project's resources (`digital-twin-*`) in this region, and specifically **cannot** grant itself admin permissions. So even if a malicious pull request somehow ran, the blast radius is tightly bounded.
 
 ---
 
@@ -1241,9 +1307,9 @@ s3_key    = aws_s3_object.lambda_api_zip.key
 **Cause:** The browser is blocking cross-origin requests.
 
 **Solutions:**
-1. Make sure `amplify_domain` in `terraform.tfvars` matches your actual Amplify domain exactly
-2. Check that `ALLOWED_ORIGINS` in the Lambda environment variables matches
-3. Both API Gateway CORS config AND FastAPI CORS middleware must agree
+1. The allowed frontend domain is derived from `git_branch` (in `terraform.tfvars` / the CI env) — make sure it matches the branch whose Amplify site you're actually loading
+2. Check that `ALLOWED_ORIGINS` in the Lambda environment variables matches your frontend URL
+3. Both the API Gateway CORS config AND the FastAPI CORS middleware must agree
 
 ---
 
