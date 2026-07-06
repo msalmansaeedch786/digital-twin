@@ -21,3 +21,6 @@ output.json
 
 # Personal tutorials and notes
 tutorial.md
+
+# Editor workspace config (kept local, not published)
+*.code-workspace
