@@ -187,9 +187,9 @@ Terraform needs two sensitive inputs — `github_token` (so Amplify can pull the
 | Repository secret | Maps to Terraform variable | Purpose |
 |-------------------|----------------------------|---------|
 | `TF_VAR_GITHUB_TOKEN` | `github_token` | GitHub PAT with `repo` scope — lets Amplify pull the repo |
-| `ALERT_EMAIL`         | `alert_email`  | Email address for CloudWatch alarm notifications |
+| `TF_VAR_ALERT_EMAIL`  | `alert_email`  | Email address for CloudWatch alarm notifications |
 
-> The workflow maps each secret to a `TF_VAR_*` env var, which Terraform reads as the matching variable ([terraform.yml](.github/workflows/terraform.yml)). The two secrets are named inconsistently for historical reasons (`TF_VAR_GITHUB_TOKEN` vs `ALERT_EMAIL`) — that's fine, since the workflow references each one explicitly.
+> The workflow maps each secret to a `TF_VAR_*` env var, which Terraform reads as the matching variable ([terraform.yml](.github/workflows/terraform.yml)). Naming each secret `TF_VAR_<variable>` keeps it lined up 1:1 with the Terraform variable it feeds.
 
 **Manual / local:** instead of repo secrets, create a `terraform.tfvars` from the example:
 
