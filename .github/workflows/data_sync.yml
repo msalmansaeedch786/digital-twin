@@ -13,7 +13,8 @@ permissions:
 
 env:
   AWS_REGION: "eu-central-1"
-  AWS_ROLE_ARN: "arn:aws:iam::231740516864:role/digital-twin-github-actions-role"
+  # Account ID comes from the AWS_ACCOUNT_ID repository variable (not hardcoded).
+  AWS_ROLE_ARN: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/digital-twin-github-actions-role"
   # Update this when switching branches — also update 'on: push: branches' above and terraform.tfvars
   GIT_BRANCH: "feature/aws-enterprise-migration"
   TF_VAR_git_branch: "feature/aws-enterprise-migration"
