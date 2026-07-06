@@ -174,11 +174,24 @@ digital-twin/
 - `Node.js` (>= 18)
 - `AWS CLI` configured with appropriate credentials.
 
-> In normal operation you don't run these steps by hand — pushing to the deployment branch triggers GitHub Actions, which builds the Lambda packages and runs `terraform apply` for you. The steps below are for a manual/local deploy.
+> **Two ways to deploy — pick one:**
+> - **Automated (recommended):** push to the deployment branch and GitHub Actions builds the Lambdas and runs `terraform apply` for you.
+> - **Manual / local:** run the numbered steps below yourself. Steps 2–4 are only needed for a manual deploy.
 
-### 1. Configure Variables
+### 1. Provide the two secrets
 
-Copy the example variables file and fill in your values (`terraform.tfvars` is gitignored).
+Terraform needs two sensitive inputs — `github_token` (so Amplify can pull the repo) and `alert_email` (where CloudWatch alarms are sent). How you supply them depends on the path:
+
+**Automated (GitHub Actions):** add them as **repository secrets** under *GitHub → Settings → Secrets and variables → Actions*. The workflow reads these and passes them to Terraform via `TF_VAR_*` environment variables — no `terraform.tfvars` file is involved (it's gitignored and never reaches CI):
+
+| Repository secret | Purpose |
+|-------------------|---------|
+| `TF_VAR_GITHUB_TOKEN` | GitHub PAT with `repo` scope — lets Amplify pull the repo |
+| `TF_VAR_ALERT_EMAIL`  | Email address for CloudWatch alarm notifications |
+
+> Secret names are case-insensitive, so `TF_VAR_github_token` and `TF_VAR_GITHUB_TOKEN` are the same secret. Terraform automatically turns any `TF_VAR_<name>` env var into the `<name>` variable.
+
+**Manual / local:** instead of repo secrets, create a `terraform.tfvars` from the example:
 
 ```bash
 cd terraform
