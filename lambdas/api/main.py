@@ -278,7 +278,7 @@ class ChatResponse(BaseModel):
 # ===========================================================================
 
 @app.post("/chat", response_model=ChatResponse)
-@limiter.limit("1/3seconds")  # Application-level rate limit: max 1 req/3s per IP
+@limiter.limit("20/minute")  # Application-level rate limit: 20 req/min per IP (allows quick successive questions; API Gateway throttling is the second layer)
 async def chat_endpoint(request: Request, chat_request: ChatRequest):
     """
     Main chat endpoint. Lazily initializes the AI Engine on first call
@@ -365,4 +365,22 @@ async def warmup():
 
 
 # Mangum wraps FastAPI for AWS Lambda + API Gateway compatibility
-handler = Mangum(app, lifespan="off")
+_mangum_handler = Mangum(app, lifespan="off")
+
+
+def handler(event, context):
+    """Lambda entrypoint.
+
+    The EventBridge warm-up rule invokes this function every 5 minutes with a
+    bare ``{"warmup": true, ...}`` payload. That is NOT an API Gateway event, so
+    Mangum cannot infer a handler for it and raises RuntimeError. Short-circuit
+    the warm-up here: initialize the AI engine (keeping the container hot) and
+    return before Mangum ever sees the event. All real HTTP events fall through
+    to Mangum unchanged.
+    """
+    if isinstance(event, dict) and event.get("warmup"):
+        if not _engine.is_ready:
+            logger.info("Warmup ping received — initializing AI Engine")
+            _engine.initialize()
+        return {"status": "warm", "ai_loaded": _engine.is_ready}
+    return _mangum_handler(event, context)

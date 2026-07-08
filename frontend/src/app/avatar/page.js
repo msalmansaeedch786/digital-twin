@@ -146,7 +146,10 @@ export default function AvatarMode() {
         }),
       });
 
-      if (!response.ok) throw new Error("Network error");
+      if (!response.ok) {
+        // 429 = rate limited: this is a "slow down" hint, not a real outage
+        throw new Error(response.status === 429 ? "RATE_LIMIT" : "Network error");
+      }
 
       const data = await response.json();
       setMessages(prev => [...prev, { role: "bot", content: data.reply }]);
@@ -157,7 +160,9 @@ export default function AvatarMode() {
       }
     } catch (error) {
       console.error(error);
-      const errorMsg = "Sorry, I lost my connection to the brain.";
+      const errorMsg = error.message === "RATE_LIMIT"
+        ? "I'm getting a lot of questions at once — give me a few seconds and ask again."
+        : "Sorry, I lost my connection to the brain.";
       setMessages(prev => [...prev, { role: "bot", content: errorMsg }]);
       if (!isMuted) {
         speak(errorMsg);
