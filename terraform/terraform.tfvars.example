@@ -22,5 +22,5 @@ alert_email = "your@email.com"
 # Git branch this infrastructure deploys from. Drives OIDC trust, the Amplify
 # branch, and CORS origin locking. Only override if you rename the deploy
 # branch — and if you do, change it in both .github/workflows/*.yml too.
-# Default: "feature/aws-enterprise-migration"
-# git_branch = "feature/aws-enterprise-migration"
+# Default: "main"
+# git_branch = "main"
