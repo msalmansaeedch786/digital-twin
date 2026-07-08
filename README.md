@@ -30,7 +30,7 @@
 
 The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline backed by Amazon Bedrock, PostgreSQL with pgvector, and a hardened FastAPI backend. All infrastructure is deployed and managed deterministically via Terraform. The frontend is a highly responsive Next.js application hosted on AWS Amplify, featuring a ChatGPT-style chat interface with integrated voice capabilities.
 
-**Live Demo**: [Live Environment (Amplify)](https://main.d5kicq590mwz3.amplifyapp.com)
+**Live Demo**: [Live Environment (Amplify)](https://main.dtogabptwtao.amplifyapp.com)
 
 ---
 
