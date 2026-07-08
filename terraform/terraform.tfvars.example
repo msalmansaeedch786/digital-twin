@@ -1,11 +1,26 @@
-# terraform.tfvars.example — Template for required variables
-# Copy this to terraform.tfvars and fill in your values
-# terraform.tfvars is gitignored — never commit real values
+# terraform.tfvars.example — Template for input variables
+# Copy this to terraform.tfvars and fill in your values.
+# terraform.tfvars is gitignored — never commit real values.
+#
+# In CI these are supplied as TF_VAR_* environment variables instead of this
+# file (see .github/workflows/terraform.yml), so terraform.tfvars is only for
+# local `terraform apply`.
 
-# GitHub Personal Access Token for AWS Amplify
-# Requires `repo` scope to automatically deploy the frontend.
+# ── Required ────────────────────────────────────────────────────────────────
+
+# GitHub Personal Access Token for AWS Amplify to pull the repo.
+# Requires `repo` scope. No default — Terraform will prompt if it's unset.
 github_token = "ghp_xxxxxxxxxxxxxxxxxxxx"
 
-# Email to receive CloudWatch alarm notifications
-# After `terraform apply`, confirm the SNS subscription from your inbox
+# ── Optional (defaults live in variables.tf) ────────────────────────────────
+
+# Email to receive CloudWatch alarm notifications.
+# Default is a dummy address; set a real one and confirm the SNS
+# subscription from your inbox after `terraform apply`.
 alert_email = "your@email.com"
+
+# Git branch this infrastructure deploys from. Drives OIDC trust, the Amplify
+# branch, and CORS origin locking. Only override if you rename the deploy
+# branch — and if you do, change it in both .github/workflows/*.yml too.
+# Default: "feature/aws-enterprise-migration"
+# git_branch = "feature/aws-enterprise-migration"
