@@ -68,6 +68,33 @@ def init_db(connection_string: str):
     logger.info("pgvector extension verified")
 
 
+COLLECTION_NAME = "digital_twin_docs"
+
+
+def delete_chunks_for_key(connection_string: str, source_key: str) -> int:
+    """
+    Delete all previously ingested chunks for an S3 key. Idempotent.
+
+    Called before re-ingesting a file (so updates replace rather than duplicate
+    old chunks — this also makes Lambda retries converge to one clean copy) and
+    when a file is deleted from S3 (so stale facts stop being retrieved).
+    """
+    raw_conn_string = connection_string.replace("postgresql+psycopg://", "postgresql://")
+    with psycopg.connect(raw_conn_string, autocommit=True) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                DELETE FROM langchain_pg_embedding
+                WHERE collection_id = (
+                    SELECT uuid FROM langchain_pg_collection WHERE name = %s
+                )
+                AND cmetadata->>'source_key' = %s
+                """,
+                (COLLECTION_NAME, source_key),
+            )
+            return cur.rowcount
+
+
 def safe_filename(key: str) -> str:
     """
     Sanitize an S3 object key to a safe local filename.
@@ -110,7 +137,7 @@ def lambda_handler(event, context):
     # 1. Setup Bedrock embeddings
     region = os.environ.get("AWS_REGION", "eu-central-1")
     embeddings = BedrockEmbeddings(
-        model_id="amazon.titan-embed-text-v2:0",
+        model_id=os.environ.get("BEDROCK_EMBEDDING_MODEL_ID", "amazon.titan-embed-text-v2:0"),
         region_name=region,
     )
 
@@ -120,7 +147,7 @@ def lambda_handler(event, context):
 
     vector_store = PGVector(
         embeddings=embeddings,
-        collection_name="digital_twin_docs",
+        collection_name=COLLECTION_NAME,
         connection=conn_string,
         use_jsonb=True,
     )
@@ -129,7 +156,17 @@ def lambda_handler(event, context):
     for record in event["Records"]:
         bucket = record["s3"]["bucket"]["name"]
         raw_key = urllib.parse.unquote_plus(record["s3"]["object"]["key"])
-        logger.info("Processing S3 object", extra={"bucket": bucket, "key": raw_key})
+        event_name = record.get("eventName", "")
+        logger.info("Processing S3 record", extra={"bucket": bucket, "key": raw_key, "event": event_name})
+
+        # Deletion: purge this file's vectors and move on. The bucket is
+        # versioned, so `aws s3 sync --delete` emits ObjectRemoved:DeleteMarkerCreated
+        # (not ObjectRemoved:Delete) — match the whole ObjectRemoved family.
+        if event_name.startswith("ObjectRemoved"):
+            deleted = delete_chunks_for_key(conn_string, raw_key)
+            logger.info("Object removed from S3 — purged its vectors",
+                        extra={"key": raw_key, "chunks_deleted": deleted})
+            continue
 
         tmp_path = None
         try:
@@ -165,7 +202,12 @@ def lambda_handler(event, context):
                 chunk.metadata["source_key"] = raw_key
                 chunk.metadata["bucket"] = bucket
 
-            # 6. Store in PGVector
+            # 6. Upsert into PGVector: purge any chunks from a previous version
+            # of this file first, so re-ingestion replaces instead of duplicating.
+            purged = delete_chunks_for_key(conn_string, raw_key)
+            if purged:
+                logger.info("Purged old chunks before re-ingest",
+                            extra={"key": raw_key, "chunks_deleted": purged})
             vector_store.add_documents(chunks)
             logger.info("Stored chunks in pgvector", extra={"chunk_count": len(chunks)})
 

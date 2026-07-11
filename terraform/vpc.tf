@@ -10,34 +10,10 @@ resource "aws_vpc" "main" {
   tags = { Name = "${var.project_name}-vpc" }
 }
 
-# ---------------------------------------------------------------------------
-# Internet Gateway — Required for the public subnets
-# ---------------------------------------------------------------------------
-
-resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
-  tags   = { Name = "${var.project_name}-igw" }
-}
-
-# ---------------------------------------------------------------------------
-# PUBLIC Subnets
-# ---------------------------------------------------------------------------
-
-resource "aws_subnet" "public_1" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "${var.aws_region}a"
-  map_public_ip_on_launch = true
-  tags                    = { Name = "${var.project_name}-public-1" }
-}
-
-resource "aws_subnet" "public_2" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.2.0/24"
-  availability_zone       = "${var.aws_region}b"
-  map_public_ip_on_launch = true
-  tags                    = { Name = "${var.project_name}-public-2" }
-}
+# NOTE: This VPC deliberately has NO internet gateway or public subnets.
+# Every workload (both Lambdas, RDS) lives in private subnets and reaches AWS
+# services exclusively through VPC endpoints. The frontend (Amplify) and API
+# entry point (API Gateway) are managed services outside the VPC.
 
 # ---------------------------------------------------------------------------
 # PRIVATE Subnets (Enterprise Standard - No Internet)
@@ -62,28 +38,6 @@ resource "aws_subnet" "private_2" {
 # ---------------------------------------------------------------------------
 # Route Tables
 # ---------------------------------------------------------------------------
-
-# Public route table — routes to the Internet Gateway
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main.id
-  }
-
-  tags = { Name = "${var.project_name}-public-rt" }
-}
-
-resource "aws_route_table_association" "public_1" {
-  subnet_id      = aws_subnet.public_1.id
-  route_table_id = aws_route_table.public.id
-}
-
-resource "aws_route_table_association" "public_2" {
-  subnet_id      = aws_subnet.public_2.id
-  route_table_id = aws_route_table.public.id
-}
 
 # Private route table — strictly internal routing only
 resource "aws_route_table" "private" {

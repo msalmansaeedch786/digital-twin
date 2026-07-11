@@ -28,6 +28,13 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history so gitleaks can scan all commits
+
+      - name: Scan for leaked secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -60,6 +67,11 @@ jobs:
         with:
           path: lambdas/ingestion/build
           key: ingest-build-${{ hashFiles('lambdas/ingestion/requirements.txt') }}
+
+      - name: Python Syntax Check
+        run: |
+          # Cheap gate: a syntax error in Lambda source must never reach deploy.
+          python -m py_compile lambdas/api/main.py lambdas/api/ingest.py lambdas/ingestion/lambda_function.py
 
       - name: Build Python Lambda Packages
         run: |
