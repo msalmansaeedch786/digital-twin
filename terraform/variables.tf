@@ -39,3 +39,21 @@ variable "custom_domain" {
   type        = string
   default     = "salman-twin.is-a.dev"
 }
+
+variable "bedrock_llm_model_id" {
+  description = "Bedrock model id (inference profile) for chat generation. Single source of truth: feeds the Lambda env var and the IAM invoke policy."
+  type        = string
+  default     = "eu.amazon.nova-lite-v1:0"
+}
+
+variable "bedrock_embedding_model_id" {
+  description = "Bedrock model id for embeddings. Single source of truth: feeds both Lambdas' env vars and the IAM invoke policies."
+  type        = string
+  default     = "amazon.titan-embed-text-v2:0"
+}
+
+variable "monthly_budget_usd" {
+  description = "Monthly cost budget in USD — email alerts fire at 80% actual and 100% forecasted."
+  type        = number
+  default     = 25
+}

@@ -54,12 +54,14 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      DB_HOST           = aws_db_instance.postgres.address
-      DB_NAME           = aws_db_instance.postgres.db_name
-      DB_SECRET_ARN     = aws_db_instance.postgres.master_user_secret[0].secret_arn
-      AWS_EXECUTION_ENV = "AWS_Lambda_python3.12"
-      ENVIRONMENT       = "production"
-      ALLOWED_ORIGINS   = join(",", local.allowed_origins)
+      DB_HOST                    = aws_db_instance.postgres.address
+      DB_NAME                    = aws_db_instance.postgres.db_name
+      DB_SECRET_ARN              = aws_db_instance.postgres.master_user_secret[0].secret_arn
+      AWS_EXECUTION_ENV          = "AWS_Lambda_python3.12"
+      ENVIRONMENT                = "production"
+      ALLOWED_ORIGINS            = join(",", local.allowed_origins)
+      BEDROCK_LLM_MODEL_ID       = var.bedrock_llm_model_id
+      BEDROCK_EMBEDDING_MODEL_ID = var.bedrock_embedding_model_id
     }
   }
 
@@ -108,10 +110,12 @@ resource "aws_apigatewayv2_stage" "prod" {
     })
   }
 
-  # Default throttling — applies to all routes
+  # Default throttling — applies to all routes. Sized for a personal portfolio:
+  # the app-level limiter allows 20 req/min per IP, so 5 rps aggregate is ample
+  # headroom while capping the cost blast radius of an unauthenticated endpoint.
   default_route_settings {
-    throttling_burst_limit   = 50 # Max concurrent requests
-    throttling_rate_limit    = 20 # Requests per second steady state
+    throttling_burst_limit   = 10 # Max burst
+    throttling_rate_limit    = 5  # Requests per second steady state
     detailed_metrics_enabled = true
   }
 }
@@ -146,7 +150,7 @@ resource "aws_lambda_permission" "api_gw" {
 
 # ===========================================================================
 # EventBridge Warm-Up Rule — Keep Lambda warm to avoid cold starts
-# Invokes the /warmup endpoint every 5 minutes during business hours
+# Invokes the warmup path every 5 minutes, around the clock
 # ===========================================================================
 
 resource "aws_cloudwatch_event_rule" "lambda_warmup" {

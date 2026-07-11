@@ -259,6 +259,26 @@ resource "aws_iam_policy" "github_actions_policy" {
         Resource = ["arn:aws:cloudtrail:${var.aws_region}:${local.gha_account_id}:trail/${var.project_name}-*"]
       },
 
+      # --- SQS: project queues only (ingestion dead-letter queue) ---
+      {
+        Sid      = "SqsManagement"
+        Effect   = "Allow"
+        Action   = ["sqs:*"]
+        Resource = ["arn:aws:sqs:${var.aws_region}:${local.gha_account_id}:${var.project_name}-*"]
+      },
+
+      # --- Budgets: cost guardrail for the unauthenticated public endpoint ---
+      # ViewBudget covers all describe APIs; ModifyBudget covers create/update/delete.
+      {
+        Sid    = "BudgetsManagement"
+        Effect = "Allow"
+        Action = [
+          "budgets:ViewBudget",
+          "budgets:ModifyBudget"
+        ]
+        Resource = ["arn:aws:budgets::${local.gha_account_id}:budget/${var.project_name}-*"]
+      },
+
       # --- IAM roles: project roles only ---
       {
         Sid    = "IamRoleManagement"
