@@ -107,6 +107,50 @@ resource "aws_lambda_function" "ingestion" {
   ]
 }
 
+# ---------------------------------------------------------------------------
+# Dead-Letter Queue — async S3-triggered invokes retry twice, then the event
+# is LOST unless captured. Failed ingestion events land here (with the full
+# payload) so a bad document never silently vanishes from the knowledge base.
+# ---------------------------------------------------------------------------
+
+resource "aws_sqs_queue" "ingestion_dlq" {
+  name                      = "${var.project_name}-ingestion-dlq"
+  message_retention_seconds = 1209600 # 14 days to notice + replay
+  sqs_managed_sse_enabled   = true
+  tags                      = { Name = "${var.project_name}-ingestion-dlq" }
+}
+
+resource "aws_lambda_function_event_invoke_config" "ingestion" {
+  function_name          = aws_lambda_function.ingestion.function_name
+  maximum_retry_attempts = 2
+
+  destination_config {
+    on_failure {
+      destination = aws_sqs_queue.ingestion_dlq.arn
+    }
+  }
+}
+
+# Alert the moment anything lands in the DLQ
+resource "aws_cloudwatch_metric_alarm" "ingestion_dlq" {
+  alarm_name          = "${var.project_name}-ingestion-dlq-messages"
+  alarm_description   = "An ingestion event failed all retries and landed in the DLQ — a document did NOT make it into the knowledge base"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "ApproximateNumberOfMessagesVisible"
+  namespace           = "AWS/SQS"
+  period              = 300
+  statistic           = "Maximum"
+  threshold           = 1
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    QueueName = aws_sqs_queue.ingestion_dlq.name
+  }
+
+  alarm_actions = [aws_sns_topic.alerts.arn]
+}
+
 # ===========================================================================
 # S3 Event Trigger for Lambda
 # ===========================================================================
