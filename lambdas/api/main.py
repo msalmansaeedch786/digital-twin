@@ -119,7 +119,7 @@ class AIEngine:
 
             # 1. Bedrock Embeddings
             embeddings = BedrockEmbeddings(
-                model_id="amazon.titan-embed-text-v2:0",
+                model_id=os.environ.get("BEDROCK_EMBEDDING_MODEL_ID", "amazon.titan-embed-text-v2:0"),
                 region_name=region,
                 config=_boto_config,
             )
@@ -135,11 +135,15 @@ class AIEngine:
             )
             retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
 
-            # 3. Bedrock LLM — Nova Lite
+            # 3. Bedrock LLM — Nova Lite.
+            # Nova routes through the Converse API; langchain-aws only forwards
+            # allowlisted model_kwargs ("max_tokens", "temperature", ...) — the
+            # previous "max_gen_len" (a Llama param) was silently dropped,
+            # leaving responses uncapped.
             llm = ChatBedrock(
-                model_id="eu.amazon.nova-lite-v1:0",
+                model_id=os.environ.get("BEDROCK_LLM_MODEL_ID", "eu.amazon.nova-lite-v1:0"),
                 region_name=region,
-                model_kwargs={"temperature": 0.1, "max_gen_len": 512},
+                model_kwargs={"temperature": 0.1, "max_tokens": 512},
                 config=_boto_config,
             )
 

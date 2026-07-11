@@ -94,10 +94,11 @@ resource "aws_lambda_function" "ingestion" {
 
   environment {
     variables = {
-      DB_HOST       = aws_db_instance.postgres.address
-      DB_NAME       = aws_db_instance.postgres.db_name
-      DB_SECRET_ARN = aws_db_instance.postgres.master_user_secret[0].secret_arn
-      ENVIRONMENT   = "production"
+      DB_HOST                    = aws_db_instance.postgres.address
+      DB_NAME                    = aws_db_instance.postgres.db_name
+      DB_SECRET_ARN              = aws_db_instance.postgres.master_user_secret[0].secret_arn
+      ENVIRONMENT                = "production"
+      BEDROCK_EMBEDDING_MODEL_ID = var.bedrock_embedding_model_id
     }
   }
 
@@ -123,8 +124,10 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.ingestion.arn
-    events              = ["s3:ObjectCreated:*"]
-    # Only trigger on document files — ignore other objects
+    # ObjectRemoved:* covers both hard deletes and the DeleteMarkerCreated
+    # events this versioned bucket emits on `aws s3 sync --delete`, so the
+    # Lambda can purge a deleted file's vectors from pgvector.
+    events        = ["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]
     filter_suffix = ""
   }
 

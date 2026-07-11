@@ -274,7 +274,17 @@ export default function AvatarMode() {
               textAlign: "left"
             }}>
               {msg.role === "bot" ? (
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    // LLM output is untrusted: render links defensively so a
+                    // prompt-injected URL can't masquerade as an endorsed link
+                    // or run in this tab's context.
+                    a: ({ node, ...props }) => (
+                      <a {...props} target="_blank" rel="nofollow noopener noreferrer" />
+                    ),
+                  }}
+                >
                   {msg.content}
                 </ReactMarkdown>
               ) : (

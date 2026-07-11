@@ -67,10 +67,13 @@ resource "aws_iam_policy" "lambda_api_custom" {
           "bedrock:InvokeModel",
           "bedrock:InvokeModelWithResponseStream"
         ]
+        # Model ids come from variables.tf so the env vars and this policy can
+        # never drift apart. The inference profile keeps its geo prefix ("eu.");
+        # the underlying foundation-model ARN drops it.
         Resource = [
-          "arn:aws:bedrock:${var.aws_region}::foundation-model/amazon.titan-embed-text-v2:0",
-          "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/eu.amazon.nova-lite-v1:0",
-          "arn:aws:bedrock:*::foundation-model/amazon.nova-lite-v1:0"
+          "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_embedding_model_id}",
+          "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/${var.bedrock_llm_model_id}",
+          "arn:aws:bedrock:*::foundation-model/${trimprefix(var.bedrock_llm_model_id, "eu.")}"
         ]
       }
     ]
@@ -142,7 +145,7 @@ resource "aws_iam_policy" "lambda_ingestion_custom" {
         Effect = "Allow"
         Action = ["bedrock:InvokeModel"]
         Resource = [
-          "arn:aws:bedrock:${var.aws_region}::foundation-model/amazon.titan-embed-text-v2:0"
+          "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_embedding_model_id}"
         ]
       }
     ]

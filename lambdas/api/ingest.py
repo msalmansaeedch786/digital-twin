@@ -35,6 +35,26 @@ def init_db(connection_string: str):
             cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
     logger.info("pgvector extension verified")
 
+COLLECTION_NAME = "digital_twin_docs"
+
+def delete_chunks_for_key(connection_string: str, source_key: str) -> int:
+    """Delete previously ingested chunks for a file (same upsert semantics as the
+    deployed ingestion Lambda — keep the two in sync)."""
+    raw_conn_string = connection_string.replace("postgresql+psycopg://", "postgresql://")
+    with psycopg.connect(raw_conn_string, autocommit=True) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                DELETE FROM langchain_pg_embedding
+                WHERE collection_id = (
+                    SELECT uuid FROM langchain_pg_collection WHERE name = %s
+                )
+                AND cmetadata->>'source_key' = %s
+                """,
+                (COLLECTION_NAME, source_key),
+            )
+            return cur.rowcount
+
 def main():
     logger.info("Starting local data ingestion process...")
 
@@ -64,10 +84,15 @@ def main():
     chunks = text_splitter.split_documents(all_docs)
     logger.info(f"Created {len(chunks)} text chunks.")
 
+    # Tag every chunk with source_key (the filename), matching the deployed
+    # ingestion Lambda's metadata so upsert/delete works across both paths.
+    for chunk in chunks:
+        chunk.metadata["source_key"] = os.path.basename(chunk.metadata.get("source", "unknown"))
+
     # 3. Setup Bedrock Embeddings and PGVector
     region = os.environ.get("AWS_REGION", "eu-central-1")
     embeddings = BedrockEmbeddings(
-        model_id="amazon.titan-embed-text-v2:0",
+        model_id=os.environ.get("BEDROCK_EMBEDDING_MODEL_ID", "amazon.titan-embed-text-v2:0"),
         region_name=region,
     )
 
@@ -76,12 +101,18 @@ def main():
 
     vector_store = PGVector(
         embeddings=embeddings,
-        collection_name="digital_twin_docs",
+        collection_name=COLLECTION_NAME,
         connection=conn_string,
         use_jsonb=True,
     )
 
-    # 4. Store in PostgreSQL
+    # 4. Upsert: purge old chunks for each file so re-runs replace, not duplicate
+    for key in sorted({c.metadata["source_key"] for c in chunks}):
+        deleted = delete_chunks_for_key(conn_string, key)
+        if deleted:
+            logger.info(f"Purged {deleted} old chunks for {key}")
+
+    # 5. Store in PostgreSQL
     logger.info("Generating embeddings via Amazon Bedrock and storing in PostgreSQL (pgvector)...")
 
     # Process in batches to avoid rate limits
