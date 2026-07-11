@@ -135,7 +135,14 @@ resource "aws_iam_policy" "github_actions_policy" {
           "kms:GetKeyPolicy",
           "kms:GetKeyRotationStatus",
           "amplify:List*",
-          "amplify:Get*"
+          "amplify:Get*",
+          # Amplify custom-domain setup calls these to detect whether the domain
+          # is Route53-hosted (salman.is-a.dev is external, so it finds none and
+          # falls back to manual DNS records). Read-only, account-level.
+          "route53:ListHostedZones",
+          "route53:ListHostedZonesByName",
+          "route53:GetHostedZone",
+          "route53:ListResourceRecordSets"
         ]
         Resource = "*"
       },
