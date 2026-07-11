@@ -24,6 +24,12 @@ export default function AvatarMode() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // The chat UI is always dark. Force it regardless of the portfolio's saved
+  // theme, and do NOT write to localStorage so the portfolio keeps the user's choice.
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", "dark");
+  }, []);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages, isSpeaking]);
