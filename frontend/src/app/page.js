@@ -8,11 +8,11 @@ import { FiGithub, FiLinkedin, FiYoutube } from "react-icons/fi";
 import Link from "next/link";
 
 export default function Portfolio() {
-  const [theme, setTheme] = useState("dark");
+  const [theme, setTheme] = useState("light");
 
   useEffect(() => {
-    // Read theme from localStorage or default to dark
-    const savedTheme = localStorage.getItem("theme") || "dark";
+    // Read theme from localStorage or default to light (the chat page forces dark)
+    const savedTheme = localStorage.getItem("theme") || "light";
     setTheme(savedTheme);
     document.documentElement.setAttribute("data-theme", savedTheme);
   }, []);
