@@ -268,15 +268,38 @@ resource "aws_iam_policy" "github_actions_policy" {
       },
 
       # --- Budgets: cost guardrail for the unauthenticated public endpoint ---
-      # ViewBudget covers all describe APIs; ModifyBudget covers create/update/delete.
+      # ViewBudget covers all describe APIs; ModifyBudget covers create/update/
+      # delete. Tag actions are required because provider default_tags makes
+      # CreateBudget tag the resource at creation.
       {
         Sid    = "BudgetsManagement"
         Effect = "Allow"
         Action = [
           "budgets:ViewBudget",
-          "budgets:ModifyBudget"
+          "budgets:ModifyBudget",
+          "budgets:TagResource",
+          "budgets:UntagResource",
+          "budgets:ListTagsForResource"
         ]
         Resource = ["arn:aws:budgets::${local.gha_account_id}:budget/${var.project_name}-*"]
+      },
+
+      # --- CloudWatch Logs delivery: required to create/update API Gateway
+      # stages that have access logging. These actions manage the log-delivery
+      # plumbing itself and do not support resource-level scoping.
+      {
+        Sid    = "LogsDeliveryForApiGatewayAccessLogs"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogDelivery",
+          "logs:GetLogDelivery",
+          "logs:UpdateLogDelivery",
+          "logs:DeleteLogDelivery",
+          "logs:ListLogDeliveries",
+          "logs:PutResourcePolicy",
+          "logs:DescribeResourcePolicies"
+        ]
+        Resource = "*"
       },
 
       # --- IAM roles: project roles only ---
