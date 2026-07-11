@@ -16,3 +16,13 @@ output "s3_bucket_name" {
   description = "Name of the knowledge-base S3 bucket (consumed by the data_sync workflow)"
   value       = aws_s3_bucket.knowledge_base.bucket
 }
+
+output "custom_domain_cert_validation_record" {
+  description = "ACM validation CNAME to add at the domain provider (is-a.dev) to issue the SSL cert"
+  value       = var.custom_domain == "" ? null : aws_amplify_domain_association.custom[0].certificate_verification_dns_record
+}
+
+output "custom_domain_sub_domains" {
+  description = "Sub-domain CNAME record(s) mapping the custom domain to the Amplify app"
+  value       = var.custom_domain == "" ? null : aws_amplify_domain_association.custom[0].sub_domain
+}
