@@ -147,6 +147,13 @@ resource "aws_iam_policy" "lambda_ingestion_custom" {
         Resource = [
           "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_embedding_model_id}"
         ]
+      },
+      {
+        # Lambda delivers failed async events to the DLQ using THIS role
+        Sid      = "DlqSendMessage"
+        Effect   = "Allow"
+        Action   = ["sqs:SendMessage"]
+        Resource = [aws_sqs_queue.ingestion_dlq.arn]
       }
     ]
   })
