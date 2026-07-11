@@ -31,6 +31,11 @@ from langchain.chains.combine_documents.stuff import create_stuff_documents_chai
 # CloudWatch Logs Insights can query with filter/aggregate natively
 # ===========================================================================
 
+# Standard LogRecord attributes — anything else on the record came in via
+# `extra=` and should be included in the JSON output.
+_STANDARD_LOG_ATTRS = set(vars(logging.makeLogRecord({})).keys()) | {"message", "asctime"}
+
+
 class JSONFormatter(logging.Formatter):
     """Formats log records as single-line JSON for CloudWatch Logs Insights."""
     def format(self, record: logging.LogRecord) -> str:
@@ -41,13 +46,20 @@ class JSONFormatter(logging.Formatter):
             "message": record.getMessage(),
             "function": record.funcName,
         }
+        # Surface extra= fields (message_length, history_length, ...) as JSON keys
+        for k, v in record.__dict__.items():
+            if k not in _STANDARD_LOG_ATTRS and not k.startswith("_"):
+                log_object[k] = v if isinstance(v, (str, int, float, bool, type(None))) else str(v)
         if record.exc_info:
             log_object["exception"] = self.formatException(record.exc_info)
         return json.dumps(log_object)
 
-handler = logging.StreamHandler()
-handler.setFormatter(JSONFormatter())
-logging.basicConfig(level=logging.INFO, handlers=[handler])
+log_handler = logging.StreamHandler()
+log_handler.setFormatter(JSONFormatter())
+# force=True: the Lambda runtime pre-installs a root handler, which makes a
+# plain basicConfig() a silent no-op — INFO logs were dropped entirely and the
+# JSON formatter never ran. force removes the runtime handler first.
+logging.basicConfig(level=logging.INFO, handlers=[log_handler], force=True)
 logger = logging.getLogger("digital-twin")
 
 # ===========================================================================
