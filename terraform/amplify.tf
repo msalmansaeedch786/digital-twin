@@ -99,6 +99,10 @@ resource "aws_amplify_domain_association" "custom" {
     branch_name = aws_amplify_branch.feature.branch_name
     prefix      = "" # map the domain apex itself (salman.is-a.dev)
   }
+
+  # Amplify calls route53:ListHostedZones during setup, so the deploy role's
+  # policy (which grants it) must be updated before this association is created.
+  depends_on = [aws_iam_policy.github_actions_policy]
 }
 
 # Automatically trigger a build when a new branch is created
