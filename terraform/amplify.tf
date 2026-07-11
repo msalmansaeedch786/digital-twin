@@ -83,6 +83,24 @@ resource "aws_amplify_branch" "feature" {
   }
 }
 
+# Custom domain (e.g. salman.is-a.dev). The DNS records are hosted by the
+# domain provider (is-a.dev, via PR), so we DON'T wait for verification here —
+# otherwise `terraform apply` would block until the records are added manually.
+# After apply, read the required records with:
+#   aws amplify get-domain-association --app-id <id> --domain-name <domain>
+resource "aws_amplify_domain_association" "custom" {
+  count       = var.custom_domain == "" ? 0 : 1
+  app_id      = aws_amplify_app.frontend.id
+  domain_name = var.custom_domain
+
+  wait_for_verification = false
+
+  sub_domain {
+    branch_name = aws_amplify_branch.feature.branch_name
+    prefix      = "" # map the domain apex itself (salman.is-a.dev)
+  }
+}
+
 # Automatically trigger a build when a new branch is created
 resource "terraform_data" "trigger_amplify_build" {
   triggers_replace = [

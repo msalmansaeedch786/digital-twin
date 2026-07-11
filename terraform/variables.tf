@@ -33,3 +33,9 @@ variable "git_branch" {
   type        = string
   default     = "main"
 }
+
+variable "custom_domain" {
+  description = "Custom domain to attach to the Amplify app (e.g. salman.is-a.dev). Empty string disables the custom-domain association."
+  type        = string
+  default     = "salman.is-a.dev"
+}
