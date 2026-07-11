@@ -15,6 +15,11 @@ import psycopg
 # Structured JSON Logging (mirrors the API Lambda pattern)
 # ===========================================================================
 
+# Standard LogRecord attributes — anything else on the record came in via
+# `extra=` and should be included in the JSON output.
+_STANDARD_LOG_ATTRS = set(vars(logging.makeLogRecord({})).keys()) | {"message", "asctime"}
+
+
 class JSONFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         import json as _json
@@ -24,13 +29,20 @@ class JSONFormatter(logging.Formatter):
             "logger": record.name,
             "message": record.getMessage(),
         }
+        # Surface extra= fields (key, chunk counts, ...) so they are queryable
+        for k, v in record.__dict__.items():
+            if k not in _STANDARD_LOG_ATTRS and not k.startswith("_"):
+                log_obj[k] = v if isinstance(v, (str, int, float, bool, type(None))) else str(v)
         if record.exc_info:
             log_obj["exception"] = self.formatException(record.exc_info)
         return _json.dumps(log_obj)
 
 _handler = logging.StreamHandler()
 _handler.setFormatter(JSONFormatter())
-logging.basicConfig(level=logging.INFO, handlers=[_handler])
+# force=True: the Lambda runtime pre-installs a root handler, which makes a
+# plain basicConfig() a silent no-op — INFO logs were dropped entirely and the
+# JSON formatter never ran. force removes the runtime handler first.
+logging.basicConfig(level=logging.INFO, handlers=[_handler], force=True)
 logger = logging.getLogger("digital-twin-ingestion")
 
 # ===========================================================================
