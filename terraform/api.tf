@@ -2,6 +2,18 @@
 # Lambda Function — Backend API
 # ===========================================================================
 
+locals {
+  # The origins allowed to call the API: the Amplify branch domain, the custom
+  # domain (salman.is-a.dev) when set, and localhost for dev. Used for both the
+  # Lambda ALLOWED_ORIGINS env var and the API Gateway CORS config.
+  amplify_origin = "https://${replace(var.git_branch, "/", "-")}.${aws_amplify_app.frontend.default_domain}"
+  allowed_origins = concat(
+    [local.amplify_origin],
+    var.custom_domain == "" ? [] : ["https://${var.custom_domain}"],
+    ["http://localhost:3000"],
+  )
+}
+
 resource "aws_cloudwatch_log_group" "lambda_api" {
   name              = "/aws/lambda/${var.project_name}-api"
   retention_in_days = 30
@@ -47,7 +59,7 @@ resource "aws_lambda_function" "api" {
       DB_SECRET_ARN     = aws_db_instance.postgres.master_user_secret[0].secret_arn
       AWS_EXECUTION_ENV = "AWS_Lambda_python3.12"
       ENVIRONMENT       = "production"
-      ALLOWED_ORIGINS   = "https://${replace(var.git_branch, "/", "-")}.${aws_amplify_app.frontend.default_domain},http://localhost:3000"
+      ALLOWED_ORIGINS   = join(",", local.allowed_origins)
     }
   }
 
@@ -66,7 +78,7 @@ resource "aws_apigatewayv2_api" "main" {
 
   # CORS: Locked down to the specific Amplify frontend domain only
   cors_configuration {
-    allow_origins     = ["https://${replace(var.git_branch, "/", "-")}.${aws_amplify_app.frontend.default_domain}", "http://localhost:3000"]
+    allow_origins     = local.allowed_origins
     allow_methods     = ["POST", "GET", "OPTIONS"]
     allow_headers     = ["content-type"]
     allow_credentials = false # No cookies/sessions — credentials not needed
