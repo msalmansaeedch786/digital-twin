@@ -74,16 +74,14 @@ resource "aws_budgets_budget" "monthly" {
 # Detection runs ~daily (it is not real-time — the abuse alarm below is).
 # ===========================================================================
 
-resource "aws_ce_anomaly_monitor" "services" {
-  name              = "${var.project_name}-anomaly-monitor"
-  monitor_type      = "DIMENSIONAL"
-  monitor_dimension = "SERVICE"
-}
-
+# AWS allows only ONE dimensional (by-service) anomaly monitor per account, and
+# it auto-created "Default-Services-Monitor". We reuse that monitor (its ARN is
+# in var.anomaly_monitor_arn) and just attach our own subscription — personal
+# email, immediate, with a dollar threshold.
 resource "aws_ce_anomaly_subscription" "email" {
   name             = "${var.project_name}-anomaly-subscription"
   frequency        = "IMMEDIATE" # alert per anomaly as soon as it is detected
-  monitor_arn_list = [aws_ce_anomaly_monitor.services.arn]
+  monitor_arn_list = [var.anomaly_monitor_arn]
 
   subscriber {
     type    = "EMAIL"
