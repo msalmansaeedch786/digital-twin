@@ -53,7 +53,13 @@ variable "bedrock_embedding_model_id" {
 }
 
 variable "monthly_budget_usd" {
-  description = "Monthly cost budget in USD — email alerts fire at 80% actual and 100% forecasted."
+  description = "Monthly cost budget in USD — email alerts fire at 80% actual and 100% forecasted. Tracks GROSS usage (credits excluded) so it is live even while free credits apply."
   type        = number
-  default     = 25
+  default     = 45
+}
+
+variable "abuse_request_threshold_15m" {
+  description = "API Gateway request count over a 15-minute window that triggers the real-time abuse alarm. A normal visitor sends well under 100; the 5 req/s throttle caps a sustained flood at ~4500 per 15 min."
+  type        = number
+  default     = 1000
 }

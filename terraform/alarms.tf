@@ -31,6 +31,24 @@ resource "aws_budgets_budget" "monthly" {
   limit_unit   = "USD"
   time_unit    = "MONTHLY"
 
+  # Track GROSS usage: count what AWS *would* charge, ignoring credits/refunds.
+  # Without this the budget measures net (~$0 while credits apply) and stays
+  # dormant — this makes it live now so abuse-driven usage is visible even
+  # though credits are footing the bill.
+  cost_types {
+    include_credit             = false
+    include_refund             = false
+    include_discount           = true
+    use_amortized              = false
+    include_tax                = true
+    include_subscription       = true
+    include_upfront            = true
+    include_recurring          = true
+    include_other_subscription = true
+    include_support            = true
+    use_blended                = false
+  }
+
   notification {
     comparison_operator        = "GREATER_THAN"
     threshold                  = 80
@@ -46,6 +64,32 @@ resource "aws_budgets_budget" "monthly" {
     notification_type          = "FORECASTED"
     subscriber_email_addresses = [var.alert_email]
   }
+}
+
+# ===========================================================================
+# Real-time abuse alarm — the public /chat endpoint gets hammered
+# Fires within ~5 min (CloudWatch metrics, not billing data) if request volume
+# spikes far above what a real visitor produces. This is the fast tripwire;
+# the budget above is the slow money backstop.
+# ===========================================================================
+
+resource "aws_cloudwatch_metric_alarm" "api_abuse" {
+  alarm_name        = "${var.project_name}-api-abuse"
+  alarm_description = "API Gateway request volume spiked — possible abuse of the public /chat endpoint. Check the source IP in the API Gateway access logs."
+
+  namespace   = "AWS/ApiGateway"
+  metric_name = "Count"
+  dimensions  = { ApiId = aws_apigatewayv2_api.main.id }
+
+  statistic           = "Sum"
+  period              = 900 # 15-minute window
+  evaluation_periods  = 1
+  comparison_operator = "GreaterThanThreshold"
+  threshold           = var.abuse_request_threshold_15m
+  treat_missing_data  = "notBreaching"
+
+  alarm_actions = [aws_sns_topic.alerts.arn]
+  ok_actions    = [aws_sns_topic.alerts.arn]
 }
 
 # ===========================================================================
