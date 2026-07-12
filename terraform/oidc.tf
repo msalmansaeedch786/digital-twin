@@ -284,6 +284,28 @@ resource "aws_iam_policy" "github_actions_policy" {
         Resource = ["arn:aws:budgets::${local.gha_account_id}:budget/${var.project_name}-*"]
       },
 
+      # --- Cost Anomaly Detection: ML tripwire for spend above the normal
+      # pattern. These actions manage anomaly monitors/subscriptions and cannot
+      # be ARN-scoped by AWS at create time. Cost-management scope, low risk.
+      {
+        Sid    = "CostAnomalyDetection"
+        Effect = "Allow"
+        Action = [
+          "ce:CreateAnomalyMonitor",
+          "ce:UpdateAnomalyMonitor",
+          "ce:DeleteAnomalyMonitor",
+          "ce:GetAnomalyMonitors",
+          "ce:CreateAnomalySubscription",
+          "ce:UpdateAnomalySubscription",
+          "ce:DeleteAnomalySubscription",
+          "ce:GetAnomalySubscriptions",
+          "ce:TagResource",
+          "ce:UntagResource",
+          "ce:ListTagsForResource"
+        ]
+        Resource = "*"
+      },
+
       # --- CloudWatch Logs delivery: required to create/update API Gateway
       # stages that have access logging. These actions manage the log-delivery
       # plumbing itself and do not support resource-level scoping.
