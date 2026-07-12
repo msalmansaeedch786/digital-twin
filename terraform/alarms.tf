@@ -17,6 +17,44 @@ resource "aws_sns_topic_subscription" "email" {
   endpoint  = var.alert_email
 }
 
+# Topic access policy — preserves same-account + CloudWatch publishing and adds
+# the Cost Anomaly Detection service so it can push anomaly alerts here.
+resource "aws_sns_topic_policy" "alerts" {
+  arn = aws_sns_topic.alerts.arn
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "DefaultAccountAccess"
+        Effect    = "Allow"
+        Principal = { AWS = "*" }
+        Action = [
+          "SNS:Publish", "SNS:Subscribe", "SNS:Receive",
+          "SNS:GetTopicAttributes", "SNS:SetTopicAttributes",
+          "SNS:AddPermission", "SNS:RemovePermission",
+          "SNS:DeleteTopic", "SNS:ListSubscriptionsByTopic"
+        ]
+        Resource  = aws_sns_topic.alerts.arn
+        Condition = { StringEquals = { "AWS:SourceOwner" = data.aws_caller_identity.current.account_id } }
+      },
+      {
+        Sid       = "AllowCloudWatchAlarms"
+        Effect    = "Allow"
+        Principal = { Service = "cloudwatch.amazonaws.com" }
+        Action    = "SNS:Publish"
+        Resource  = aws_sns_topic.alerts.arn
+      },
+      {
+        Sid       = "AllowCostAnomalyDetection"
+        Effect    = "Allow"
+        Principal = { Service = "costalerts.amazonaws.com" }
+        Action    = "SNS:Publish"
+        Resource  = aws_sns_topic.alerts.arn
+      }
+    ]
+  })
+}
+
 # ===========================================================================
 # Cost Guardrail — the /chat endpoint is public and unauthenticated, and every
 # request invokes Bedrock. A budget alert is the cheapest defense against
@@ -83,10 +121,16 @@ resource "aws_ce_anomaly_subscription" "email" {
   frequency        = "IMMEDIATE" # alert per anomaly as soon as it is detected
   monitor_arn_list = [var.anomaly_monitor_arn]
 
+  # IMMEDIATE frequency requires an SNS subscriber (AWS restriction). Route
+  # through the alerts topic — which already has a confirmed email subscription.
   subscriber {
-    type    = "EMAIL"
-    address = var.alert_email
+    type    = "SNS"
+    address = aws_sns_topic.alerts.arn
   }
+
+  # The topic policy granting costalerts.amazonaws.com publish rights must exist
+  # first, or CreateAnomalySubscription fails its publish-permission check.
+  depends_on = [aws_sns_topic_policy.alerts]
 
   # Only alert when the anomaly's dollar impact is >= the threshold, so normal
   # daily wiggle does not page you.
