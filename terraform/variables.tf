@@ -63,3 +63,9 @@ variable "abuse_request_threshold_15m" {
   type        = number
   default     = 1000
 }
+
+variable "anomaly_alert_threshold_usd" {
+  description = "Cost Anomaly Detection: email when a detected anomaly's dollar impact is at least this much above the normal spend pattern. AWS only flags statistically unusual spend, so very low values mostly add noise; ~1 USD is the practical floor."
+  type        = number
+  default     = 1
+}
