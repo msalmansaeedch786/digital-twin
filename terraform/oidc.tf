@@ -259,71 +259,6 @@ resource "aws_iam_policy" "github_actions_policy" {
         Resource = ["arn:aws:cloudtrail:${var.aws_region}:${local.gha_account_id}:trail/${var.project_name}-*"]
       },
 
-      # --- SQS: project queues only (ingestion dead-letter queue) ---
-      {
-        Sid      = "SqsManagement"
-        Effect   = "Allow"
-        Action   = ["sqs:*"]
-        Resource = ["arn:aws:sqs:${var.aws_region}:${local.gha_account_id}:${var.project_name}-*"]
-      },
-
-      # --- Budgets: cost guardrail for the unauthenticated public endpoint ---
-      # ViewBudget covers all describe APIs; ModifyBudget covers create/update/
-      # delete. Tag actions are required because provider default_tags makes
-      # CreateBudget tag the resource at creation.
-      {
-        Sid    = "BudgetsManagement"
-        Effect = "Allow"
-        Action = [
-          "budgets:ViewBudget",
-          "budgets:ModifyBudget",
-          "budgets:TagResource",
-          "budgets:UntagResource",
-          "budgets:ListTagsForResource"
-        ]
-        Resource = ["arn:aws:budgets::${local.gha_account_id}:budget/${var.project_name}-*"]
-      },
-
-      # --- Cost Anomaly Detection: ML tripwire for spend above the normal
-      # pattern. These actions manage anomaly monitors/subscriptions and cannot
-      # be ARN-scoped by AWS at create time. Cost-management scope, low risk.
-      {
-        Sid    = "CostAnomalyDetection"
-        Effect = "Allow"
-        Action = [
-          "ce:CreateAnomalyMonitor",
-          "ce:UpdateAnomalyMonitor",
-          "ce:DeleteAnomalyMonitor",
-          "ce:GetAnomalyMonitors",
-          "ce:CreateAnomalySubscription",
-          "ce:UpdateAnomalySubscription",
-          "ce:DeleteAnomalySubscription",
-          "ce:GetAnomalySubscriptions",
-          "ce:TagResource",
-          "ce:UntagResource",
-          "ce:ListTagsForResource"
-        ]
-        Resource = "*"
-      },
-
-      # --- CloudWatch Logs delivery: required to create/update API Gateway
-      # stages that have access logging. These actions manage the log-delivery
-      # plumbing itself and do not support resource-level scoping.
-      {
-        Sid    = "LogsDeliveryForApiGatewayAccessLogs"
-        Effect = "Allow"
-        Action = [
-          "logs:CreateLogDelivery",
-          "logs:GetLogDelivery",
-          "logs:UpdateLogDelivery",
-          "logs:DeleteLogDelivery",
-          "logs:ListLogDeliveries",
-          "logs:PutResourcePolicy",
-          "logs:DescribeResourcePolicies"
-        ]
-        Resource = "*"
-      },
-
       # --- IAM roles: project roles only ---
       {
         Sid    = "IamRoleManagement"
@@ -413,4 +348,78 @@ resource "aws_iam_policy" "github_actions_policy" {
 resource "aws_iam_role_policy_attachment" "github_actions" {
   role       = aws_iam_role.github_actions.name
   policy_arn = aws_iam_policy.github_actions_policy.arn
+}
+
+# ---------------------------------------------------------------------------
+# SECOND deploy policy — operational/cost guardrails.
+# Split out because the primary policy hit the 6,144-char IAM managed-policy
+# size limit. Same least-privilege intent, just a separate document.
+# ---------------------------------------------------------------------------
+
+resource "aws_iam_policy" "github_actions_ops" {
+  name        = "${var.project_name}-github-actions-ops-policy"
+  description = "Deploy perms for operational/cost resources (SQS DLQ, Budgets, Cost Anomaly Detection, API GW log delivery)"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "SqsManagement"
+        Effect   = "Allow"
+        Action   = ["sqs:*"]
+        Resource = ["arn:aws:sqs:${var.aws_region}:${local.gha_account_id}:${var.project_name}-*"]
+      },
+      {
+        Sid    = "BudgetsManagement"
+        Effect = "Allow"
+        Action = [
+          "budgets:ViewBudget",
+          "budgets:ModifyBudget",
+          "budgets:TagResource",
+          "budgets:UntagResource",
+          "budgets:ListTagsForResource"
+        ]
+        Resource = ["arn:aws:budgets::${local.gha_account_id}:budget/${var.project_name}-*"]
+      },
+      {
+        # Cost Anomaly Detection — cannot be ARN-scoped at create time.
+        Sid    = "CostAnomalyDetection"
+        Effect = "Allow"
+        Action = [
+          "ce:CreateAnomalyMonitor",
+          "ce:UpdateAnomalyMonitor",
+          "ce:DeleteAnomalyMonitor",
+          "ce:GetAnomalyMonitors",
+          "ce:CreateAnomalySubscription",
+          "ce:UpdateAnomalySubscription",
+          "ce:DeleteAnomalySubscription",
+          "ce:GetAnomalySubscriptions",
+          "ce:TagResource",
+          "ce:UntagResource",
+          "ce:ListTagsForResource"
+        ]
+        Resource = "*"
+      },
+      {
+        # Log-delivery plumbing for API Gateway access logs — not ARN-scopable.
+        Sid    = "LogsDeliveryForApiGatewayAccessLogs"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogDelivery",
+          "logs:GetLogDelivery",
+          "logs:UpdateLogDelivery",
+          "logs:DeleteLogDelivery",
+          "logs:ListLogDeliveries",
+          "logs:PutResourcePolicy",
+          "logs:DescribeResourcePolicies"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "github_actions_ops" {
+  role       = aws_iam_role.github_actions.name
+  policy_arn = aws_iam_policy.github_actions_ops.arn
 }
