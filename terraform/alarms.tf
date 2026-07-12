@@ -67,6 +67,41 @@ resource "aws_budgets_budget" "monthly" {
 }
 
 # ===========================================================================
+# Cost Anomaly Detection — the "fraud alert" for AWS spend. Learns your normal
+# daily pattern (~$0.85/day) and emails when spend deviates above it, regardless
+# of the absolute monthly total. This is what catches "cost is higher than it
+# should be" without the false alarms a tight fixed budget would produce.
+# Detection runs ~daily (it is not real-time — the abuse alarm below is).
+# ===========================================================================
+
+resource "aws_ce_anomaly_monitor" "services" {
+  name              = "${var.project_name}-anomaly-monitor"
+  monitor_type      = "DIMENSIONAL"
+  monitor_dimension = "SERVICE"
+}
+
+resource "aws_ce_anomaly_subscription" "email" {
+  name             = "${var.project_name}-anomaly-subscription"
+  frequency        = "IMMEDIATE" # alert per anomaly as soon as it is detected
+  monitor_arn_list = [aws_ce_anomaly_monitor.services.arn]
+
+  subscriber {
+    type    = "EMAIL"
+    address = var.alert_email
+  }
+
+  # Only alert when the anomaly's dollar impact is >= the threshold, so normal
+  # daily wiggle does not page you.
+  threshold_expression {
+    dimension {
+      key           = "ANOMALY_TOTAL_IMPACT_ABSOLUTE"
+      match_options = ["GREATER_THAN_OR_EQUAL"]
+      values        = [tostring(var.anomaly_alert_threshold_usd)]
+    }
+  }
+}
+
+# ===========================================================================
 # Real-time abuse alarm — the public /chat endpoint gets hammered
 # Fires within ~5 min (CloudWatch metrics, not billing data) if request volume
 # spikes far above what a real visitor produces. This is the fast tripwire;
