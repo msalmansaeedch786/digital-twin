@@ -7,17 +7,23 @@ import { Sun, Moon, Mail, Award, ExternalLink, MessageSquare, MapPin } from "luc
 import { FiGithub, FiLinkedin, FiYoutube } from "react-icons/fi";
 import Link from "next/link";
 
-// Terminal wordmark boot sequence: type a greeting, erase it, settle on the name
-const WORDMARK_SEQUENCE = ["welcome :)", "muhammad-salman"];
+// Terminal wordmark: the prompt "~/muhammad-salman:" stays fixed while these
+// messages type out after it, cycling like a live shell.
+const WORDMARK_MESSAGES = [
+  "welcome to my portfolio",
+  "ask my twin anything",
+  "terraform apply -auto-approve",
+  "certified 6x by AWS",
+];
 
 export default function Portfolio() {
   const [theme, setTheme] = useState("light");
   const [typed, setTyped] = useState("");
 
   useEffect(() => {
-    // Respect reduced-motion: skip the animation, show the name immediately
+    // Respect reduced-motion: no animation, just show the welcome
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setTyped(WORDMARK_SEQUENCE[WORDMARK_SEQUENCE.length - 1]);
+      setTyped(WORDMARK_MESSAGES[0]);
       return;
     }
 
@@ -27,31 +33,30 @@ export default function Portfolio() {
     let deleting = false;
 
     const tick = () => {
-      const current = WORDMARK_SEQUENCE[phrase];
+      const current = WORDMARK_MESSAGES[phrase];
       if (!deleting) {
         i += 1;
         setTyped(current.slice(0, i));
         if (i === current.length) {
-          if (phrase === WORDMARK_SEQUENCE.length - 1) return; // settled on the name
           deleting = true;
-          timer = setTimeout(tick, 1400); // linger on the greeting
+          timer = setTimeout(tick, 4200); // let the message be read
           return;
         }
-        timer = setTimeout(tick, 85);
+        timer = setTimeout(tick, 75);
       } else {
         i -= 1;
         setTyped(current.slice(0, i));
         if (i === 0) {
           deleting = false;
-          phrase += 1;
-          timer = setTimeout(tick, 350);
+          phrase = (phrase + 1) % WORDMARK_MESSAGES.length;
+          timer = setTimeout(tick, 500);
           return;
         }
-        timer = setTimeout(tick, 40);
+        timer = setTimeout(tick, 35);
       }
     };
 
-    timer = setTimeout(tick, 500);
+    timer = setTimeout(tick, 600);
     return () => clearTimeout(timer);
   }, []);
 
@@ -118,7 +123,8 @@ export default function Portfolio() {
       {/* Navigation Bar */}
       <nav className="navbar">
         <Link href="/" className="wordmark" aria-label="Home">
-          <span className="prompt">~/</span>{typed}<span className="cursor" />
+          <span className="prompt">~/</span>muhammad-salman<span className="prompt">:</span>
+          <span className="typed-msg">&nbsp;{typed}</span><span className="cursor" />
         </Link>
         <div className="nav-links">
           <a href="#experience" className="nav-link">Experience</a>
