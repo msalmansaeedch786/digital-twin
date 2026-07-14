@@ -304,30 +304,6 @@ h2 {
 
 .meta-chip svg { color: var(--neon-cyan); }
 
-.tech-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
-}
-
-.tech-chip {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.78rem;
-  padding: 0.3rem 0.7rem;
-  border-radius: 8px;
-  color: var(--text-secondary);
-  border: 1px solid var(--glass-border);
-  background: var(--glass-bg);
-  transition: color 0.25s, border-color 0.25s, transform 0.25s;
-}
-
-.tech-chip:hover {
-  color: var(--neon-cyan);
-  border-color: var(--accent-soft-border);
-  transform: translateY(-2px);
-}
-
 /* "Online" presence pill on the twin widget */
 .online-pill {
   position: absolute;
