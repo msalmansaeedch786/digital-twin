@@ -12,8 +12,6 @@ import Link from "next/link";
 const WORDMARK_MESSAGES = [
   "welcome to my portfolio",
   "ask my twin anything",
-  "terraform apply -auto-approve",
-  "certified 6x by AWS",
 ];
 
 export default function Portfolio() {
