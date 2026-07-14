@@ -7,8 +7,53 @@ import { Sun, Moon, Mail, Award, ExternalLink, MessageSquare, MapPin } from "luc
 import { FiGithub, FiLinkedin, FiYoutube } from "react-icons/fi";
 import Link from "next/link";
 
+// Terminal wordmark boot sequence: type a greeting, erase it, settle on the name
+const WORDMARK_SEQUENCE = ["welcome :)", "muhammad-salman"];
+
 export default function Portfolio() {
   const [theme, setTheme] = useState("light");
+  const [typed, setTyped] = useState("");
+
+  useEffect(() => {
+    // Respect reduced-motion: skip the animation, show the name immediately
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setTyped(WORDMARK_SEQUENCE[WORDMARK_SEQUENCE.length - 1]);
+      return;
+    }
+
+    let timer;
+    let i = 0;
+    let phrase = 0;
+    let deleting = false;
+
+    const tick = () => {
+      const current = WORDMARK_SEQUENCE[phrase];
+      if (!deleting) {
+        i += 1;
+        setTyped(current.slice(0, i));
+        if (i === current.length) {
+          if (phrase === WORDMARK_SEQUENCE.length - 1) return; // settled on the name
+          deleting = true;
+          timer = setTimeout(tick, 1400); // linger on the greeting
+          return;
+        }
+        timer = setTimeout(tick, 85);
+      } else {
+        i -= 1;
+        setTyped(current.slice(0, i));
+        if (i === 0) {
+          deleting = false;
+          phrase += 1;
+          timer = setTimeout(tick, 350);
+          return;
+        }
+        timer = setTimeout(tick, 40);
+      }
+    };
+
+    timer = setTimeout(tick, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     // Read theme from localStorage or default to light (the chat page forces dark)
@@ -73,7 +118,7 @@ export default function Portfolio() {
       {/* Navigation Bar */}
       <nav className="navbar">
         <Link href="/" className="wordmark" aria-label="Home">
-          <span className="prompt">~/</span>muhammad-salman<span className="cursor" />
+          <span className="prompt">~/</span>{typed}<span className="cursor" />
         </Link>
         <div className="nav-links">
           <a href="#experience" className="nav-link">Experience</a>
