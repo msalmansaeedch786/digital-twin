@@ -140,6 +140,16 @@ a:focus-visible, button:focus-visible {
 }
 
 .wordmark .prompt { color: var(--neon-cyan); }
+
+.wordmark .typed-msg {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+/* Keep the navbar tidy on small screens: prompt stays, message hides */
+@media (max-width: 640px) {
+  .wordmark .typed-msg { display: none; }
+}
 .wordmark .cursor {
   display: inline-block;
   width: 8px;
