@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Tilt from "react-parallax-tilt";
-import { Sun, Moon, Mail, Award, ExternalLink, MessageSquare } from "lucide-react";
+import { Sun, Moon, Mail, Award, ExternalLink, MessageSquare, MapPin } from "lucide-react";
 import { FiGithub, FiLinkedin, FiYoutube } from "react-icons/fi";
 import Link from "next/link";
 
@@ -72,7 +72,9 @@ export default function Portfolio() {
 
       {/* Navigation Bar */}
       <nav className="navbar">
-        <div></div>
+        <Link href="/" className="wordmark" aria-label="Home">
+          <span className="prompt">~/</span>muhammad-salman<span className="cursor" />
+        </Link>
         <div className="nav-links">
           <a href="#experience" className="nav-link">Experience</a>
           <a href="#education" className="nav-link">Education</a>
@@ -94,10 +96,19 @@ export default function Portfolio() {
             {/* LEFT COLUMN: Main Intro */}
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
               <h1>Hi, I'm <span className="text-accent">Muhammad Salman</span></h1>
-              <h2 style={{ fontSize: "1.8rem", marginBottom: "1rem" }}>Senior Infrastructure Consultant</h2>
-              <p style={{ maxWidth: "600px", fontSize: "1.15rem", marginBottom: "2rem", lineHeight: 1.7 }}>
+              <h2 style={{ fontSize: "1.8rem", marginBottom: "1.25rem" }}>Senior Infrastructure Consultant</h2>
+              <div className="hero-meta">
+                <span className="meta-chip"><MapPin size={15} /> Munich, Germany</span>
+                <span className="meta-chip"><Award size={15} /> 6x AWS Certified</span>
+              </div>
+              <p style={{ maxWidth: "600px", fontSize: "1.15rem", marginBottom: "0.5rem", lineHeight: 1.7 }}>
                 6x AWS Certified professional specializing in Platform Engineering, Cloud Native architectures, and building scalable infrastructure for Generative AI. With over 4 years of experience, I automate complex, multi-account AWS environments using Terraform and Kubernetes to deliver resilient, enterprise-grade cloud solutions.
               </p>
+              <div className="tech-chips">
+                {["Terraform", "Kubernetes", "AWS", "GitLab CI/CD", "GenAI Infrastructure"].map((t) => (
+                  <span key={t} className="tech-chip">{t}</span>
+                ))}
+              </div>
               <div className="hero-contact">
                 <a href="mailto:msalmansaeedch786@gmail.com" className="contact-btn"><Mail size={18} /> Email</a>
                 <a href="https://github.com/msalmansaeedch" target="_blank" rel="noreferrer" className="contact-btn"><FiGithub size={18} /> GitHub</a>
@@ -112,27 +123,29 @@ export default function Portfolio() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               style={{
-                background: "rgba(0, 242, 254, 0.03)",
-                border: "1px solid rgba(0, 242, 254, 0.1)",
+                position: "relative",
+                background: "var(--accent-soft-bg)",
+                border: "1px solid var(--accent-soft-border)",
                 borderRadius: "24px",
                 padding: "2.5rem 2rem",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 textAlign: "center",
-                boxShadow: "0 10px 30px -10px rgba(0, 242, 254, 0.1)",
+                boxShadow: "0 10px 30px -10px var(--neon-cyan-glow)",
                 backdropFilter: "blur(10px)",
                 maxWidth: "500px",
                 margin: "0 auto"
               }}
             >
+              <span className="online-pill"><span className="online-dot" />online</span>
               <img
                 src="/salman-avatar.jpg"
                 alt="Digital Twin"
-                style={{ width: "90px", height: "90px", borderRadius: "50%", objectFit: "cover", objectPosition: "center 20%", border: "2px solid rgba(0, 242, 254, 0.4)", marginBottom: "1.5rem" }}
+                style={{ width: "90px", height: "90px", borderRadius: "50%", objectFit: "cover", objectPosition: "center 20%", border: "2px solid var(--accent-soft-border)", marginBottom: "1.5rem" }}
               />
               <h3 style={{ fontSize: "1.6rem", fontWeight: 500, marginBottom: "0.5rem", letterSpacing: "0.5px" }}>
-                I'm Salman's <span style={{ fontStyle: "italic", color: "#00f2fe", fontWeight: 600 }}>digital twin</span>.
+                I'm Salman's <span style={{ fontStyle: "italic", color: "var(--neon-cyan)", fontWeight: 600 }}>digital twin</span>.
               </h3>
               <p style={{ fontSize: "1.2rem", fontWeight: 400, marginBottom: "1rem", lineHeight: 1.4 }}>
                 Ask me anything – the real Salman might just chime in.
@@ -154,6 +167,7 @@ export default function Portfolio() {
 
         {/* EXPERIENCE SECTION */}
         <section id="experience" className="section">
+          <div className="section-eyebrow">01 — Career Path</div>
           <h2>Experience</h2>
           <div className="timeline">
             {experiences.map((exp, index) => (
@@ -177,6 +191,7 @@ export default function Portfolio() {
 
         {/* EDUCATION SECTION */}
         <section id="education" className="section">
+          <div className="section-eyebrow">02 — Academics</div>
           <h2>Education</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             {education.map((edu, index) => (
@@ -206,6 +221,7 @@ export default function Portfolio() {
 
         {/* PROJECTS SECTION */}
         <section id="projects" className="section">
+          <div className="section-eyebrow">03 — Selected Work</div>
           <h2>Projects</h2>
           <div className="projects-grid">
             {projects.map((project, index) => (
@@ -239,8 +255,9 @@ export default function Portfolio() {
 
         {/* CERTIFICATIONS SECTION */}
         <section id="certifications" className="section">
+          <div className="section-eyebrow">04 — Credentials</div>
           <h2>Certifications & Badges</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.5rem" }}>
             {certifications.map((cert, index) => (
               <motion.a
                 href={cert.url}
@@ -258,7 +275,7 @@ export default function Portfolio() {
                 <div style={{ position: "absolute", top: "1rem", right: "1rem" }}>
                   <ExternalLink size={20} style={{ color: "var(--text-secondary)" }} />
                 </div>
-                <img src={cert.image} alt={cert.title} style={{ width: "240px", height: "240px", objectFit: "contain", filter: "drop-shadow(0 12px 24px rgba(0,0,0,0.5))", marginBottom: "1.5rem" }} />
+                <img src={cert.image} alt={cert.title} style={{ width: "150px", height: "150px", objectFit: "contain", filter: "var(--badge-shadow)", marginBottom: "1.25rem" }} />
                 <span style={{ background: "rgba(0, 242, 254, 0.1)", color: "var(--neon-cyan)", padding: "0.3rem 0.8rem", borderRadius: "20px", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase", marginBottom: "1rem" }}>
                   {cert.type}
                 </span>
@@ -295,6 +312,22 @@ export default function Portfolio() {
           </motion.div>
         </Link>
       </div>
+
+      {/* Footer */}
+      <footer className="site-footer">
+        <div className="footer-socials">
+          <a href="mailto:msalmansaeedch786@gmail.com" aria-label="Email"><Mail size={20} /></a>
+          <a href="https://github.com/msalmansaeedch" target="_blank" rel="noreferrer" aria-label="GitHub"><FiGithub size={20} /></a>
+          <a href="https://linkedin.com/in/msalmansaeedch" target="_blank" rel="noreferrer" aria-label="LinkedIn"><FiLinkedin size={20} /></a>
+          <a href="https://www.youtube.com/@msalmansaeedch" target="_blank" rel="noreferrer" aria-label="YouTube"><FiYoutube size={20} /></a>
+        </div>
+        <div className="footer-line">
+          designed & built by Muhammad Salman — Next.js · AWS Bedrock · Terraform
+        </div>
+        <div className="footer-line">
+          <a href="https://github.com/msalmansaeedch786/digital-twin" target="_blank" rel="noreferrer">view source on GitHub</a>
+        </div>
+      </footer>
     </>
   );
 }
