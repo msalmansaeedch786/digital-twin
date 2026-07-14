@@ -104,11 +104,6 @@ export default function Portfolio() {
               <p style={{ maxWidth: "600px", fontSize: "1.15rem", marginBottom: "0.5rem", lineHeight: 1.7 }}>
                 6x AWS Certified professional specializing in Platform Engineering, Cloud Native architectures, and building scalable infrastructure for Generative AI. With over 4 years of experience, I automate complex, multi-account AWS environments using Terraform and Kubernetes to deliver resilient, enterprise-grade cloud solutions.
               </p>
-              <div className="tech-chips">
-                {["Terraform", "Kubernetes", "AWS", "GitLab CI/CD", "GenAI Infrastructure"].map((t) => (
-                  <span key={t} className="tech-chip">{t}</span>
-                ))}
-              </div>
               <div className="hero-contact">
                 <a href="mailto:msalmansaeedch786@gmail.com" className="contact-btn"><Mail size={18} /> Email</a>
                 <a href="https://github.com/msalmansaeedch" target="_blank" rel="noreferrer" className="contact-btn"><FiGithub size={18} /> GitHub</a>
