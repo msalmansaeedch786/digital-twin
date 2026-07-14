@@ -167,7 +167,6 @@ export default function Portfolio() {
 
         {/* EXPERIENCE SECTION */}
         <section id="experience" className="section">
-          <div className="section-eyebrow">01 — Career Path</div>
           <h2>Experience</h2>
           <div className="timeline">
             {experiences.map((exp, index) => (
@@ -191,7 +190,6 @@ export default function Portfolio() {
 
         {/* EDUCATION SECTION */}
         <section id="education" className="section">
-          <div className="section-eyebrow">02 — Academics</div>
           <h2>Education</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             {education.map((edu, index) => (
@@ -221,7 +219,6 @@ export default function Portfolio() {
 
         {/* PROJECTS SECTION */}
         <section id="projects" className="section">
-          <div className="section-eyebrow">03 — Selected Work</div>
           <h2>Projects</h2>
           <div className="projects-grid">
             {projects.map((project, index) => (
@@ -255,7 +252,6 @@ export default function Portfolio() {
 
         {/* CERTIFICATIONS SECTION */}
         <section id="certifications" className="section">
-          <div className="section-eyebrow">04 — Credentials</div>
           <h2>Certifications & Badges</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.5rem" }}>
             {certifications.map((cert, index) => (
