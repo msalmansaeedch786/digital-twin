@@ -265,17 +265,6 @@ h2 {
   color: var(--text-primary);
 }
 
-/* Numbered mono eyebrow above each section title */
-.section-eyebrow {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  color: var(--neon-cyan);
-  margin-bottom: 0.75rem;
-}
-
 /* Gradient underline on section titles (direct children only, so the hero
    subtitle is unaffected) */
 .section > h2 {
