@@ -71,6 +71,12 @@ variable "anomaly_alert_threshold_usd" {
   default     = 1
 }
 
+variable "daily_budget_usd" {
+  description = "Daily cost tripwire in USD (gross usage, credits excluded). Expected steady-state is ~1.50/day after the single-AZ endpoint + no-X-Ray trim; 2.00 leaves headroom so normal lumpy days do not false-alarm."
+  type        = number
+  default     = 2
+}
+
 variable "anomaly_monitor_arn" {
   description = "ARN of the account's existing dimensional (by-service) Cost Anomaly monitor. AWS allows only one per account and auto-creates 'Default-Services-Monitor'; we attach our subscription to it rather than create a duplicate."
   type        = string

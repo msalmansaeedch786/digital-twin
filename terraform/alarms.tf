@@ -104,6 +104,41 @@ resource "aws_budgets_budget" "monthly" {
   }
 }
 
+# Daily cost tripwire: emails the moment a single day's GROSS usage exceeds
+# the expected run-rate (~$1.50/day) + headroom. Daily budgets only support
+# ACTUAL notifications (AWS restriction); billing data refreshes ~3x/day, so
+# expect the email within hours of a breach, not minutes — the request-count
+# abuse alarm below remains the fast tripwire.
+resource "aws_budgets_budget" "daily" {
+  name         = "${var.project_name}-daily"
+  budget_type  = "COST"
+  limit_amount = tostring(var.daily_budget_usd)
+  limit_unit   = "USD"
+  time_unit    = "DAILY"
+
+  cost_types {
+    include_credit             = false
+    include_refund             = false
+    include_discount           = true
+    use_amortized              = false
+    include_tax                = true
+    include_subscription       = true
+    include_upfront            = true
+    include_recurring          = true
+    include_other_subscription = true
+    include_support            = true
+    use_blended                = false
+  }
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 100
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "ACTUAL"
+    subscriber_email_addresses = [var.alert_email]
+  }
+}
+
 # ===========================================================================
 # Cost Anomaly Detection — the "fraud alert" for AWS spend. Learns your normal
 # daily pattern (~$0.85/day) and emails when spend deviates above it, regardless
