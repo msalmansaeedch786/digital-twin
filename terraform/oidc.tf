@@ -401,6 +401,18 @@ resource "aws_iam_policy" "github_actions_ops" {
         Resource = "*"
       },
       {
+        # CloudWatch dashboards: project-prefixed only
+        Sid    = "DashboardManagement"
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutDashboard",
+          "cloudwatch:GetDashboard",
+          "cloudwatch:DeleteDashboards",
+          "cloudwatch:ListDashboards"
+        ]
+        Resource = ["arn:aws:cloudwatch::${local.gha_account_id}:dashboard/${var.project_name}-*"]
+      },
+      {
         # Log-delivery plumbing for API Gateway access logs — not ARN-scopable.
         Sid    = "LogsDeliveryForApiGatewayAccessLogs"
         Effect = "Allow"
