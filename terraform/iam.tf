@@ -40,11 +40,6 @@ resource "aws_iam_role_policy_attachment" "api_vpc" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
-resource "aws_iam_role_policy_attachment" "api_xray" {
-  role       = aws_iam_role.lambda_api.name
-  policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
-}
-
 resource "aws_iam_policy" "lambda_api_custom" {
   name        = "${var.project_name}-lambda-api-policy"
   description = "Least-privilege policy for the API Lambda: Bedrock + Secrets Manager (read only)"
@@ -104,11 +99,6 @@ resource "aws_iam_role_policy_attachment" "ingestion_basic" {
 resource "aws_iam_role_policy_attachment" "ingestion_vpc" {
   role       = aws_iam_role.lambda_ingestion.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
-}
-
-resource "aws_iam_role_policy_attachment" "ingestion_xray" {
-  role       = aws_iam_role.lambda_ingestion.name
-  policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
 }
 
 resource "aws_iam_policy" "lambda_ingestion_custom" {

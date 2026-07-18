@@ -40,9 +40,10 @@ resource "aws_lambda_function" "api" {
   timeout       = 30 # 30 seconds for API requests
   memory_size   = 1024
 
-  # AWS X-Ray Active Tracing — full distributed trace visibility
+  # X-Ray tracing disabled: its PrivateLink endpoint cost (~$9/mo) outweighs
+  # tracing value for this workload. Logs + alarms remain the observability path.
   tracing_config {
-    mode = "Active"
+    mode = "PassThrough"
   }
 
   vpc_config {
