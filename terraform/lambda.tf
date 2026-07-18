@@ -80,9 +80,10 @@ resource "aws_lambda_function" "ingestion" {
   timeout       = 300 # 5 minutes for document parsing and embedding
   memory_size   = 1024
 
-  # AWS X-Ray Active Tracing — trace embedding calls to Bedrock and PGVector
+  # X-Ray tracing disabled (endpoint removed for cost) — logs + DLQ alarm cover
+  # ingestion observability.
   tracing_config {
-    mode = "Active"
+    mode = "PassThrough"
   }
 
   vpc_config {
