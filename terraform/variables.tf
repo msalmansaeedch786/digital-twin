@@ -17,9 +17,10 @@ variable "project_name" {
 }
 
 variable "github_token" {
-  description = "GitHub Personal Access Token for Amplify to access the repo"
+  description = "Only needed when (re)creating the Amplify app: a one-time setup token from the Amplify GitHub App flow (or a classic PAT). Normal runs use the GitHub App connection and leave this unset."
   type        = string
   sensitive   = true
+  default     = null
 }
 
 variable "alert_email" {

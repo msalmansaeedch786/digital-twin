@@ -47,7 +47,7 @@ cd lambdas/ingestion && ./build.sh    # -> lambdas/ingestion/lambda_function.zip
 ```
 
 **Infrastructure** (from `terraform/`): `terraform init`, `terraform plan`, `terraform apply`.
-Requires `terraform.tfvars` (copy from `terraform.tfvars.example` — sets `github_token`, `alert_email`; both are secrets and gitignored).
+Requires `terraform.tfvars` (copy from `terraform.tfvars.example` — sets `alert_email`; secret and gitignored). Amplify pulls the repo via the Amplify GitHub App; `github_token` is only needed as a one-time setup token if the Amplify app is ever recreated from scratch.
 
 **Pre-commit hooks** (enforce `terraform fmt` + `terraform validate`): `pre-commit install`
 
