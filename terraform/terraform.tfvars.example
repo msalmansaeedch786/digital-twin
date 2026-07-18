@@ -6,13 +6,14 @@
 # file (see .github/workflows/terraform.yml), so terraform.tfvars is only for
 # local `terraform apply`.
 
-# ── Required ────────────────────────────────────────────────────────────────
-
-# GitHub Personal Access Token for AWS Amplify to pull the repo.
-# Requires `repo` scope. No default — Terraform will prompt if it's unset.
-github_token = "ghp_xxxxxxxxxxxxxxxxxxxx"
-
 # ── Optional (defaults live in variables.tf) ────────────────────────────────
+
+# Amplify repo access token — ONLY needed when (re)creating the Amplify app
+# from scratch. The live app authenticates via the Amplify GitHub App (console
+# migration, 2026-07-18), so leave this unset for normal runs. To rebuild:
+# install the Amplify GitHub App on the repo and generate a one-time setup
+# token (AWS doc: "Setting up Amplify access to GitHub repositories").
+# github_token = "one-time-setup-token"
 
 # Email to receive CloudWatch alarm notifications.
 # Default is a dummy address; set a real one and confirm the SNS
