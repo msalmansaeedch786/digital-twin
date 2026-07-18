@@ -29,7 +29,11 @@ resource "aws_amplify_app" "frontend" {
   name       = "${var.project_name}-frontend"
   repository = "https://github.com/msalmansaeedch786/digital-twin"
 
-  # The GitHub PAT is required so AWS can automatically pull code when you push
+  # Repo auth uses the Amplify GitHub App (installed via the console migration,
+  # 2026-07-18). access_token is only needed to (re)create the app from scratch:
+  # generate a one-time setup token per the AWS doc "Setting up Amplify access
+  # to GitHub repositories" and pass it as TF_VAR_github_token. AWS never stores
+  # the token, so omitting it on normal runs produces no diff.
   access_token = var.github_token
 
   iam_service_role_arn = aws_iam_role.amplify_role.arn

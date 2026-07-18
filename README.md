@@ -178,25 +178,26 @@ digital-twin/
 > - **Automated (recommended):** push to the deployment branch and GitHub Actions builds the Lambdas and runs `terraform apply` for you.
 > - **Manual / local:** run the numbered steps below yourself. Steps 2–4 are only needed for a manual deploy.
 
-### 1. Provide the two secrets
+### 1. Provide the secret
 
-Terraform needs two sensitive inputs — `github_token` (so Amplify can pull the repo) and `alert_email` (where CloudWatch alarms are sent). How you supply them depends on the path:
+Terraform needs one sensitive input — `alert_email` (where CloudWatch alarms are sent). Amplify's access to the repo is handled by the **Amplify GitHub App** (installed once via the Amplify console), so no GitHub token is needed for normal runs.
 
-**Automated (GitHub Actions):** add them as **repository secrets** under *GitHub → Settings → Secrets and variables → Actions*. The workflow reads these and passes them to Terraform via `TF_VAR_*` environment variables — no `terraform.tfvars` file is involved (it's gitignored and never reaches CI):
+**Automated (GitHub Actions):** add it as a **repository secret** under *GitHub → Settings → Secrets and variables → Actions*. The workflow reads it and passes it to Terraform via a `TF_VAR_*` environment variable — no `terraform.tfvars` file is involved (it's gitignored and never reaches CI):
 
 | Repository secret | Maps to Terraform variable | Purpose |
 |-------------------|----------------------------|---------|
-| `TF_VAR_GITHUB_TOKEN` | `github_token` | GitHub PAT with `repo` scope — lets Amplify pull the repo |
 | `TF_VAR_ALERT_EMAIL`  | `alert_email`  | Email address for CloudWatch alarm notifications |
 
-> The workflow maps each secret to a `TF_VAR_*` env var, which Terraform reads as the matching variable ([terraform.yml](.github/workflows/terraform.yml)). Naming each secret `TF_VAR_<variable>` keeps it lined up 1:1 with the Terraform variable it feeds.
+> The workflow maps the secret to a `TF_VAR_*` env var, which Terraform reads as the matching variable ([terraform.yml](.github/workflows/terraform.yml)). Naming the secret `TF_VAR_<variable>` keeps it lined up 1:1 with the Terraform variable it feeds.
+
+> **Recreating the Amplify app from scratch?** Only then is `github_token` needed: install the Amplify GitHub App on the repo and generate a one-time setup token (AWS doc: *Setting up Amplify access to GitHub repositories*), then pass it as `TF_VAR_github_token` / in `terraform.tfvars` for that single apply.
 
 **Manual / local:** instead of repo secrets, create a `terraform.tfvars` from the example:
 
 ```bash
 cd terraform
 cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars: set github_token and alert_email
+# Edit terraform.tfvars: set alert_email
 ```
 
 ### 2. Build the Lambda Packages
