@@ -71,7 +71,7 @@ jobs:
       - name: Python Syntax Check
         run: |
           # Cheap gate: a syntax error in Lambda source must never reach deploy.
-          python -m py_compile lambdas/api/main.py lambdas/api/ingest.py lambdas/ingestion/lambda_function.py
+          python -m py_compile lambdas/api/main.py lambdas/api/ingest.py lambdas/ingestion/lambda_function.py lambdas/breaker/lambda_function.py
 
       - name: Build Python Lambda Packages
         run: |
