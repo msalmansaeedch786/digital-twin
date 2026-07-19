@@ -179,25 +179,26 @@ resource "aws_ce_anomaly_subscription" "email" {
 }
 
 # ===========================================================================
-# Real-time abuse alarm — the public /chat endpoint gets hammered
-# Fires within ~5 min (CloudWatch metrics, not billing data) if request volume
-# spikes far above what a real visitor produces. This is the fast tripwire;
-# the budget above is the slow money backstop.
+# Real-time abuse alarm — the public /chat endpoint gets hammered.
+# 1-minute counting: > threshold req/min for 2 consecutive minutes -> ALARM.
+# Worst-case detection ~3-4 min regardless of when the flood starts. The alarm
+# both emails (SNS) and triggers the circuit breaker (see breaker.tf), which
+# closes the API at the front door until reopened.
 # ===========================================================================
 
 resource "aws_cloudwatch_metric_alarm" "api_abuse" {
   alarm_name        = "${var.project_name}-api-abuse"
-  alarm_description = "API Gateway request volume spiked — possible abuse of the public /chat endpoint. Check the source IP in the API Gateway access logs."
+  alarm_description = "API request flood on the public /chat endpoint — the circuit breaker will close the API. Check source IPs in the API Gateway access logs."
 
   namespace   = "AWS/ApiGateway"
   metric_name = "Count"
   dimensions  = { ApiId = aws_apigatewayv2_api.main.id }
 
   statistic           = "Sum"
-  period              = 900 # 15-minute window
-  evaluation_periods  = 1
+  period              = 60 # 1-minute counting so detection is fast
+  evaluation_periods  = 2  # two bad minutes in a row — one busy minute is not an attack
   comparison_operator = "GreaterThanThreshold"
-  threshold           = var.abuse_request_threshold_15m
+  threshold           = var.abuse_request_threshold_1m
   treat_missing_data  = "notBreaching"
 
   alarm_actions = [aws_sns_topic.alerts.arn]

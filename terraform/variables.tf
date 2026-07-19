@@ -59,10 +59,10 @@ variable "monthly_budget_usd" {
   default     = 45
 }
 
-variable "abuse_request_threshold_15m" {
-  description = "API Gateway request count over a 15-minute window that triggers the real-time abuse alarm. A normal visitor sends well under 100; the 5 req/s throttle caps a sustained flood at ~4500 per 15 min."
+variable "abuse_request_threshold_1m" {
+  description = "API Gateway requests per MINUTE that count as a flood (needs 2 consecutive minutes to alarm + trip the circuit breaker). A real visitor produces < 20/min; the 5 req/s throttle admits at most 300/min."
   type        = number
-  default     = 1000
+  default     = 150
 }
 
 variable "anomaly_alert_threshold_usd" {

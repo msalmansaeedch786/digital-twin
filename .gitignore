@@ -15,6 +15,7 @@ lambdas/api/build/
 lambdas/api/*.zip
 lambdas/ingestion/build/
 lambdas/ingestion/*.zip
+lambdas/breaker/*.zip
 terraform.tfvars
 terraform/tfplan
 output.json
