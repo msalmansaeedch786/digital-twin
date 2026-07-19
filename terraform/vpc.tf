@@ -121,12 +121,11 @@ resource "aws_security_group" "vpc_endpoints" {
 # ---------------------------------------------------------------------------
 # VPC Endpoints (PrivateLink) - Enterprise Standard
 #
-# COST: interface endpoints bill ~$0.012 PER AZ PER HOUR. Each is deliberately
-# single-AZ (private_1 only) — that halves endpoint cost (~$35/mo) at the cost
-# of AZ redundancy, which this portfolio workload does not need. Lambdas in
-# private_2 reach them cross-AZ (negligible data charges at KB volumes).
-# The X-Ray endpoint was removed with tracing (see api.tf/lambda.tf) for the
-# same reason: ~$9/mo for tracing depth a portfolio does not need.
+# COST: interface endpoints bill per AZ per hour. Bedrock Runtime and Secrets
+# Manager remain because the Lambdas call those APIs from private subnets.
+# S3 uses a Gateway endpoint, which avoids hourly interface endpoint cost.
+# CloudWatch Logs and X-Ray endpoints are omitted because Lambda service-managed
+# logging/tracing does not require the functions to call those APIs directly.
 # ---------------------------------------------------------------------------
 
 resource "aws_vpc_endpoint" "bedrock_runtime" {
@@ -141,15 +140,6 @@ resource "aws_vpc_endpoint" "bedrock_runtime" {
 resource "aws_vpc_endpoint" "secretsmanager" {
   vpc_id              = aws_vpc.main.id
   service_name        = "com.amazonaws.${var.aws_region}.secretsmanager"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = [aws_subnet.private_1.id]
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-  private_dns_enabled = true
-}
-
-resource "aws_vpc_endpoint" "logs" {
-  vpc_id              = aws_vpc.main.id
-  service_name        = "com.amazonaws.${var.aws_region}.logs"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = [aws_subnet.private_1.id]
   security_group_ids  = [aws_security_group.vpc_endpoints.id]
