@@ -42,6 +42,21 @@ resource "aws_iam_policy" "breaker" {
         Resource = ["arn:aws:apigateway:${var.aws_region}::/apis/${aws_apigatewayv2_api.main.id}/stages/*"]
       },
       {
+        # UpdateStage re-validates the whole stage, including access-log
+        # delivery — not just the throttle fields being changed. Same
+        # log-delivery requirement the deploy role needed (see oidc.tf).
+        Sid    = "LogsDeliveryForStageUpdate"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogDelivery",
+          "logs:GetLogDelivery",
+          "logs:UpdateLogDelivery",
+          "logs:ListLogDeliveries",
+          "logs:DescribeResourcePolicies"
+        ]
+        Resource = "*"
+      },
+      {
         Sid      = "NotifyAlerts"
         Effect   = "Allow"
         Action   = ["sns:Publish"]
