@@ -30,6 +30,22 @@ export default function AvatarMode() {
     document.documentElement.setAttribute("data-theme", "dark");
   }, []);
 
+  // iOS keyboard fix: when the on-screen keyboard opens, Safari pans the page
+  // and can leave it scrolled after the keyboard closes — the input bar then
+  // appears "lifted" with dead space below. Snap the window back whenever the
+  // visual viewport changes so the app shell stays pinned.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const snapBack = () => window.scrollTo(0, 0);
+    vv.addEventListener("resize", snapBack);
+    vv.addEventListener("scroll", snapBack);
+    return () => {
+      vv.removeEventListener("resize", snapBack);
+      vv.removeEventListener("scroll", snapBack);
+    };
+  }, []);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages, isSpeaking]);
@@ -195,8 +211,8 @@ export default function AvatarMode() {
       {/* Subtle Dot Pattern Background */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px)", backgroundSize: "24px 24px", zIndex: 0, pointerEvents: "none" }} />
 
-      {/* Top Nav */}
-      <div className="avatar-topnav" style={{ position: "absolute", top: 0, left: 0, right: 0, height: "70px", zIndex: 10, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 2rem", background: "rgba(8, 12, 22, 0.8)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+      {/* Top Nav — in normal flow so the layout below it is stable */}
+      <div className="avatar-topnav" style={{ flexShrink: 0, height: "70px", zIndex: 10, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 2rem", background: "rgba(8, 12, 22, 0.8)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "0.9rem", fontWeight: 600, letterSpacing: "1px", transition: "color 0.2s" }}>
           <Home size={18} />
           <span>PORTFOLIO</span>
@@ -219,31 +235,33 @@ export default function AvatarMode() {
         </div>
       </div>
 
-      {/* ChatGPT-style Chat History */}
-      <div className="avatar-chat-container" style={{ flex: 1, overflowY: "auto", padding: "100px 2rem 2rem 2rem", display: "flex", flexDirection: "column", gap: "2rem", maxWidth: "800px", margin: "0 auto", width: "100%", scrollBehavior: "smooth", zIndex: 1 }}>
-
-        {/* The elegant minimal visualizer at the top of the chat */}
-        <div className="avatar-visualizer" style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "2rem" }}>
-          <div className="avatar-viz-box" style={{ position: "relative", width: "140px", height: "140px", display: "flex", justifyContent: "center", alignItems: "center" }}>
-            <motion.img
-              className="avatar-viz-img"
-              src="/salman-avatar.jpg"
-              alt="Salman"
-              animate={{ scale: isSpeaking ? [1, 1.05, 1] : isListening ? [1, 1.02, 1] : 1, boxShadow: isSpeaking ? "0 0 40px rgba(0, 242, 254, 0.6)" : "0 0 15px rgba(0, 242, 254, 0.2)" }}
-              transition={{ duration: isSpeaking ? 0.8 : 1.5, repeat: Infinity }}
-              style={{ width: "120px", height: "120px", borderRadius: "50%", objectFit: "cover", objectPosition: "center 20%", position: "relative", zIndex: 2, border: "3px solid rgba(0, 242, 254, 0.4)" }}
+      {/* Frozen identity header: avatar + name + subtitle. Lives OUTSIDE the
+          scroll area so it never moves while messages scroll underneath. */}
+      <div className="avatar-header" style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", padding: "1rem 1rem 0.75rem", zIndex: 5, background: "rgba(8, 12, 22, 0.9)", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+        <div className="avatar-viz-box" style={{ position: "relative", width: "110px", height: "110px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+          <motion.img
+            className="avatar-viz-img"
+            src="/salman-avatar.jpg"
+            alt="Salman"
+            animate={{ scale: isSpeaking ? [1, 1.05, 1] : isListening ? [1, 1.02, 1] : 1, boxShadow: isSpeaking ? "0 0 40px rgba(0, 242, 254, 0.6)" : "0 0 15px rgba(0, 242, 254, 0.2)" }}
+            transition={{ duration: isSpeaking ? 0.8 : 1.5, repeat: Infinity }}
+            style={{ width: "96px", height: "96px", borderRadius: "50%", objectFit: "cover", objectPosition: "center 20%", position: "relative", zIndex: 2, border: "3px solid rgba(0, 242, 254, 0.4)" }}
+          />
+          {isSpeaking && (
+            <motion.div
+              className="avatar-viz-pulse"
+              animate={{ scale: [1, 1.3], opacity: [0.5, 0] }}
+              transition={{ duration: 1, repeat: Infinity }}
+              style={{ position: "absolute", width: "96px", height: "96px", borderRadius: "50%", background: "#00f2fe", zIndex: 1 }}
             />
-            {isSpeaking && (
-              <motion.div
-                animate={{ scale: [1, 1.3], opacity: [0.5, 0] }}
-                transition={{ duration: 1, repeat: Infinity }}
-                style={{ position: "absolute", width: "120px", height: "120px", borderRadius: "50%", background: "#00f2fe", zIndex: 1 }}
-              />
-            )}
-          </div>
-          <h2 style={{ fontSize: "1.2rem", fontWeight: 600, marginTop: "1rem", letterSpacing: "1px", color: "rgba(255,255,255,0.9)" }}>Salman's Digital Twin</h2>
-          <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", marginTop: "0.3rem" }}>AI-Powered Professional Assistant</p>
+          )}
         </div>
+        <h2 className="avatar-title" style={{ fontSize: "1.1rem", fontWeight: 600, marginTop: "0.6rem", letterSpacing: "1px", color: "rgba(255,255,255,0.9)" }}>Salman's Digital Twin</h2>
+        <p className="avatar-subtitle" style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.5)", marginTop: "0.2rem" }}>AI-Powered Professional Assistant</p>
+      </div>
+
+      {/* Scrollable messages — the ONLY thing that scrolls */}
+      <div className="avatar-chat-container" style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "1.25rem 2rem", display: "flex", flexDirection: "column", gap: "1.5rem", maxWidth: "800px", margin: "0 auto", width: "100%", scrollBehavior: "smooth", zIndex: 1 }}>
 
         {messages.map((msg, index) => (
           <motion.div
