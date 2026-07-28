@@ -155,7 +155,10 @@ class AIEngine:
             llm = ChatBedrock(
                 model_id=os.environ.get("BEDROCK_LLM_MODEL_ID", "eu.amazon.nova-lite-v1:0"),
                 region_name=region,
-                model_kwargs={"temperature": 0.1, "max_tokens": 512},
+                # 1024 gives headroom so long answers don't truncate mid-markdown
+                # (a cut-off "**item" renders as literal asterisks in the chat UI);
+                # the BREVITY prompt rule keeps typical answers well under this.
+                model_kwargs={"temperature": 0.1, "max_tokens": 1024},
                 config=_boto_config,
             )
 
@@ -196,7 +199,11 @@ class AIEngine:
                 "contain only one item, give exactly one; do not invent additional entries to pad "
                 "the answer.\n"
                 "4. Keep your answers concise, human-like, and conversational. Use markdown formatting "
-                "(bullet points, bold text) to make your answers easy to read.\n"
+                "(bullet points, bold text) to make your answers easy to read. BREVITY: most readers "
+                "are on a phone. Aim for under ~120 words or at most 6 short bullets. For broad "
+                "questions (e.g. 'your tech stack', 'your experience'), give the strongest highlights "
+                "only and end by offering to go deeper on any area — never enumerate every category "
+                "and sub-item in one answer.\n"
                 "5. YOU ARE A CONVERSATIONAL AVATAR. You cannot execute commands, deploy apps, or "
                 "delete resources. If asked to perform an action, clearly state that you are an AI "
                 "avatar and cannot perform actions, but you can explain how Salman would do it.\n"

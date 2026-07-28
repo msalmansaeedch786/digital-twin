@@ -190,13 +190,13 @@ export default function AvatarMode() {
   // Browsers usually block autoplay audio, so it's better to wait for the first click.
 
   return (
-    <div style={{ backgroundColor: "#080C16", height: "100vh", color: "white", display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", fontFamily: "'Outfit', sans-serif" }}>
+    <div className="avatar-root" style={{ backgroundColor: "#080C16", color: "white", display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", fontFamily: "'Outfit', sans-serif" }}>
 
       {/* Subtle Dot Pattern Background */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px)", backgroundSize: "24px 24px", zIndex: 0, pointerEvents: "none" }} />
 
       {/* Top Nav */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "70px", zIndex: 10, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 2rem", background: "rgba(8, 12, 22, 0.8)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+      <div className="avatar-topnav" style={{ position: "absolute", top: 0, left: 0, right: 0, height: "70px", zIndex: 10, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 2rem", background: "rgba(8, 12, 22, 0.8)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "0.9rem", fontWeight: 600, letterSpacing: "1px", transition: "color 0.2s" }}>
           <Home size={18} />
           <span>PORTFOLIO</span>
@@ -223,9 +223,10 @@ export default function AvatarMode() {
       <div className="avatar-chat-container" style={{ flex: 1, overflowY: "auto", padding: "100px 2rem 2rem 2rem", display: "flex", flexDirection: "column", gap: "2rem", maxWidth: "800px", margin: "0 auto", width: "100%", scrollBehavior: "smooth", zIndex: 1 }}>
 
         {/* The elegant minimal visualizer at the top of the chat */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "2rem" }}>
-          <div style={{ position: "relative", width: "140px", height: "140px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <div className="avatar-visualizer" style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "2rem" }}>
+          <div className="avatar-viz-box" style={{ position: "relative", width: "140px", height: "140px", display: "flex", justifyContent: "center", alignItems: "center" }}>
             <motion.img
+              className="avatar-viz-img"
               src="/salman-avatar.jpg"
               alt="Salman"
               animate={{ scale: isSpeaking ? [1, 1.05, 1] : isListening ? [1, 1.02, 1] : 1, boxShadow: isSpeaking ? "0 0 40px rgba(0, 242, 254, 0.6)" : "0 0 15px rgba(0, 242, 254, 0.2)" }}
@@ -249,6 +250,7 @@ export default function AvatarMode() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             key={index}
+            className="avatar-msg-row"
             style={{
               alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
               maxWidth: msg.role === "user" ? "75%" : "90%",
@@ -258,7 +260,7 @@ export default function AvatarMode() {
             }}
           >
             {msg.role === "bot" && (
-               <img src="/salman-avatar.jpg" alt="AI" style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover", objectPosition: "center 20%", flexShrink: 0, border: "1px solid rgba(0, 242, 254, 0.3)" }} />
+               <img className="avatar-msg-icon" src="/salman-avatar.jpg" alt="AI" style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover", objectPosition: "center 20%", flexShrink: 0, border: "1px solid rgba(0, 242, 254, 0.3)" }} />
             )}
 
             <div className={`avatar-message-bubble ${msg.role === "bot" ? "markdown-body" : ""}`} style={{
