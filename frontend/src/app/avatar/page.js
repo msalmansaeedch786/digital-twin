@@ -18,10 +18,14 @@ export default function AvatarMode() {
   const [voices, setVoices] = useState([]);
 
   const recognitionRef = useRef(null);
-  const messagesEndRef = useRef(null);
+  const chatScrollRef = useRef(null);
 
+  // Scroll ONLY the messages container. scrollIntoView() walks every scrollable
+  // ancestor including the document itself — on iOS that panned the whole app
+  // shell upward (nav pushed off-screen, dead space under the input).
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = chatScrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   };
 
   // The chat UI is always dark. Force it regardless of the portfolio's saved
@@ -261,7 +265,7 @@ export default function AvatarMode() {
       </div>
 
       {/* Scrollable messages — the ONLY thing that scrolls */}
-      <div className="avatar-chat-container" style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "1.25rem 2rem", display: "flex", flexDirection: "column", gap: "1.5rem", maxWidth: "800px", margin: "0 auto", width: "100%", scrollBehavior: "smooth", zIndex: 1 }}>
+      <div ref={chatScrollRef} className="avatar-chat-container" style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "1.25rem 2rem", display: "flex", flexDirection: "column", gap: "1.5rem", maxWidth: "800px", margin: "0 auto", width: "100%", scrollBehavior: "smooth", zIndex: 1 }}>
 
         {messages.map((msg, index) => (
           <motion.div
@@ -324,7 +328,6 @@ export default function AvatarMode() {
              </div>
            </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Suggestion Pills */}
