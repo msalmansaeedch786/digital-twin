@@ -798,11 +798,16 @@ p {
    AVATAR / CHAT MOBILE DESIGN
 ========================================== */
 
-/* dvh tracks the *visible* viewport on mobile (browser toolbars collapse and
-   expand), so the input bar is never pushed off-screen the way 100vh does. */
+/* App-shell lock: the chat is a fixed full-viewport app. position:fixed means
+   the page body itself can never scroll or rubber-band — only the messages
+   list scrolls. dvh tracks the *visible* viewport on mobile (browser toolbars
+   collapse/expand), so the input bar stays pinned to the real bottom. */
 .avatar-root {
+  position: fixed;
+  inset: 0;
   height: 100vh;
   height: 100dvh;
+  width: 100%;
 }
 
 .avatar-message-bubble {
@@ -822,22 +827,25 @@ p {
 @media (max-width: 768px) {
   .avatar-topnav {
     padding: 0 1rem !important;
-    height: 56px !important;
+    height: 52px !important;
   }
   .avatar-chat-container {
-    padding: 72px 0.75rem 0.75rem 0.75rem !important;
+    padding: 1rem 0.75rem !important;
     gap: 1rem !important;
   }
-  /* Shrink the header visualizer so the first answer is visible sooner */
-  .avatar-visualizer { margin-bottom: 0.75rem !important; }
+  /* Compact frozen header: identity stays visible without eating the screen */
+  .avatar-header { padding: 0.6rem 1rem 0.5rem !important; }
   .avatar-viz-box {
-    width: 96px !important;
-    height: 96px !important;
+    width: 64px !important;
+    height: 64px !important;
   }
   .avatar-viz-img {
-    width: 84px !important;
-    height: 84px !important;
+    width: 56px !important;
+    height: 56px !important;
   }
+  .avatar-title { font-size: 0.95rem !important; margin-top: 0.35rem !important; }
+  .avatar-subtitle { font-size: 0.7rem !important; }
+  .avatar-viz-pulse { width: 56px !important; height: 56px !important; }
   /* Messages: reclaim horizontal space (smaller icon, tighter gap, wider rows) */
   .avatar-msg-row {
     gap: 0.5rem !important;
