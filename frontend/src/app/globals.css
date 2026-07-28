@@ -146,9 +146,13 @@ a:focus-visible, button:focus-visible {
   font-weight: 400;
 }
 
-/* Keep the navbar tidy on small screens: prompt stays, message hides */
+/* On small screens, keep the typed message visible but shrink the wordmark
+   a touch so "~/muhammad-salman: <message>" fits on one line without overflow. */
 @media (max-width: 640px) {
-  .wordmark .typed-msg { display: none; }
+  .wordmark { font-size: 0.8rem; letter-spacing: 0.3px; }
+}
+@media (max-width: 380px) {
+  .wordmark { font-size: 0.72rem; }
 }
 .wordmark .cursor {
   display: inline-block;
