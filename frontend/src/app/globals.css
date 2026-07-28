@@ -798,21 +798,64 @@ p {
    AVATAR / CHAT MOBILE DESIGN
 ========================================== */
 
+/* dvh tracks the *visible* viewport on mobile (browser toolbars collapse and
+   expand), so the input bar is never pushed off-screen the way 100vh does. */
+.avatar-root {
+  height: 100vh;
+  height: 100dvh;
+}
+
 .avatar-message-bubble {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
 
+/* Long markdown lists from the twin: keep bullets tight on narrow screens */
+.avatar-message-bubble ul,
+.avatar-message-bubble ol {
+  padding-left: 1.2rem;
+  margin: 0.4rem 0;
+}
+.avatar-message-bubble li { margin: 0.2rem 0; }
+.avatar-message-bubble p { margin: 0.4rem 0; }
+
 @media (max-width: 768px) {
+  .avatar-topnav {
+    padding: 0 1rem !important;
+    height: 56px !important;
+  }
   .avatar-chat-container {
-    padding: 80px 1rem 1rem 1rem !important;
+    padding: 72px 0.75rem 0.75rem 0.75rem !important;
     gap: 1rem !important;
   }
-  .avatar-input-wrapper {
-    padding: 0 1rem 1rem 1rem !important;
+  /* Shrink the header visualizer so the first answer is visible sooner */
+  .avatar-visualizer { margin-bottom: 0.75rem !important; }
+  .avatar-viz-box {
+    width: 96px !important;
+    height: 96px !important;
+  }
+  .avatar-viz-img {
+    width: 84px !important;
+    height: 84px !important;
+  }
+  /* Messages: reclaim horizontal space (smaller icon, tighter gap, wider rows) */
+  .avatar-msg-row {
+    gap: 0.5rem !important;
+    max-width: 94% !important;
+  }
+  .avatar-msg-icon {
+    width: 24px !important;
+    height: 24px !important;
   }
   .avatar-message-bubble {
-    padding: 0.8rem 1rem !important;
+    padding: 0.7rem 0.9rem !important;
     font-size: 0.95rem !important;
+    line-height: 1.55 !important;
+  }
+  .avatar-input-wrapper {
+    padding: 0 0.75rem 0.75rem 0.75rem !important;
+  }
+  .avatar-input-wrapper form {
+    padding: 0.5rem 0.5rem 0.5rem 1rem !important;
   }
 }
