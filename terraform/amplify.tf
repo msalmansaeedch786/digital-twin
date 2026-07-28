@@ -101,7 +101,12 @@ resource "aws_amplify_domain_association" "custom" {
 
   sub_domain {
     branch_name = aws_amplify_branch.feature.branch_name
-    prefix      = "" # map the domain apex itself (salman.is-a.dev)
+    prefix      = "" # map the domain apex itself (msalmansaeedch.de)
+  }
+
+  sub_domain {
+    branch_name = aws_amplify_branch.feature.branch_name
+    prefix      = "www" # also serve www.msalmansaeedch.de
   }
 
   # Amplify calls route53:ListHostedZones during setup, so the deploy role's

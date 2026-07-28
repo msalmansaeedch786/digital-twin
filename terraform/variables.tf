@@ -35,20 +35,18 @@ variable "git_branch" {
   default     = "main"
 }
 
-# PAUSED 2026-07-23. salman-twin.is-a.dev was removed from the is-a.dev registry
-# by maintainer cleanup PR is-a-dev/register#44406 ("remove disconnected domains"),
-# which deletes subdomains that don't resolve to a working site because a dangling
-# record is hijackable. The Amplify association never reached HEALTHY: each failed
-# certificate forces a re-add, and every re-add hands out a fresh CloudFront
-# address, which needs another registry PR — a loop we chose to stop rather than
-# keep feeding. The app is served on its default *.amplifyapp.com URL meanwhile.
-# To re-enable: get the domain restored (comment on #44406), then set this back to
-# "salman-twin.is-a.dev" and publish BOTH the routing CNAME and the ACM validation
-# record in a single registry PR before the association's validation window lapses.
+# msalmansaeedch.de is a self-owned domain registered at Porkbun, replacing the
+# earlier free salman-twin.is-a.dev subdomain. That is-a.dev attempt was abandoned
+# (removed by registry cleanup PR is-a-dev/register#44406) because its DNS could
+# only be changed by a human-merged pull request, which could never keep up with
+# Amplify's ordered, time-limited certificate-validation records. Owning the DNS
+# fixes that at the root: the ACM validation and routing records are written
+# directly (Porkbun API), so validation completes in minutes and cannot be pruned
+# by a third party. Empty string disables the custom-domain association.
 variable "custom_domain" {
-  description = "Custom domain to attach to the Amplify app (e.g. salman-twin.is-a.dev). Empty string disables the custom-domain association."
+  description = "Custom domain to attach to the Amplify app (e.g. msalmansaeedch.de). Empty string disables the custom-domain association."
   type        = string
-  default     = ""
+  default     = "msalmansaeedch.de"
 }
 
 variable "bedrock_llm_model_id" {
