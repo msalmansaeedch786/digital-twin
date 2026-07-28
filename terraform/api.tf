@@ -9,7 +9,7 @@ locals {
   amplify_origin = "https://${replace(var.git_branch, "/", "-")}.${aws_amplify_app.frontend.default_domain}"
   allowed_origins = concat(
     [local.amplify_origin],
-    var.custom_domain == "" ? [] : ["https://${var.custom_domain}"],
+    var.custom_domain == "" ? [] : ["https://${var.custom_domain}", "https://www.${var.custom_domain}"],
     ["http://localhost:3000"],
   )
 }
