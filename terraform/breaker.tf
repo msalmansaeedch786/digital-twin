@@ -123,3 +123,34 @@ resource "aws_lambda_permission" "breaker_eventbridge" {
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.breaker.arn
 }
+
+# Auto-reopen: when the abuse alarm returns to OK (the flood has stopped — the
+# alarm stays in ALARM while the attacker keeps sending, because API Gateway
+# counts the rejected 429s too), fire the breaker again to restore the normal
+# throttle. This makes the breaker self-healing so legitimate users (and the
+# owner) are never locked out after an attack ends.
+resource "aws_cloudwatch_event_rule" "breaker_reopen" {
+  name        = "${var.project_name}-breaker-auto-reopen"
+  description = "Reopen the circuit breaker when the api-abuse alarm clears"
+
+  event_pattern = jsonencode({
+    source      = ["aws.cloudwatch"]
+    detail-type = ["CloudWatch Alarm State Change"]
+    resources   = [aws_cloudwatch_metric_alarm.api_abuse.arn]
+    detail      = { state = { value = ["OK"] } }
+  })
+}
+
+resource "aws_cloudwatch_event_target" "breaker_reopen" {
+  rule      = aws_cloudwatch_event_rule.breaker_reopen.name
+  target_id = "CircuitBreakerReopen"
+  arn       = aws_lambda_function.breaker.arn
+}
+
+resource "aws_lambda_permission" "breaker_reopen_eventbridge" {
+  statement_id  = "AllowExecutionFromEventBridgeReopen"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.breaker.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.breaker_reopen.arn
+}
