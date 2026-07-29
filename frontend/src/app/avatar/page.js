@@ -161,7 +161,9 @@ export default function AvatarMode() {
     setIsSpeaking(true); // Simulate thinking animation
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      // Strip any trailing slash so we don't build a "//chat" URL when the
+      // configured base already ends in "/".
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
       const response = await fetch(`${apiUrl}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
