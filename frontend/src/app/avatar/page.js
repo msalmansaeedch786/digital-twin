@@ -19,6 +19,7 @@ export default function AvatarMode() {
 
   const recognitionRef = useRef(null);
   const chatScrollRef = useRef(null);
+  const rootRef = useRef(null);
 
   // Scroll ONLY the messages container. scrollIntoView() walks every scrollable
   // ancestor including the document itself — on iOS that panned the whole app
@@ -34,19 +35,29 @@ export default function AvatarMode() {
     document.documentElement.setAttribute("data-theme", "dark");
   }, []);
 
-  // iOS keyboard fix: when the on-screen keyboard opens, Safari pans the page
-  // and can leave it scrolled after the keyboard closes — the input bar then
-  // appears "lifted" with dead space below. Snap the window back whenever the
-  // visual viewport changes so the app shell stays pinned.
+  // Mobile keyboard fix. 100dvh does NOT shrink when the iOS/Android on-screen
+  // keyboard opens, so the bottom of the app (the input bar) ends up behind the
+  // keyboard, and dismissing it can leave the input "floating" with dead space.
+  // Instead, size the app shell to the *visual viewport* — the region actually
+  // visible above the keyboard — and follow it as the keyboard opens/closes.
   useEffect(() => {
+    const root = rootRef.current;
     const vv = window.visualViewport;
-    if (!vv) return;
-    const snapBack = () => window.scrollTo(0, 0);
-    vv.addEventListener("resize", snapBack);
-    vv.addEventListener("scroll", snapBack);
+    if (!root || !vv) return; // CSS 100dvh fallback covers no-visualViewport
+    const apply = () => {
+      root.style.height = `${vv.height}px`;
+      root.style.transform = `translateY(${vv.offsetTop}px)`;
+      // Keyboard open? Collapse the tall identity header so the conversation
+      // and input get the visible space instead of a giant avatar.
+      const keyboardOpen = window.innerHeight - vv.height > 120;
+      root.classList.toggle("kb-open", keyboardOpen);
+    };
+    apply();
+    vv.addEventListener("resize", apply);
+    vv.addEventListener("scroll", apply);
     return () => {
-      vv.removeEventListener("resize", snapBack);
-      vv.removeEventListener("scroll", snapBack);
+      vv.removeEventListener("resize", apply);
+      vv.removeEventListener("scroll", apply);
     };
   }, []);
 
@@ -212,7 +223,7 @@ export default function AvatarMode() {
   // Browsers usually block autoplay audio, so it's better to wait for the first click.
 
   return (
-    <div className="avatar-root" style={{ backgroundColor: "#080C16", color: "white", display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", fontFamily: "'Outfit', sans-serif" }}>
+    <div ref={rootRef} className="avatar-root" style={{ backgroundColor: "#080C16", color: "white", display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: "'Outfit', sans-serif" }}>
 
       {/* Subtle Dot Pattern Background */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px)", backgroundSize: "24px 24px", zIndex: 0, pointerEvents: "none" }} />
