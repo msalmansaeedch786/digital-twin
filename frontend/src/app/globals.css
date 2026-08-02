@@ -804,10 +804,21 @@ p {
    collapse/expand), so the input bar stays pinned to the real bottom. */
 .avatar-root {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Fallback for browsers without visualViewport; JS overrides height to the
+     visible viewport so the input bar tracks the mobile keyboard exactly. */
   height: 100vh;
   height: 100dvh;
   width: 100%;
+  transform-origin: top;
+}
+
+/* When the mobile keyboard is open, hide the tall identity header so the
+   conversation and input use the limited visible space. */
+.avatar-root.kb-open .avatar-header {
+  display: none !important; /* beat the inline display:flex on the header */
 }
 
 .avatar-message-bubble {
