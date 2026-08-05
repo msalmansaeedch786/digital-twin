@@ -56,9 +56,11 @@ Best practice dictates placing Lambda functions and Databases inside **Private S
 
 To achieve a **Production-Ready** baseline, this architecture implements the following enterprise patterns:
 1. **Isolated Subnets**: The PostgreSQL database and Compute Lambdas reside strictly in Private Subnets with no Internet Gateway route, rendering them inaccessible from the public internet.
-2. **AWS PrivateLink (VPC Endpoints)**: Secure, private tunnels are provisioned for Amazon Bedrock, AWS Secrets Manager, Amazon CloudWatch, and AWS X-Ray. API traffic to these services never traverses the public internet.
+2. **AWS PrivateLink (VPC Endpoints)**: Secure, private tunnels are provisioned for Amazon Bedrock Runtime and AWS Secrets Manager (Interface endpoints), plus Amazon S3 (a Gateway endpoint, which carries no hourly charge). Traffic to these services never traverses the public internet. Interface endpoints are deliberately single-AZ, since they bill per-AZ per-hour and this workload does not need cross-AZ endpoint redundancy.
 3. **Least Privilege IAM**: Every Lambda function executes under a tightly scoped IAM role, granting exact permissions (e.g., the Ingestion Lambda can generate Bedrock embeddings, but is explicitly denied access to the Bedrock LLM).
 4. **Encrypted Secrets**: The database master password is auto-generated and managed by AWS Secrets Manager, keeping it out of Terraform state entirely. Lambda functions dynamically fetch this secret at runtime.
+5. **Automatic Circuit Breaker**: A CloudWatch alarm on the API Gateway request count (60-second periods) fires an EventBridge rule into a dedicated breaker Lambda, which sets the stage throttle to `0/0` — every request is then rejected at the front door for free, before Lambda or Bedrock can be billed. A second rule fires when the alarm returns to `OK` and restores the normal `5 req/s` limit, so the API self-heals once a flood stops. The breaker deliberately runs **outside** the VPC so it still works if VPC networking is what is failing. This has absorbed live floods of >300,000 requests for a few cents.
+6. **Cost Guardrails**: Daily and monthly AWS Budgets plus Cost Anomaly Detection publish to SNS, so unexpected spend is caught even if it never trips a technical alarm.
 
 <details>
 <summary><strong>View Detailed Sequence Diagrams</strong></summary>
@@ -237,9 +239,12 @@ npm run dev
 ## Observability
 
 The architecture integrates deeply with AWS native observability tools:
-- **Amazon CloudWatch**: Captures structured JSON logs from the Lambda functions for easy parsing and debugging.
-- **AWS X-Ray**: Provides end-to-end distributed tracing to identify performance bottlenecks in the RAG pipeline.
-- **AWS CloudTrail**: Audits all API calls made within the AWS account for compliance and security monitoring.
+- **Amazon CloudWatch**: Captures structured JSON logs from the Lambda functions for easy parsing and debugging, and drives a `digital-twin-ops` dashboard plus seven alarms covering API abuse, Lambda errors/throttles/p99 duration, and RDS CPU/connections/storage.
+- **Amazon SNS**: Delivers every alarm, circuit-breaker action, budget threshold, and cost anomaly to email.
+- **Amazon SQS**: A dead-letter queue captures ingestion events that fail all retries, so a bad document is visible rather than silently dropped.
+- **AWS CloudTrail**: Audits all API calls made within the AWS account for compliance and security monitoring, with log-file validation enabled.
+
+> X-Ray tracing was evaluated and deliberately removed: it requires its own interface VPC endpoint (~$9/month) which outweighed its value for this workload. Structured logs, alarms, and the dashboard remain the observability path.
 
 ## Developer Guide
 
