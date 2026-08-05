@@ -353,16 +353,36 @@ export default function Portfolio() {
         </Link>
       </div>
 
-      {/* Footer */}
+      {/* Footer — three tiers: closing CTA, navigation + social, legal */}
       <footer className="site-footer">
+        <div className="footer-cta">
+          <h2 className="footer-cta-title">Want the details? Just ask.</h2>
+          <p className="footer-cta-sub">
+            My digital twin answers questions about my work in my own voice.
+          </p>
+          <Link href="/avatar" className="footer-cta-btn">
+            <MessageSquare size={18} />
+            Chat with my twin
+          </Link>
+        </div>
+
+        <nav className="footer-nav" aria-label="Footer">
+          <a href="#experience">Experience</a>
+          <a href="#education">Education</a>
+          <a href="#projects">Projects</a>
+          <a href="#certifications">Certifications</a>
+        </nav>
+
         <div className="footer-socials">
           <a href="mailto:msalmansaeedch786@gmail.com" aria-label="Email"><Mail size={20} /></a>
           <a href="https://github.com/msalmansaeedch" target="_blank" rel="noreferrer" aria-label="GitHub"><FiGithub size={20} /></a>
           <a href="https://linkedin.com/in/msalmansaeedch" target="_blank" rel="noreferrer" aria-label="LinkedIn"><FiLinkedin size={20} /></a>
           <a href="https://www.youtube.com/@msalmansaeedch" target="_blank" rel="noreferrer" aria-label="YouTube"><FiYoutube size={20} /></a>
         </div>
-        <div className="footer-line">
-          designed & built by Muhammad Salman — Next.js · AWS Bedrock · Terraform
+
+        <div className="footer-legal">
+          <span>© {new Date().getFullYear()} Muhammad Salman · Munich, Germany</span>
+          <span>Next.js · AWS Bedrock · Terraform</span>
         </div>
       </footer>
     </>
