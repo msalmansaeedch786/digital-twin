@@ -28,6 +28,15 @@
   --accent-soft-border: rgba(2, 132, 199, 0.18);
   --badge-shadow: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.18));
   --dot-grid: rgba(15, 23, 42, 0.05);
+
+  /* Text drawn ON TOP of the accent gradient. The light-mode accents
+     (#0284c7 -> #4f46e5) are dark, so this must be white for legible contrast;
+     the dark-mode accents are bright cyan, so it flips to black below. */
+  --on-accent: #ffffff;
+  /* Solid-fill CTA gradient. Deliberately a shade deeper than --neon-cyan at
+     the start: the plain accent only reached 4.10:1 against white, below the
+     4.5:1 WCAG AA minimum for text at this size. */
+  --cta-gradient: linear-gradient(135deg, #0369a1, #4f46e5);
 }
 
 [data-theme='dark'] {
@@ -46,6 +55,10 @@
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-highlight: rgba(255, 255, 255, 0.15);
   --glass-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.7);
+
+  /* Dark-mode accents are bright cyan, so text on top must be dark. */
+  --on-accent: #000000;
+  --cta-gradient: linear-gradient(135deg, #00f2fe, #4facfe);
 
   --orb-1-color: rgba(0, 242, 254, 0.4);
   --orb-2-color: rgba(79, 172, 254, 0.4);
@@ -625,11 +638,11 @@ p {
 /* Footer */
 .site-footer {
   border-top: 1px solid var(--glass-border);
-  padding: 2.5rem 2rem 3rem;
+  padding: 3.5rem 2rem 2.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 2rem;
   text-align: center;
 }
 
@@ -638,6 +651,87 @@ p {
   font-size: 0.82rem;
   color: var(--text-secondary);
   letter-spacing: 0.5px;
+}
+
+/* Tier 1 — closing call to action */
+.footer-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: 34rem;
+}
+
+.footer-cta-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  text-wrap: balance;
+}
+
+.footer-cta-sub {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin: 0;
+  text-wrap: balance;
+}
+
+.footer-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  padding: 0.75rem 1.6rem;
+  border-radius: 25px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--on-accent);
+  background: var(--cta-gradient);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.footer-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px var(--neon-cyan-glow);
+}
+
+/* Tier 2 — navigation, so the page bottom is not a dead end */
+.footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.6rem;
+}
+
+.footer-nav a {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-nav a:hover {
+  color: var(--text-primary);
+}
+
+/* Tier 3 — legal / colophon */
+.footer-legal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.4px;
+  opacity: 0.85;
+}
+
+@media (max-width: 640px) {
+  .site-footer { padding: 2.5rem 1.25rem 2rem; gap: 1.6rem; }
+  .footer-cta-title { font-size: 1.3rem; }
+  .footer-nav { gap: 1rem 1.2rem; }
 }
 
 .footer-line a {
