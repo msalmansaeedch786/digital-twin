@@ -364,9 +364,6 @@ export default function Portfolio() {
         <div className="footer-line">
           designed & built by Muhammad Salman — Next.js · AWS Bedrock · Terraform
         </div>
-        <div className="footer-line">
-          <a href="https://github.com/msalmansaeedch786/digital-twin" target="_blank" rel="noreferrer">view source on GitHub</a>
-        </div>
       </footer>
     </>
   );
