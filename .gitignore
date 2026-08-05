@@ -1,5 +1,8 @@
 node_modules/
+# Match every variant (.env, .env.local, .env.production, ...), not just ".env"
 .env
+.env.*
+!.env.example
 .DS_Store
 venv/
 __pycache__/
