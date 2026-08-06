@@ -135,6 +135,16 @@
     font-size:12.5px;color:#0369a1;letter-spacing:.01em;
   }
 
+  /* slide 1: centred statement, to contrast with the split cover image */
+  .inner.center{align-items:center;justify-content:center;text-align:center}
+  .hero{font-size:82px;line-height:1.0;font-weight:800;letter-spacing:-.035em;margin-top:26px}
+  .hero-lede{
+    margin-top:26px;max-width:820px;font-size:23px;line-height:1.5;
+    color:var(--text-secondary);letter-spacing:-.006em;
+  }
+  .hero-by{margin-top:34px;font-size:19px;color:#64748b}
+  .hero-by b{font-weight:600;color:#334155}
+
   .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between}
   .foot .who{font-size:17px;color:#64748b}
   .foot .who b{font-weight:600;color:#334155}
@@ -142,41 +152,26 @@
 </head>
 <body>
 
-<!-- ============ 1. HOOK ============ -->
+<!-- ============ 1. HOOK ============
+     Deliberately NOT the same composition as twin-cover.png: that image is
+     already attached as the link preview and sits beside this deck in the
+     media strip. Centred statement here, left-aligned card rows after. -->
 <div class="slide">
   <div class="orb orb-a"></div><div class="orb orb-b"></div>
-  <div class="inner">
-    <div class="eyebrow"><span class="dot"></span>Live Demo</div>
-    <div class="row">
-      <div style="flex:1">
-        <h1>AI Digital Twin</h1>
-        <div class="sub">Serverless RAG Chatbot on AWS</div>
-        <div class="byline"><b>Muhammad Salman</b> · Senior Infrastructure Consultant</div>
-        <div style="margin-top:34px"><span class="url">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-               stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/>
-            <path d="M12 2a15.3 15.3 0 0 1 0 20a15.3 15.3 0 0 1 0-20z"/>
-          </svg>msalmansaeedch.de
-        </span></div>
-      </div>
-      <div class="chat">
-        <div class="q">What are your strengths?</div>
-        <div class="a">
-          <div class="lead">My strengths include:</div>
-          <ul>
-            <li><div><b>Consistency</b> <span>— determined to solve complex tickets, however long it takes.</span></div></li>
-            <li><div><b>Passion for Cloud Computing</b> <span>— it doesn't feel like a job to me.</span></div></li>
-            <li><div><b>Task Management</b> <span>— highly organised, with clear visibility for my team.</span></div></li>
-          </ul>
-        </div>
-        <div class="proof">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-          Answered live by the twin — grounded in real data
-        </div>
-      </div>
-    </div>
+  <div class="inner center">
+    <div class="eyebrow" style="justify-content:center"><span class="dot"></span>Live Demo</div>
+    <h1 class="hero">A portfolio you<br>can interrogate.</h1>
+    <div class="hero-lede">I built an AI version of myself and put it on my site. It answers
+      questions about my career in the first person — grounded strictly in my own documents,
+      so it never invents a credential I don't have.</div>
+    <div style="margin-top:36px"><span class="url">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/>
+        <path d="M12 2a15.3 15.3 0 0 1 0 20a15.3 15.3 0 0 1 0-20z"/>
+      </svg>msalmansaeedch.de
+    </span></div>
+    <div class="hero-by"><b>Muhammad Salman</b> · Senior Infrastructure Consultant</div>
   </div>
 </div>
 
