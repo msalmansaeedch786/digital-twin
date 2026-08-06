@@ -1,0 +1,169 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap");</style>
+<style>
+  /* Light-theme tokens copied verbatim from frontend/src/app/globals.css :root */
+  :root{
+    --bg-deep:#f8fafc;
+    --bg-secondary:#f1f5f9;
+    --text-primary:#0f172a;
+    --text-secondary:#475569;
+    --neon-cyan:#0284c7;
+    --neon-purple:#4f46e5;
+    --dot-grid:rgba(15,23,42,0.05);
+    --orb-1:rgba(2,132,199,0.15);
+    --orb-2:rgba(79,70,229,0.15);
+    --cta:linear-gradient(135deg,#0369a1,#4f46e5);
+    --glass-border:rgba(0,0,0,0.05);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{width:1200px;height:630px;overflow:hidden}
+
+  .card{
+    position:relative;width:1200px;height:630px;
+    background:var(--bg-deep);
+    font-family:'Outfit',system-ui,sans-serif;
+    display:flex;align-items:center;
+    padding:0 66px;gap:46px;
+    overflow:hidden;
+  }
+  /* dot grid */
+  .card::before{
+    content:'';position:absolute;inset:0;
+    background-image:radial-gradient(var(--dot-grid) 1.5px, transparent 1.5px);
+    background-size:26px 26px;
+  }
+  /* soft accent orbs */
+  .orb{position:absolute;border-radius:50%;filter:blur(80px)}
+  .orb-a{width:620px;height:620px;right:-160px;top:-260px;background:var(--orb-1)}
+  .orb-b{width:560px;height:560px;left:-200px;bottom:-280px;background:var(--orb-2)}
+  .orb-c{width:420px;height:420px;right:120px;bottom:-300px;background:rgba(217,70,239,0.045)}
+
+  .left{position:relative;z-index:2;width:512px;flex:none}
+  .right{position:relative;z-index:2;flex:1;display:flex;justify-content:flex-end}
+
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:9px;
+    font-family:'JetBrains Mono',monospace;font-weight:700;
+    font-size:14px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--neon-cyan);margin-bottom:20px;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:#22c55e;
+       box-shadow:0 0 0 4px rgba(34,197,94,0.18)}
+
+  h1{
+    font-size:74px;line-height:.98;font-weight:800;
+    letter-spacing:-.032em;color:var(--text-primary);
+  }
+  h2{
+    margin-top:16px;font-size:29px;line-height:1.25;font-weight:600;
+    letter-spacing:-.012em;color:var(--text-secondary);
+  }
+  .byline{
+    margin-top:18px;font-size:18px;font-weight:400;color:#64748b;
+    letter-spacing:-.005em;
+  }
+  .byline b{font-weight:600;color:#334155}
+
+  .url{
+    margin-top:32px;display:inline-flex;align-items:center;gap:11px;
+    padding:14px 26px 14px 22px;border-radius:999px;
+    background:var(--cta);color:#fff;
+    font-size:22px;font-weight:600;letter-spacing:-.005em;
+    box-shadow:0 12px 28px -10px rgba(3,105,161,.55);
+  }
+  .url svg{width:19px;height:19px;flex:none}
+
+  /* ---- chat proof: the twin's real answer about its strengths ---- */
+  .chat{
+    width:512px;background:#fff;
+    border:1px solid var(--glass-border);border-radius:24px;
+    box-shadow:0 24px 60px -20px rgba(15,23,42,.18),
+               0 2px 6px rgba(15,23,42,.04);
+    padding:24px 26px 20px;
+  }
+  .q{
+    background:var(--cta);color:#fff;font-weight:500;
+    font-size:18.5px;line-height:1.4;letter-spacing:-.006em;
+    padding:13px 18px;border-radius:18px 18px 6px 18px;
+    margin-left:150px;
+  }
+  .a{
+    background:var(--bg-secondary);color:var(--text-primary);
+    border:1px solid rgba(15,23,42,.06);
+    padding:16px 18px 15px;border-radius:18px 18px 18px 6px;
+    margin-top:12px;margin-right:22px;
+  }
+  .a .lead{
+    font-size:16.5px;font-weight:400;color:var(--text-secondary);
+    letter-spacing:-.004em;margin-bottom:11px;
+  }
+  .a ul{list-style:none}
+  .a li{
+    display:flex;gap:10px;align-items:flex-start;
+    font-size:16.5px;line-height:1.38;letter-spacing:-.006em;
+    margin-bottom:9px;
+  }
+  .a li:last-child{margin-bottom:0}
+  .a li::before{
+    content:'';flex:none;width:6px;height:6px;border-radius:50%;
+    background:#0369a1;margin-top:7px;
+  }
+  .a b{font-weight:700;color:#0f172a}
+  .a span{font-weight:400;color:var(--text-secondary)}
+
+  .proof{
+    margin-top:18px;padding-top:15px;border-top:1px solid rgba(15,23,42,.07);
+    display:flex;align-items:center;gap:9px;
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:400;
+    letter-spacing:.02em;color:#64748b;
+  }
+  .proof svg{width:15px;height:15px;flex:none;color:#16a34a}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="orb orb-a"></div>
+  <div class="orb orb-b"></div>
+  <div class="orb orb-c"></div>
+
+  <div class="left">
+    <div class="eyebrow"><span class="dot"></span>Live Demo</div>
+    <h1>AI Digital Twin</h1>
+    <h2>Serverless RAG Chatbot on AWS</h2>
+    <div class="byline"><b>Muhammad Salman</b> · Senior Infrastructure Consultant</div>
+    <div class="url">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/>
+        <path d="M12 2a15.3 15.3 0 0 1 0 20a15.3 15.3 0 0 1 0-20z"/>
+      </svg>
+      msalmansaeedch.de
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="chat">
+      <div class="q">What are your strengths?</div>
+      <div class="a">
+        <div class="lead">My strengths include:</div>
+        <ul>
+          <li><div><b>Consistency</b> <span>— determined to solve complex tickets, however long it takes.</span></div></li>
+          <li><div><b>Passion for Cloud Computing</b> <span>— it doesn't feel like a job to me.</span></div></li>
+          <li><div><b>Task Management</b> <span>— highly organised, with clear visibility for my team.</span></div></li>
+        </ul>
+      </div>
+      <div class="proof">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6 9 17l-5-5"/>
+        </svg>
+        Answered live by the twin — grounded in real data
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
