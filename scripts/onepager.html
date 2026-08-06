@@ -1,0 +1,298 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap");</style>
+<style>
+  /* Light-theme tokens copied verbatim from frontend/src/app/globals.css :root,
+     so the carousel matches twin-cover.png and the live site. */
+  :root{
+    --bg-deep:#f8fafc;
+    --bg-secondary:#f1f5f9;
+    --text-primary:#0f172a;
+    --text-secondary:#475569;
+    --neon-cyan:#0284c7;
+    --neon-purple:#4f46e5;
+    --dot-grid:rgba(15,23,42,0.05);
+    --cta:linear-gradient(135deg,#0369a1,#4f46e5);
+    --glass-border:rgba(0,0,0,0.05);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+
+  /* 1280x720 CSS px = 13.333in x 7.5in at 96dpi — the standard 16:9 slide,
+     which is what LinkedIn's document carousel expects. */
+  @page{ size:1280px 720px; margin:0 }
+  html,body{width:1280px;background:#fff}
+
+  .slide{
+    position:relative;width:1280px;height:720px;overflow:hidden;
+    background:var(--bg-deep);
+    font-family:'Outfit',system-ui,sans-serif;
+    color:var(--text-primary);
+    padding:64px 72px;
+    page-break-after:always;break-after:page;
+  }
+  .slide:last-child{page-break-after:auto;break-after:auto}
+  .slide::before{
+    content:'';position:absolute;inset:0;
+    background-image:radial-gradient(var(--dot-grid) 1.5px, transparent 1.5px);
+    background-size:26px 26px;
+  }
+  /* Soft accent orbs. These are radial-gradients rather than a blurred solid:
+     filter:blur() forces Chrome to rasterise the whole layer when printing,
+     which turns every glyph on the page into a bitmap. Gradients keep the text
+     as real vector type in the PDF. */
+  .orb{position:absolute;border-radius:50%}
+  .orb-a{width:900px;height:900px;right:-320px;top:-420px;
+    background:radial-gradient(circle closest-side,
+      rgba(2,132,199,0.20) 0%, rgba(2,132,199,0.10) 45%, rgba(2,132,199,0) 100%)}
+  .orb-b{width:860px;height:860px;left:-340px;bottom:-450px;
+    background:radial-gradient(circle closest-side,
+      rgba(79,70,229,0.17) 0%, rgba(79,70,229,0.08) 45%, rgba(79,70,229,0) 100%)}
+  .inner{position:relative;z-index:2;height:100%;display:flex;flex-direction:column}
+
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:9px;
+    font-family:'JetBrains Mono',monospace;font-weight:700;
+    font-size:13px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--neon-cyan);
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:#22c55e;
+       box-shadow:0 0 0 4px rgba(34,197,94,0.18)}
+
+  h1{font-size:76px;line-height:.98;font-weight:800;letter-spacing:-.033em}
+  h2{font-size:44px;line-height:1.08;font-weight:800;letter-spacing:-.028em}
+  .sub{margin-top:14px;font-size:27px;font-weight:600;color:var(--text-secondary);letter-spacing:-.012em}
+  .byline{margin-top:14px;font-size:19px;color:#64748b}
+  .byline b{font-weight:600;color:#334155}
+  .lede{margin-top:14px;font-size:21px;line-height:1.45;color:var(--text-secondary);max-width:900px}
+
+  .url{
+    display:inline-flex;align-items:center;gap:11px;
+    padding:15px 28px 15px 24px;border-radius:999px;
+    background:var(--cta);color:#fff;
+    font-size:23px;font-weight:600;
+  }
+  .url svg{width:20px;height:20px}
+
+  /* slide 1 chat */
+  .row{display:flex;gap:44px;align-items:center;flex:1}
+  .chat{
+    width:492px;flex:none;background:#fff;
+    border:1px solid rgba(15,23,42,.10);border-radius:24px;
+    padding:24px 26px 20px;
+  }
+  .q{background:var(--cta);color:#fff;font-weight:500;font-size:18px;
+     padding:13px 18px;border-radius:18px 18px 6px 18px;margin-left:140px}
+  .a{background:var(--bg-secondary);border:1px solid rgba(15,23,42,.06);
+     padding:16px 18px 15px;border-radius:18px 18px 18px 6px;margin-top:12px;margin-right:22px}
+  .a .lead{font-size:16px;color:var(--text-secondary);margin-bottom:11px}
+  .a li{display:flex;gap:10px;align-items:flex-start;font-size:16px;line-height:1.38;
+        margin-bottom:9px;list-style:none}
+  .a li:last-child{margin-bottom:0}
+  .a li::before{content:'';flex:none;width:6px;height:6px;border-radius:50%;
+                background:#0369a1;margin-top:7px}
+  .a b{font-weight:700}
+  .a span{color:var(--text-secondary)}
+  .proof{margin-top:18px;padding-top:15px;border-top:1px solid rgba(15,23,42,.07);
+         display:flex;align-items:center;gap:9px;font-family:'JetBrains Mono',monospace;
+         font-size:12px;color:#64748b}
+  .proof svg{width:15px;height:15px;color:#16a34a}
+
+  /* flow steps */
+  .flow{display:flex;align-items:stretch;gap:14px;margin-top:38px}
+  .step{
+    flex:1;background:#fff;border:1px solid rgba(15,23,42,.10);border-radius:20px;
+    padding:22px 20px 20px;
+    display:flex;flex-direction:column;
+  }
+  .num{
+    width:34px;height:34px;border-radius:10px;background:var(--cta);color:#fff;
+    font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;
+    margin-bottom:14px;
+  }
+  .step h3{font-size:19px;font-weight:700;letter-spacing:-.01em;margin-bottom:7px}
+  .step p{font-size:15.5px;line-height:1.42;color:var(--text-secondary)}
+  .step code{font-family:'JetBrains Mono',monospace;font-size:13.5px;color:#0369a1}
+  .arrow{display:flex;align-items:center;color:#cbd5e1;font-size:26px;font-weight:300}
+
+  /* decision cards */
+  .cards{display:flex;gap:20px;margin-top:36px;flex:1}
+  .card2{
+    flex:1;background:#fff;border:1px solid rgba(15,23,42,.10);border-radius:22px;
+    padding:28px 26px;
+    display:flex;flex-direction:column;
+  }
+  .card2 .ico{
+    width:46px;height:46px;border-radius:13px;display:flex;align-items:center;
+    justify-content:center;margin-bottom:18px;background:rgba(2,132,199,.09);color:#0369a1;
+  }
+  .card2 .ico svg{width:24px;height:24px}
+  .card2 h3{font-size:23px;font-weight:800;letter-spacing:-.018em;line-height:1.12;margin-bottom:12px}
+  .card2 p{font-size:16.5px;line-height:1.46;color:var(--text-secondary)}
+  .card2 .tag{
+    margin-top:auto;padding-top:16px;font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;color:#0369a1;letter-spacing:.01em;
+  }
+
+  .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between}
+  .foot .who{font-size:17px;color:#64748b}
+  .foot .who b{font-weight:600;color:#334155}
+</style>
+</head>
+<body>
+
+<!-- ============ 1. HOOK ============ -->
+<div class="slide">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <div class="inner">
+    <div class="eyebrow"><span class="dot"></span>Live Demo</div>
+    <div class="row">
+      <div style="flex:1">
+        <h1>AI Digital Twin</h1>
+        <div class="sub">Serverless RAG Chatbot on AWS</div>
+        <div class="byline"><b>Muhammad Salman</b> · Senior Infrastructure Consultant</div>
+        <div style="margin-top:34px"><span class="url">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/>
+            <path d="M12 2a15.3 15.3 0 0 1 0 20a15.3 15.3 0 0 1 0-20z"/>
+          </svg>msalmansaeedch.de
+        </span></div>
+      </div>
+      <div class="chat">
+        <div class="q">What are your strengths?</div>
+        <div class="a">
+          <div class="lead">My strengths include:</div>
+          <ul>
+            <li><div><b>Consistency</b> <span>— determined to solve complex tickets, however long it takes.</span></div></li>
+            <li><div><b>Passion for Cloud Computing</b> <span>— it doesn't feel like a job to me.</span></div></li>
+            <li><div><b>Task Management</b> <span>— highly organised, with clear visibility for my team.</span></div></li>
+          </ul>
+        </div>
+        <div class="proof">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          Answered live by the twin — grounded in real data
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 2. HOW IT ANSWERS ============ -->
+<div class="slide">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <div class="inner">
+    <div class="eyebrow">How a question gets answered</div>
+    <h2 style="margin-top:18px">It retrieves before it speaks.</h2>
+    <div class="lede">Nothing is generated from the model's own priors. Every answer is assembled
+      from chunks of my CV that were actually retrieved for that question.</div>
+    <div class="flow">
+      <div class="step"><div class="num">1</div><h3>You ask</h3>
+        <p>The question hits API&nbsp;Gateway and a FastAPI handler on Lambda.</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="num">2</div><h3>Embed</h3>
+        <p>Bedrock <b>Titan&nbsp;v2</b> turns the question into a vector.</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="num">3</div><h3>Retrieve</h3>
+        <p><b>pgvector</b> on RDS returns the <code>k=5</code> closest chunks of my real documents.</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="num">4</div><h3>Ground</h3>
+        <p><b>Nova&nbsp;Lite</b> writes the reply using only those chunks as context.</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="num">5</div><h3>Or refuse</h3>
+        <p>Nothing relevant retrieved? It says it doesn't know instead of guessing.</p></div>
+    </div>
+    <div class="foot">
+      <div class="who"><b>Muhammad Salman</b> · msalmansaeedch.de</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 3. DECISIONS ============ -->
+<div class="slide">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <div class="inner">
+    <div class="eyebrow">Engineering decisions</div>
+    <h2 style="margin-top:18px">The parts I'd defend in a design review.</h2>
+    <div class="cards">
+      <div class="card2">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <h3>No NAT.<br>No internet gateway.</h3>
+        <p>The VPC is private subnets only. Lambda reaches Bedrock, Secrets Manager and S3
+           through VPC endpoints, so model and database traffic never touch the public
+           internet — and the NAT bill is zero.</p>
+        <div class="tag">3 VPC endpoints · 0 egress paths</div>
+      </div>
+      <div class="card2">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></div>
+        <h3>It defends itself.</h3>
+        <p>A CloudWatch alarm on request volume fires a Lambda that drops the API stage throttle
+           to zero. An abuse flood is rejected at the front door, unbilled — and it reopens
+           automatically once traffic normalises.</p>
+        <div class="tag">ALARM → 0/0 · OK → 5/10</div>
+      </div>
+      <div class="card2">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/>
+          <circle cx="12" cy="12" r="9"/></svg></div>
+        <h3>Keyless deploys.</h3>
+        <p>GitHub Actions authenticates to AWS through OIDC — there is not a single static
+           credential in the repo or in CI. Push to main and Terraform plans, applies and
+           ships the Lambda bundles.</p>
+        <div class="tag">100% Terraform · 0 stored secrets</div>
+      </div>
+    </div>
+    <div class="foot">
+      <div class="who"><b>Muhammad Salman</b> · msalmansaeedch.de</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 4. INGESTION + CTA ============ -->
+<div class="slide">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <div class="inner">
+    <div class="eyebrow">Keeping it current</div>
+    <h2 style="margin-top:18px">Updating what it knows is a git commit.</h2>
+    <div class="lede">No dashboard, no re-training, no manual re-indexing. The knowledge base is
+      version-controlled like the rest of the system.</div>
+    <div class="flow">
+      <div class="step"><div class="num">1</div><h3>Edit</h3>
+        <p>Change a text file in <code>data/</code> and push.</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="num">2</div><h3>Sync</h3>
+        <p>GitHub Actions syncs the folder to the knowledge-base S3 bucket.</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="num">3</div><h3>Trigger</h3>
+        <p>The <code>ObjectCreated</code> event invokes the ingestion Lambda.</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="num">4</div><h3>Chunk &amp; embed</h3>
+        <p>1000-character chunks, 200 overlap, embedded with Titan&nbsp;v2.</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="num">5</div><h3>Live</h3>
+        <p>Vectors land in pgvector. The twin knows it on the next question.</p></div>
+    </div>
+    <div class="foot">
+      <div>
+        <div style="font-size:20px;color:var(--text-secondary);margin-bottom:16px">
+          Ask it anything about my cloud and platform engineering experience.</div>
+        <span class="url">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/>
+            <path d="M12 2a15.3 15.3 0 0 1 0 20a15.3 15.3 0 0 1 0-20z"/>
+          </svg>msalmansaeedch.de
+        </span>
+      </div>
+      <div class="who"><b>Muhammad Salman</b><br>Senior Infrastructure Consultant</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
