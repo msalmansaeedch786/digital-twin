@@ -16,7 +16,30 @@
     --dot-grid:rgba(15,23,42,0.05);
     --cta:linear-gradient(135deg,#0369a1,#4f46e5);
     --glass-border:rgba(0,0,0,0.05);
+    /* Text drawn on top of the accent gradient. Light-mode accents are dark,
+       so this is white; it flips to black in the dark block below, exactly as
+       globals.css does. */
+    --on-accent:#ffffff;
   }
+
+  /* Dark opener — the same [data-theme='dark'] tokens the chat UI runs on.
+     Scoped to the slide so the explainer slides that follow stay light. */
+  .slide.dark{
+    --bg-deep:#050b14;
+    --bg-secondary:#0a1120;
+    --text-primary:#ffffff;
+    --text-secondary:#8b9bb4;
+    --neon-cyan:#00f2fe;
+    --dot-grid:rgba(255,255,255,0.05);
+    --cta:linear-gradient(135deg,#00f2fe,#4facfe);
+    --on-accent:#000000;
+  }
+  .slide.dark .orb-a{background:radial-gradient(circle closest-side,
+    rgba(0,242,254,0.22) 0%, rgba(0,242,254,0.08) 45%, rgba(0,242,254,0) 100%)}
+  .slide.dark .orb-b{background:radial-gradient(circle closest-side,
+    rgba(79,172,254,0.20) 0%, rgba(79,172,254,0.07) 45%, rgba(79,172,254,0) 100%)}
+  .slide.dark .hero-by{color:#8b9bb4}
+  .slide.dark .hero-by b{color:#e2e8f0}
   *{margin:0;padding:0;box-sizing:border-box}
 
   /* 1280x720 CSS px = 13.333in x 7.5in at 96dpi — the standard 16:9 slide,
@@ -70,7 +93,7 @@
   .url{
     display:inline-flex;align-items:center;gap:11px;
     padding:15px 28px 15px 24px;border-radius:999px;
-    background:var(--cta);color:#fff;
+    background:var(--cta);color:var(--on-accent);
     font-size:23px;font-weight:600;
   }
   .url svg{width:20px;height:20px}
@@ -156,7 +179,7 @@
      Deliberately NOT the same composition as twin-cover.png: that image is
      already attached as the link preview and sits beside this deck in the
      media strip. Centred statement here, left-aligned card rows after. -->
-<div class="slide">
+<div class="slide dark">
   <div class="orb orb-a"></div><div class="orb orb-b"></div>
   <div class="inner center">
     <div class="eyebrow" style="justify-content:center"><span class="dot"></span>Live Demo</div>
