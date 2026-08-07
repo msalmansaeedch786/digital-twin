@@ -353,19 +353,9 @@ export default function Portfolio() {
         </Link>
       </div>
 
-      {/* Footer — three tiers: closing CTA, navigation + social, legal */}
+      {/* Footer: navigation + social, then legal. No closing CTA here, the
+          "Talk to my digital twin" button sits directly above it. */}
       <footer className="site-footer">
-        <div className="footer-cta">
-          <h2 className="footer-cta-title">Want the details? Just ask.</h2>
-          <p className="footer-cta-sub">
-            My digital twin answers questions about my work in my own voice.
-          </p>
-          <Link href="/avatar" className="footer-cta-btn">
-            <MessageSquare size={18} />
-            Chat with my twin
-          </Link>
-        </div>
-
         <nav className="footer-nav" aria-label="Footer">
           <a href="#experience">Experience</a>
           <a href="#education">Education</a>

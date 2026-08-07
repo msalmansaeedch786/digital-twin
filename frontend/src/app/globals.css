@@ -653,51 +653,7 @@ p {
   letter-spacing: 0.5px;
 }
 
-/* Tier 1 — closing call to action */
-.footer-cta {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.6rem;
-  max-width: 34rem;
-}
-
-.footer-cta-title {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0;
-  text-wrap: balance;
-}
-
-.footer-cta-sub {
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  margin: 0;
-  text-wrap: balance;
-}
-
-.footer-cta-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.6rem;
-  padding: 0.75rem 1.6rem;
-  border-radius: 25px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  text-decoration: none;
-  color: var(--on-accent);
-  background: var(--cta-gradient);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.footer-cta-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px var(--neon-cyan-glow);
-}
-
-/* Tier 2 — navigation, so the page bottom is not a dead end */
+/* Tier 1: navigation, so the page bottom is not a dead end */
 .footer-nav {
   display: flex;
   flex-wrap: wrap;
@@ -716,7 +672,7 @@ p {
   color: var(--text-primary);
 }
 
-/* Tier 3 — legal / colophon */
+/* Tier 2: legal / colophon */
 .footer-legal {
   display: flex;
   flex-direction: column;
@@ -730,7 +686,6 @@ p {
 
 @media (max-width: 640px) {
   .site-footer { padding: 2.5rem 1.25rem 2rem; gap: 1.6rem; }
-  .footer-cta-title { font-size: 1.3rem; }
   .footer-nav { gap: 1rem 1.2rem; }
 }
 
