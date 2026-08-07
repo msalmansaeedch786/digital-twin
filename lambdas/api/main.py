@@ -5,6 +5,7 @@ import time
 import logging
 import urllib.parse
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from typing import List, Optional
 
 import boto3
@@ -21,6 +22,7 @@ from langchain_aws import ChatBedrock, BedrockEmbeddings
 from langchain_postgres import PGVector
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain.chains.combine_documents.stuff import create_stuff_documents_chain
@@ -118,6 +120,80 @@ def get_db_connection_string() -> str:
 # PGVector uses psycopg connection pool to reuse DB connections across requests.
 # ===========================================================================
 
+# ===========================================================================
+# Per-stage timing
+#
+# The REPORT line only gives total invocation time, which cannot answer the
+# question that actually matters for tuning: is the ~950ms dominated by
+# Bedrock generation or by the pgvector round trip? These hooks split the
+# chain into embed / search / generate and log the milliseconds alongside the
+# existing structured fields, so Logs Insights can aggregate them.
+#
+# Timings are held in a ContextVar rather than a module global so a request
+# can never pick up a neighbour's numbers.
+# ===========================================================================
+
+_stage_ms: ContextVar[Optional[dict]] = ContextVar("stage_ms", default=None)
+
+
+def _record(key: str, value: float) -> None:
+    """Add to the current request's timing bucket, if one is active."""
+    bucket = _stage_ms.get()
+    if bucket is not None:
+        bucket[key] = round(bucket.get(key, 0.0) + value, 1)
+
+
+class TimedBedrockEmbeddings(BedrockEmbeddings):
+    """BedrockEmbeddings that reports how long embed_query took.
+
+    Embeddings emit no LangChain callbacks, and the call happens deep inside
+    the retriever, so overriding the method is the only place to measure it.
+    """
+
+    def embed_query(self, text: str) -> List[float]:
+        started = time.perf_counter()
+        try:
+            return super().embed_query(text)
+        finally:
+            _record("embed_ms", (time.perf_counter() - started) * 1000)
+
+
+class StageTimer(BaseCallbackHandler):
+    """Times the retriever and LLM spans of a single chain invocation.
+
+    One instance per request: the start timestamps are instance state, so
+    sharing one across requests would interleave them.
+    """
+
+    def __init__(self) -> None:
+        self._started: dict = {}
+
+    # -- retrieval (includes the embedding call made inside it) --
+    def on_retriever_start(self, serialized, query, **kwargs) -> None:
+        self._started["retriever"] = time.perf_counter()
+
+    def on_retriever_end(self, documents, **kwargs) -> None:
+        start = self._started.pop("retriever", None)
+        if start is not None:
+            _record("retrieve_ms", (time.perf_counter() - start) * 1000)
+        bucket = _stage_ms.get()
+        if bucket is not None:
+            bucket["docs_retrieved"] = len(documents)
+
+    # -- generation. ChatBedrock is a chat model, so on_chat_model_start is
+    # what fires; on_llm_start is kept for safety if that ever changes. --
+    def on_chat_model_start(self, serialized, messages, **kwargs) -> None:
+        self._started.setdefault("llm", time.perf_counter())
+
+    def on_llm_start(self, serialized, prompts, **kwargs) -> None:
+        self._started.setdefault("llm", time.perf_counter())
+
+    def on_llm_end(self, response, **kwargs) -> None:
+        start = self._started.pop("llm", None)
+        if start is not None:
+            _record("generate_ms", (time.perf_counter() - start) * 1000)
+
+
 class AIEngine:
     """Encapsulates all AI components. Initialized once per Lambda container."""
 
@@ -129,8 +205,8 @@ class AIEngine:
         try:
             region = os.environ.get("AWS_REGION", "eu-central-1")
 
-            # 1. Bedrock Embeddings
-            embeddings = BedrockEmbeddings(
+            # 1. Bedrock Embeddings (timed subclass, see StageTimer above)
+            embeddings = TimedBedrockEmbeddings(
                 model_id=os.environ.get("BEDROCK_EMBEDDING_MODEL_ID", "amazon.titan-embed-text-v2:0"),
                 region_name=region,
                 config=_boto_config,
@@ -346,12 +422,34 @@ async def chat_endpoint(request: Request, chat_request: ChatRequest):
                 else:
                     chat_history.append(AIMessage(content=msg.content))
 
-        response = _engine.rag_chain.invoke({
-            "input": chat_request.message,
-            "chat_history": chat_history,
-        })
+        stages: dict = {}
+        token = _stage_ms.set(stages)
+        invoke_started = time.perf_counter()
+        try:
+            response = _engine.rag_chain.invoke(
+                {
+                    "input": chat_request.message,
+                    "chat_history": chat_history,
+                },
+                config={"callbacks": [StageTimer()]},
+            )
+        finally:
+            _stage_ms.reset(token)
 
-        logger.info("Chat response generated successfully")
+        # retrieve_ms wraps the embedding call, so subtract it to get the time
+        # actually spent in the pgvector round trip.
+        embed_ms = stages.get("embed_ms", 0.0)
+        search_ms = round(max(stages.get("retrieve_ms", 0.0) - embed_ms, 0.0), 1)
+        logger.info(
+            "Chat response generated successfully",
+            extra={
+                "embed_ms": embed_ms,
+                "search_ms": search_ms,
+                "generate_ms": stages.get("generate_ms", 0.0),
+                "chain_ms": round((time.perf_counter() - invoke_started) * 1000, 1),
+                "docs_retrieved": stages.get("docs_retrieved", 0),
+            },
+        )
         return ChatResponse(reply=response["answer"])
 
     except Exception:
