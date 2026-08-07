@@ -30,7 +30,7 @@
     --arrow:#cbd5e1;
   }
 
-  /* Dark opener — the same [data-theme='dark'] tokens the chat UI runs on.
+  /* Dark opener: the same [data-theme='dark'] tokens the chat UI runs on.
      Scoped to the slide so the explainer slides that follow stay light. */
   .slide.dark{
     --bg-deep:#050b14;
@@ -58,7 +58,7 @@
     rgba(79,172,254,0.20) 0%, rgba(79,172,254,0.07) 45%, rgba(79,172,254,0) 100%)}
   *{margin:0;padding:0;box-sizing:border-box}
 
-  /* 1280x720 CSS px = 13.333in x 7.5in at 96dpi — the standard 16:9 slide,
+  /* 1280x720 CSS px = 13.333in x 7.5in at 96dpi, the standard 16:9 slide,
      which is what LinkedIn's document carousel expects. */
   @page{ size:1280px 720px; margin:0 }
   html,body{width:1280px;background:#fff}
@@ -201,8 +201,8 @@
     <div class="eyebrow" style="justify-content:center"><span class="dot"></span>Live Demo</div>
     <h1 class="hero">A portfolio you<br>can interrogate.</h1>
     <div class="hero-lede">I built an AI version of myself and put it on my site. It answers
-      questions about my career in the first person — grounded strictly in my own documents,
-      so it never invents a credential I don't have.</div>
+      questions about my career in the first person, grounded strictly in my own
+      documents, so it never invents a credential I don't have.</div>
     <div style="margin-top:36px"><span class="url">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
            stroke-linecap="round" stroke-linejoin="round">
@@ -258,7 +258,7 @@
         <h3>No NAT.<br>No internet gateway.</h3>
         <p>The VPC is private subnets only. Lambda reaches Bedrock, Secrets Manager and S3
            through VPC endpoints, so model and database traffic never touch the public
-           internet — and the NAT bill is zero.</p>
+           internet, and the NAT bill is zero.</p>
         <div class="tag">3 VPC endpoints · 0 egress paths</div>
       </div>
       <div class="card2">
@@ -266,7 +266,7 @@
           stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></div>
         <h3>It defends itself.</h3>
         <p>A CloudWatch alarm on request volume fires a Lambda that drops the API stage throttle
-           to zero. An abuse flood is rejected at the front door, unbilled — and it reopens
+           to zero. An abuse flood is rejected at the front door, unbilled, and it reopens
            automatically once traffic normalises.</p>
         <div class="tag">ALARM → 0/0 · OK → 5/10</div>
       </div>
@@ -275,7 +275,7 @@
           stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/>
           <circle cx="12" cy="12" r="9"/></svg></div>
         <h3>Keyless deploys.</h3>
-        <p>GitHub Actions authenticates to AWS through OIDC — there is not a single static
+        <p>GitHub Actions authenticates to AWS through OIDC. There is not a single static
            credential in the repo or in CI. Push to main and Terraform plans, applies and
            ships the Lambda bundles.</p>
         <div class="tag">100% Terraform · 0 stored secrets</div>
