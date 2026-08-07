@@ -30,27 +30,36 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 COUNT="$(grep -c '<div class="story">' "$SRC")"
-echo "Rendering $COUNT story frames -> $OUT_DIR"
+echo "Rendering $COUNT story frames x 2 themes -> $OUT_DIR"
 
-for n in $(seq 1 "$COUNT"); do
-  # Hide every frame but the nth, keeping the markup as the single source.
-  # The temp copy lives outside scripts/, so the relative <img> path is
-  # rewritten to an absolute one or the architecture frame renders empty.
-  sed -e "s|</head>|<style>.story{display:none}.story:nth-of-type($n){display:block}</style></head>|" \
-      -e "s|\.\./frontend/public/|file://$REPO_ROOT/frontend/public/|g" \
-    "$SRC" > "$TMP/story$n.html"
+for theme in dark light; do
+  for n in $(seq 1 "$COUNT"); do
+    # Hide every frame but the nth, keeping the markup as the single source.
+    # The temp copy lives outside scripts/, so the relative <img> path is
+    # rewritten to an absolute one or the architecture frame renders empty.
+    sed -e "s|</head>|<style>.story{display:none}.story:nth-of-type($n){display:block}</style></head>|" \
+        -e "s|\.\./frontend/public/|file://$REPO_ROOT/frontend/public/|g" \
+      "$SRC" > "$TMP/story$n-$theme.html"
 
-  "$CHROME" \
-    --headless \
-    --disable-gpu \
-    --hide-scrollbars \
-    --allow-file-access-from-files \
-    --window-size=1080,1920 \
-    --virtual-time-budget=10000 \
-    --screenshot="$OUT_DIR/story-$n.png" \
-    "file://$TMP/story$n.html" 2>/dev/null
+    # Dark is the stylesheet default; the light set adds the class that flips
+    # every token. Done here rather than in the markup so both themes stay a
+    # single source of truth.
+    if [ "$theme" = "light" ]; then
+      sed -i '' 's|<div class="story">|<div class="story light">|g' "$TMP/story$n-$theme.html"
+    fi
 
-  echo "  story-$n.png"
+    "$CHROME" \
+      --headless \
+      --disable-gpu \
+      --hide-scrollbars \
+      --allow-file-access-from-files \
+      --window-size=1080,1920 \
+      --virtual-time-budget=10000 \
+      --screenshot="$OUT_DIR/story-$n-$theme.png" \
+      "file://$TMP/story$n-$theme.html" 2>/dev/null
+
+    echo "  story-$n-$theme.png"
+  done
 done
 
 echo "Done."
