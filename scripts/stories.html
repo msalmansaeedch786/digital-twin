@@ -127,6 +127,25 @@
   .a b{font-weight:700;color:var(--text-primary)}
   .a span{color:var(--text-secondary)}
 
+  /* how-it-works steps */
+  .steps{margin-top:44px;display:flex;flex-direction:column;gap:26px}
+  .st{display:flex;gap:22px;align-items:flex-start}
+  .st .n{
+    flex:none;width:56px;height:56px;border-radius:18px;background:var(--cta);
+    color:var(--on-accent);font-size:26px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .st h3{font-size:33px;font-weight:700;letter-spacing:-.01em;line-height:1.2}
+  .st p{margin-top:6px;font-size:27px;line-height:1.35;color:var(--text-secondary)}
+  .st .t{
+    font-family:'JetBrains Mono',monospace;font-size:25px;font-weight:700;
+    color:var(--neon-cyan);margin-left:auto;flex:none;padding-left:14px;
+  }
+  .next{
+    margin-top:52px;font-family:'JetBrains Mono',monospace;font-size:26px;
+    color:var(--neon-cyan);
+  }
+
   /* architecture card */
   .diagram{
     background:#fff;border-radius:32px;padding:26px;
@@ -201,7 +220,36 @@
   </div>
 </div>
 
-<!-- ===== 4. CTA ===== -->
+<!-- ===== 4. HOW IT WORKS (leads into the explainer video) ===== -->
+<div class="story">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <div class="safe">
+    <div class="eyebrow">How it works</div>
+    <h2>You ask. One second<br>later, you have<br>an answer.</h2>
+    <div class="lede" style="margin-top:26px;font-size:31px">Everything that
+      happens in between:</div>
+    <div class="steps">
+      <div class="st"><div class="n">1</div>
+        <div><h3>It reaches a Lambda</h3>
+          <p>Through API Gateway, already warm.</p></div></div>
+      <div class="st"><div class="n">2</div>
+        <div><h3>Your words become numbers</h3>
+          <p>Bedrock Titan v2 embeds the question.</p></div>
+        <div class="t">109 ms</div></div>
+      <div class="st"><div class="n">3</div>
+        <div><h3>It searches my documents</h3>
+          <p>pgvector returns the 5 closest chunks.</p></div>
+        <div class="t">12 ms</div></div>
+      <div class="st"><div class="n">4</div>
+        <div><h3>It answers from those only</h3>
+          <p>Nova Lite writes the reply. Nothing else.</p></div>
+        <div class="t">712 ms</div></div>
+    </div>
+    <div class="next">Next: watch it happen &rarr;</div>
+  </div>
+</div>
+
+<!-- ===== 5. CTA ===== -->
 <div class="story">
   <div class="orb orb-a"></div><div class="orb orb-b"></div>
   <div class="safe center">
