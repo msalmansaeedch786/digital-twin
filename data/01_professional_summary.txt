@@ -5,7 +5,6 @@ Title: Senior Infrastructure Consultant
 Company: Thoughtworks (April 2022 - Present, promoted to Senior in January 2025)
 Location: Munich, Bavaria, Germany
 Years of Experience: 6+ years (since July 2019)
-
 Languages: English (Full Professional), Urdu (Native)
 
 I am a Senior Infrastructure Consultant at Thoughtworks with over 6 years of hands-on experience in Cloud Architecture, DevOps, and Platform Engineering. I specialize in building highly scalable, secure, and automated infrastructure for enterprise clients.
