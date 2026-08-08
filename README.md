@@ -164,15 +164,9 @@ digital-twin/
 │   ├── dashboard.tf                # CloudWatch ops dashboard
 │   ├── s3.tf                       # Knowledge-base bucket
 │   └── variables.tf / outputs.tf   # Input variables and outputs
-├── scripts/                        # Dev helpers + asset generators (see below)
+├── scripts/                        # Dev helpers
 │   ├── start.sh / stop.sh          # Run backend + frontend locally
-│   ├── generate_diagram.py         # -> frontend/public/architecture.png
-│   ├── generate_cover.sh           # -> frontend/public/twin-cover.png (og:image)
-│   ├── generate_onepager.sh        # -> digital-twin-onepager.pdf
-│   ├── generate_stories.sh         # -> instagram-stories/*.png
-│   ├── generate_pipeline_video.sh  # -> *.mp4 explainer videos
-│   └── *.html                      # Layout source for each generator above
-├── instagram-stories/              # Generated social frames (light + dark)
+│   └── generate_diagram.py         # -> frontend/public/architecture.png
 └── .github/workflows/              # CI/CD: terraform.yml (build + deploy), data_sync.yml (S3 sync)
 ```
 

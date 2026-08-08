@@ -28,3 +28,19 @@ tutorial.md
 
 # Editor workspace config (kept local, not published)
 *.code-workspace
+
+# Marketing and social assets: generated locally, not part of the deployable
+# project. The HTML sources and their generators live on the author's machine.
+instagram-stories/
+digital-twin-onepager.pdf
+*.mp4
+scripts/cover.html
+scripts/onepager.html
+scripts/stories.html
+scripts/pipeline.html
+scripts/journey.html
+scripts/ingest-journey.html
+scripts/generate_cover.sh
+scripts/generate_onepager.sh
+scripts/generate_stories.sh
+scripts/generate_pipeline_video.sh
