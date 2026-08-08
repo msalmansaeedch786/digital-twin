@@ -1,0 +1,251 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap");</style>
+<style>
+  /* Dark tokens from frontend/src/app/globals.css [data-theme='dark']. */
+  :root{
+    --bg-deep:#050b14;
+    --bg-secondary:#0a1120;
+    --text-primary:#ffffff;
+    --text-secondary:#8b9bb4;
+    --neon-cyan:#00f2fe;
+    --dot-grid:rgba(255,255,255,0.05);
+    --cta:linear-gradient(135deg,#00f2fe,#4facfe);
+    --on-accent:#000000;
+    --surface:#0d1626;
+    --surface-border:rgba(255,255,255,.10);
+    --muted:#8b9bb4;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#000}
+
+  .stage-canvas{
+    position:relative;width:1080px;height:1920px;overflow:hidden;
+    background:var(--bg-deep);
+    font-family:'Outfit',system-ui,sans-serif;color:var(--text-primary);
+  }
+  .stage-canvas::before{
+    content:'';position:absolute;inset:0;
+    background-image:radial-gradient(var(--dot-grid) 2px, transparent 2px);
+    background-size:38px 38px;
+  }
+  .orb{position:absolute;border-radius:50%}
+  .orb-a{width:1200px;height:1200px;right:-380px;top:-460px;
+    background:radial-gradient(circle closest-side,
+      rgba(0,242,254,0.18) 0%, rgba(0,242,254,0.06) 45%, rgba(0,242,254,0) 100%)}
+  .orb-b{width:1100px;height:1100px;left:-420px;bottom:-420px;
+    background:radial-gradient(circle closest-side,
+      rgba(79,172,254,0.16) 0%, rgba(79,172,254,0.05) 45%, rgba(79,172,254,0) 100%)}
+
+  .wrap{position:relative;z-index:2;height:100%;padding:150px 70px;
+        display:flex;flex-direction:column}
+
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;font-weight:700;
+    font-size:22px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--neon-cyan);margin-bottom:18px;
+  }
+  h1{font-size:66px;line-height:1.04;font-weight:800;letter-spacing:-.03em}
+
+  /* ---- chat ---- */
+  .chat{
+    margin-top:44px;background:var(--surface);
+    border:1px solid var(--surface-border);border-radius:34px;
+    padding:34px;height:560px;display:flex;flex-direction:column;
+  }
+  .bubble-q{
+    align-self:flex-end;max-width:78%;
+    background:var(--cta);color:var(--on-accent);
+    font-size:30px;font-weight:600;line-height:1.35;
+    padding:22px 28px;border-radius:26px 26px 8px 26px;
+    min-height:74px;
+  }
+  .caret{display:inline-block;width:3px;height:30px;background:var(--on-accent);
+         vertical-align:-4px;margin-left:3px}
+  .bubble-a{
+    margin-top:24px;align-self:flex-start;max-width:88%;
+    background:var(--bg-secondary);border:1px solid var(--surface-border);
+    font-size:27px;line-height:1.42;color:var(--text-primary);
+    padding:24px 28px;border-radius:26px 26px 26px 8px;
+  }
+  .bubble-a .cert{color:var(--text-secondary)}
+  .thinking{display:flex;gap:12px;align-items:center;margin-top:24px;align-self:flex-start;
+            background:var(--bg-secondary);border:1px solid var(--surface-border);
+            padding:26px 30px;border-radius:26px 26px 26px 8px}
+  .thinking i{width:14px;height:14px;border-radius:50%;background:var(--neon-cyan);display:block}
+
+  /* ---- pipeline ---- */
+  .pipe{margin-top:40px;flex:1;display:flex;flex-direction:column;gap:18px}
+  .step{
+    position:relative;display:flex;gap:24px;align-items:flex-start;
+    background:var(--surface);border:1px solid var(--surface-border);
+    border-radius:26px;padding:26px 30px;
+  }
+  .step.on{border-color:var(--neon-cyan);background:#0e1c2e}
+  .step.done{border-color:rgba(0,242,254,.35)}
+  .badge{
+    flex:none;width:60px;height:60px;border-radius:18px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;font-weight:700;
+    background:rgba(255,255,255,.06);color:var(--muted);
+  }
+  .step.on .badge,.step.done .badge{background:var(--cta);color:var(--on-accent)}
+  .step h3{font-size:31px;font-weight:700;letter-spacing:-.01em}
+  .step p{font-size:24px;line-height:1.35;color:var(--text-secondary);margin-top:6px}
+  .step p b{color:var(--neon-cyan);font-weight:600}
+  .step .right{margin-left:auto;display:flex;align-items:center;gap:16px}
+  .step .ms{
+    font-family:'JetBrains Mono',monospace;font-size:25px;font-weight:700;
+    color:var(--neon-cyan);opacity:0;white-space:nowrap;
+  }
+  .step.done .ms{opacity:1}
+  .step .tick{flex:none;width:34px;height:34px;color:var(--neon-cyan);opacity:0}
+  .step.done .tick{opacity:1}
+
+  /* k=5 chunk strip, revealed during retrieval */
+  .chunks{display:flex;gap:10px;margin-top:14px}
+  .chunks span{
+    width:52px;height:12px;border-radius:6px;background:rgba(255,255,255,.10);
+  }
+  .chunks span.hit{background:var(--neon-cyan)}
+
+  .foot{margin-top:30px;display:flex;align-items:center;justify-content:space-between}
+  .latency{
+    font-family:'JetBrains Mono',monospace;font-size:23px;color:var(--neon-cyan);
+    opacity:0;
+  }
+  .foot .site{font-size:28px;font-weight:600;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="stage-canvas">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <div class="wrap">
+    <div class="eyebrow">Under the hood</div>
+    <h1 id="title">What happens when<br>you ask a question.</h1>
+
+    <div class="chat">
+      <div class="bubble-q" id="q"><span id="qtext"></span><span class="caret" id="caret"></span></div>
+      <div id="slot"></div>
+    </div>
+
+    <div class="pipe">
+      <div class="step" id="s1">
+        <div class="badge">1</div>
+        <div><h3>API Gateway to Lambda</h3>
+          <p>FastAPI on <b>arm64</b>, already warm.</p></div>
+        <div class="right"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+             stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+      </div>
+      <div class="step" id="s2">
+        <div class="badge">2</div>
+        <div><h3>Embed the question</h3>
+          <p>Bedrock <b>Titan v2</b> turns the words into a vector.</p></div>
+        <div class="right"><span class="ms">109 ms</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+             stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+      </div>
+      <div class="step" id="s3">
+        <div class="badge">3</div>
+        <div><h3>Search my documents</h3>
+          <p><b>pgvector</b> returns the <b>k=5</b> closest chunks.</p>
+          <div class="chunks" id="chunks">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div></div>
+        <div class="right"><span class="ms">12 ms</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+             stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+      </div>
+      <div class="step" id="s4">
+        <div class="badge">4</div>
+        <div><h3>Answer from those chunks only</h3>
+          <p><b>Nova Lite</b> writes the reply. No chunks, no answer.</p></div>
+        <div class="right"><span class="ms">712 ms</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+             stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="latency" id="lat">845 ms in Lambda &nbsp;·&nbsp; 84% of it is the model</div>
+      <div class="site">msalmansaeedch.de</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Deterministic timeline: every visual state is a pure function of t, so the
+// renderer can seek to any frame with ?t=<seconds> and get identical output.
+// Nothing here uses requestAnimationFrame or wall-clock time.
+const Q = "Which AWS certifications do you hold?";
+const CERTS = [
+  "Solutions Architect - Professional",
+  "DevOps Engineer - Professional",
+  "Developer - Associate",
+  "Solutions Architect - Associate",
+  "SysOps Administrator - Associate",
+  "Cloud Practitioner",
+];
+
+const T = {
+  typeStart: 0.4,  typeEnd: 2.6,
+  s1: [2.9, 4.1],
+  s2: [4.1, 5.6],
+  s3: [5.6, 7.8],
+  s4: [7.8, 9.4],
+  ansStart: 9.5, ansEnd: 12.6,
+  latAt: 12.8,
+};
+
+function clamp01(x){ return x < 0 ? 0 : x > 1 ? 1 : x; }
+
+function render(t){
+  // 1. question types in
+  const typed = clamp01((t - T.typeStart) / (T.typeEnd - T.typeStart));
+  const n = Math.round(typed * Q.length);
+  document.getElementById('qtext').textContent = Q.slice(0, n);
+  // caret blinks while typing, disappears once sent
+  const caret = document.getElementById('caret');
+  caret.style.opacity = (t < T.typeEnd + 0.15 && Math.floor(t * 2.5) % 2 === 0) ? '1' : '0';
+
+  // 2. pipeline steps
+  [['s1',T.s1],['s2',T.s2],['s3',T.s3],['s4',T.s4]].forEach(([id, span]) => {
+    const el = document.getElementById(id);
+    el.classList.toggle('on',   t >= span[0] && t < span[1]);
+    el.classList.toggle('done', t >= span[1]);
+  });
+
+  // 3. the five retrieved chunks light up one by one across step 3
+  const cs = document.querySelectorAll('#chunks span');
+  const prog = clamp01((t - T.s3[0]) / (T.s3[1] - T.s3[0] - 0.3));
+  cs.forEach((c, i) => c.classList.toggle('hit', prog > (i + 1) / 5 - 0.18));
+
+  // 4. thinking dots, then the answer types out
+  const slot = document.getElementById('slot');
+  if (t >= T.s1[0] && t < T.ansStart) {
+    const lit = Math.floor(t * 3) % 3;
+    slot.innerHTML = '<div class="thinking">' +
+      [0,1,2].map(i => `<i style="opacity:${i === lit ? 1 : 0.25}"></i>`).join('') +
+      '</div>';
+  } else if (t >= T.ansStart) {
+    const p = clamp01((t - T.ansStart) / (T.ansEnd - T.ansStart));
+    const head = 'I hold the following AWS certifications:';
+    const shown = Math.floor(p * (CERTS.length + 1));
+    let html = '<div class="bubble-a">' + head;
+    for (let i = 0; i < Math.min(shown, CERTS.length); i++) {
+      html += `<br><span class="cert">• ${CERTS[i]}</span>`;
+    }
+    slot.innerHTML = html + '</div>';
+  } else {
+    slot.innerHTML = '';
+  }
+
+  // 5. measured latency badge
+  document.getElementById('lat').style.opacity = t >= T.latAt ? '1' : '0';
+}
+
+const t = parseFloat(new URLSearchParams(location.search).get('t') || '0');
+render(t);
+document.documentElement.setAttribute('data-ready', '1');
+</script>
+</body>
+</html>
