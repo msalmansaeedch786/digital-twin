@@ -8,7 +8,7 @@ A serverless **RAG "digital twin"** — a chat avatar that answers questions abo
 
 ## Architecture (the parts that span files)
 
-Two independent Lambdas plus a frontend, all provisioned by Terraform:
+Three Lambdas plus a frontend, all provisioned by Terraform:
 
 1. **API Lambda** — [lambdas/api/main.py](lambdas/api/main.py). FastAPI wrapped by Mangum. Serves `/chat`, `/health`, `/warmup`. Builds a LangChain history-aware RAG chain: rewrite query → embed → `pgvector` similarity search (`k=5`, collection `digital_twin_docs`) → generate. The `AIEngine` singleton is initialized once per warm container; an EventBridge ping to `/warmup` every 5 min keeps it hot. DB credentials come from Secrets Manager (cached 15 min in-memory), never hardcoded.
 2. **Ingestion Lambda** — [lambdas/ingestion/lambda_function.py](lambdas/ingestion/lambda_function.py). Triggered by `s3:ObjectCreated` on the knowledge-base bucket. Downloads the file (with path-traversal-safe filename sanitization + extension allowlist), chunks (1000 chars / 200 overlap), embeds, and writes to the same `pgvector` collection.
@@ -30,6 +30,10 @@ Two independent Lambdas plus a frontend, all provisioned by Terraform:
 - **A "site is down / lost connection to the brain" report is usually the circuit breaker, not an outage.** Check `aws apigatewayv2 get-stage --api-id <id> --stage-name '$default' --query DefaultRouteSettings`: `0/0` means the breaker is engaged. It now auto-reopens when the alarm clears, but a *sustained* flood keeps it shut by design. A 429 carries no CORS headers, so the browser reports it as a **CORS error** — misleading, but the root cause is throttling.
 - **The chat page is an app shell pinned to `window.visualViewport`, not `100dvh`.** `dvh` does not shrink when the mobile keyboard opens, which leaves the input bar floating or hidden. [frontend/src/app/avatar/page.js](frontend/src/app/avatar/page.js) sets the root height from `visualViewport.height` and collapses the identity header while the keyboard is open. Auto-scroll must target the message container directly — `scrollIntoView()` walks scrollable ancestors and pans the whole shell on iOS.
 - **The architecture diagram is generated, not drawn.** [scripts/generate_diagram.py](scripts/generate_diagram.py) renders `frontend/public/architecture.png`, which the README embeds. It drifted from reality once already; re-run `python scripts/generate_diagram.py` and commit the PNG whenever infrastructure changes meaningfully.
+- **So is every other image in the repo.** The OG cover, the LinkedIn carousel, the Instagram frames and the explainer videos all have an HTML source in `scripts/` and a generator beside it (see Commands). Never hand-edit the PNG/PDF/MP4 outputs: the next generator run silently overwrites them. The one that matters most is `frontend/public/twin-cover.png`, which is served as `og:image` from [frontend/src/app/layout.js](frontend/src/app/layout.js), so a stale cover shows up on every shared link.
+- **The video renderers work around two Chrome behaviours**, both of which look like a hang rather than an error. Parallel headless instances sharing the default profile deadlock on its singleton lock, so each frame gets its own `--user-data-dir`. And since Chrome 151, headless writes the screenshot then never exits, so each render is backgrounded with a watchdog that waits for the PNG to stop growing before killing it. If a render suddenly stalls after a Chrome update, look here first.
+- **The breaker Lambda has no `build.sh`.** It is a single dependency-free file, so Terraform packages it with `archive_file` ([terraform/breaker.tf](terraform/breaker.tf)); `lambdas/breaker/breaker.zip` is a build artifact and is not committed. Only the API and ingestion Lambdas need their zips built before an apply.
+- **Per-request timings are logged, and are the way to answer "why is it slow".** [lambdas/api/main.py](lambdas/api/main.py) logs `embed_ms`, `search_ms`, `generate_ms`, `chain_ms` and `docs_retrieved` on every chat request, queryable in Logs Insights. Measured split: generation ~84%, embedding ~13%, pgvector ~1.4%. `docs_retrieved` dropping to 0 is the empty-knowledge-base failure above, so it is the field to alarm on.
 
 ## Commands
 
@@ -52,6 +56,18 @@ cd lambdas/ingestion && ./build.sh    # -> lambdas/ingestion/lambda_function.zip
 
 **Infrastructure** (from `terraform/`): `terraform init`, `terraform plan`, `terraform apply`.
 Requires `terraform.tfvars` (copy from `terraform.tfvars.example` — sets `alert_email`; secret and gitignored). Amplify pulls the repo via the Amplify GitHub App; `github_token` is only needed as a one-time setup token if the Amplify app is ever recreated from scratch.
+
+**Regenerate the published images and videos** (all need network access for the Google Fonts import; the video renderers also need `ffmpeg`):
+```bash
+python scripts/generate_diagram.py       # -> frontend/public/architecture.png
+./scripts/generate_cover.sh              # -> frontend/public/twin-cover.png  (og:image)
+./scripts/generate_onepager.sh           # -> digital-twin-onepager.pdf       (LinkedIn carousel)
+./scripts/generate_stories.sh            # -> instagram-stories/*.png         (both themes)
+./scripts/generate_pipeline_video.sh     # -> pipeline-explainer.mp4
+SRC_HTML=scripts/journey.html DURATION=15.6 \
+  ./scripts/generate_pipeline_video.sh journey-explainer.mp4
+```
+Each reads its layout from the matching `scripts/*.html` and the light/dark tokens from [frontend/src/app/globals.css](frontend/src/app/globals.css), so brand changes start there. `generate_stories.sh` derives the frame count from the markup: adding a `.story` block yields another pair of PNGs with no script change.
 
 **Pre-commit hooks** (enforce `terraform fmt` + `terraform validate`): `pre-commit install`
 
