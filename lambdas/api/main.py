@@ -398,11 +398,16 @@ async def chat_endpoint(request: Request, chat_request: ChatRequest):
                 detail="AI Engine is not available. Please try again in a moment.",
             )
 
+    # user_agent/origin make request counts readable as traffic: a browser on
+    # the site looks nothing like curl or an uptime check. Truncated because a
+    # user agent is attacker-controlled and unbounded.
     logger.info(
         "Chat request received",
         extra={
             "message_length": len(chat_request.message),
             "history_length": len(chat_request.history),
+            "user_agent": request.headers.get("user-agent", "-")[:200],
+            "origin": request.headers.get("origin", "-")[:200],
         }
     )
 
