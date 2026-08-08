@@ -108,6 +108,11 @@ resource "aws_apigatewayv2_stage" "prod" {
       status                  = "$context.status"
       responseLength          = "$context.responseLength"
       integrationErrorMessage = "$context.integrationErrorMessage"
+      # userAgent separates real browser traffic from scripted calls (curl,
+      # uptime pings, my own testing). Without it every request looks alike
+      # and the request count cannot be read as visitor numbers.
+      userAgent = "$context.identity.userAgent"
+      path      = "$context.path"
     })
   }
 
