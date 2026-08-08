@@ -140,10 +140,12 @@ digital-twin/
 │   │   ├── build.sh                # Builds the arm64 / manylinux2014 Lambda zip
 │   │   ├── test_lambda.py          # Backend tests
 │   │   └── requirements.txt        # Python dependencies (pinned for arm64)
-│   └── ingestion/                  # Document-ingestion Lambda (S3-triggered)
-│       ├── lambda_function.py      # Chunk + embed + store handler
-│       ├── build.sh                # Builds the arm64 Lambda zip
-│       └── requirements.txt
+│   ├── ingestion/                  # Document-ingestion Lambda (S3-triggered)
+│   │   ├── lambda_function.py      # Chunk + embed + store handler
+│   │   ├── build.sh                # Builds the arm64 Lambda zip
+│   │   └── requirements.txt
+│   └── breaker/                    # Circuit-breaker Lambda (no build.sh: Terraform
+│       └── lambda_function.py      #   packages this single file via archive_file)
 ├── frontend/                       # Next.js app (JavaScript, hosted on AWS Amplify)
 │   └── src/app/                    # App Router: page.js, layout.js, avatar/page.js, globals.css
 ├── data/                           # Knowledge-base source documents (synced to S3)
@@ -156,11 +158,21 @@ digital-twin/
 │   ├── amplify.tf                  # Amplify frontend hosting
 │   ├── iam.tf                      # Per-Lambda least-privilege execution roles
 │   ├── oidc.tf                     # GitHub Actions OIDC provider + scoped deploy role
+│   ├── breaker.tf                  # Circuit-breaker Lambda + EventBridge alarm rules
 │   ├── cloudtrail.tf               # CloudTrail audit logging + root-usage alarm
-│   ├── alarms.tf                   # CloudWatch alarms + SNS alerts
+│   ├── alarms.tf                   # CloudWatch alarms, budgets, cost anomaly detection
+│   ├── dashboard.tf                # CloudWatch ops dashboard
 │   ├── s3.tf                       # Knowledge-base bucket
 │   └── variables.tf / outputs.tf   # Input variables and outputs
-├── scripts/                        # Dev helpers: start.sh, stop.sh, generate_diagram.py
+├── scripts/                        # Dev helpers + asset generators (see below)
+│   ├── start.sh / stop.sh          # Run backend + frontend locally
+│   ├── generate_diagram.py         # -> frontend/public/architecture.png
+│   ├── generate_cover.sh           # -> frontend/public/twin-cover.png (og:image)
+│   ├── generate_onepager.sh        # -> digital-twin-onepager.pdf
+│   ├── generate_stories.sh         # -> instagram-stories/*.png
+│   ├── generate_pipeline_video.sh  # -> *.mp4 explainer videos
+│   └── *.html                      # Layout source for each generator above
+├── instagram-stories/              # Generated social frames (light + dark)
 └── .github/workflows/              # CI/CD: terraform.yml (build + deploy), data_sync.yml (S3 sync)
 ```
 
@@ -239,7 +251,9 @@ npm run dev
 ## Observability
 
 The architecture integrates deeply with AWS native observability tools:
-- **Amazon CloudWatch**: Captures structured JSON logs from the Lambda functions for easy parsing and debugging, and drives a `digital-twin-ops` dashboard plus seven alarms covering API abuse, Lambda errors/throttles/p99 duration, and RDS CPU/connections/storage.
+- **Amazon CloudWatch**: Captures structured JSON logs from the Lambda functions for easy parsing and debugging, and drives a `digital-twin-ops` dashboard plus nine alarms covering API abuse, Lambda errors/throttles/p99 duration, RDS CPU/connections/storage, ingestion DLQ depth, and root-account usage.
+- **Per-request latency breakdown**: Every chat request logs `embed_ms`, `search_ms`, `generate_ms`, `chain_ms` and `docs_retrieved`, so Logs Insights can answer where the time actually goes rather than only reporting a total. Measured on warm requests, generation is ~84% of the chain, embedding ~13%, and the pgvector search ~1.4%. `docs_retrieved` also doubles as a grounding check: a sustained 0 means retrieval is returning nothing and answers are no longer grounded.
+- **Traffic attribution**: The API Gateway access log records `userAgent` and `path`, and the chat log records `user_agent` and `origin`, so real browser traffic can be separated from scripted calls and uptime pings.
 - **Amazon SNS**: Delivers every alarm, circuit-breaker action, budget threshold, and cost anomaly to email.
 - **Amazon SQS**: A dead-letter queue captures ingestion events that fail all retries, so a bad document is visible rather than silently dropped.
 - **AWS CloudTrail**: Audits all API calls made within the AWS account for compliance and security monitoring, with log-file validation enabled.
