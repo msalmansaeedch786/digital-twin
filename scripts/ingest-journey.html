@@ -1,0 +1,237 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap");</style>
+<style>
+  /* Dark tokens from frontend/src/app/globals.css [data-theme='dark']. */
+  :root{
+    --bg-deep:#050b14; --bg-secondary:#0a1120;
+    --text-primary:#ffffff; --text-secondary:#8b9bb4;
+    --neon-cyan:#00f2fe; --cta:linear-gradient(135deg,#00f2fe,#4facfe);
+    --on-accent:#000000; --surface:#0d1626;
+    --surface-border:rgba(255,255,255,.10); --muted:#8b9bb4;
+    --green:#7CFFB2;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#000}
+
+  .canvas{
+    position:relative;width:1080px;height:1920px;overflow:hidden;
+    background:var(--bg-deep);
+    font-family:'Outfit',system-ui,sans-serif;color:var(--text-primary);
+  }
+  .canvas::before{
+    content:'';position:absolute;inset:0;
+    background-image:radial-gradient(rgba(255,255,255,.05) 2px, transparent 2px);
+    background-size:38px 38px;
+  }
+  .orb{position:absolute;border-radius:50%}
+  .orb-a{width:1100px;height:1100px;right:-360px;top:-420px;
+    background:radial-gradient(circle closest-side,
+      rgba(0,242,254,.16) 0%, rgba(0,242,254,.05) 45%, rgba(0,242,254,0) 100%)}
+  .orb-b{width:1000px;height:1000px;left:-380px;bottom:-360px;
+    background:radial-gradient(circle closest-side,
+      rgba(79,172,254,.14) 0%, rgba(79,172,254,.05) 45%, rgba(79,172,254,0) 100%)}
+
+  .hdr{position:absolute;top:120px;left:70px;z-index:5}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:21px;
+    letter-spacing:.22em;text-transform:uppercase;color:var(--neon-cyan);
+  }
+  h1{margin-top:14px;font-size:56px;line-height:1.05;font-weight:800;letter-spacing:-.03em}
+
+  /* ---- editor window ---- */
+  .editor{
+    position:absolute;left:90px;top:290px;width:900px;height:300px;z-index:4;
+    background:var(--surface);border:1px solid var(--surface-border);
+    border-radius:26px;overflow:hidden;
+  }
+  .bar{height:60px;background:#0a1322;border-bottom:1px solid var(--surface-border);
+       display:flex;align-items:center;gap:12px;padding:0 26px}
+  .bar i{width:13px;height:13px;border-radius:50%;background:#2a3550;display:block}
+  .bar .fn{margin-left:16px;font-family:'JetBrains Mono',monospace;
+           font-size:19px;color:var(--muted)}
+  .code{padding:22px 30px;font-family:'JetBrains Mono',monospace;
+        font-size:21px;line-height:1.6;color:var(--text-secondary)}
+  .code .add{color:var(--green)}
+  .code .cur{display:inline-block;width:3px;height:22px;background:var(--green);
+             vertical-align:-3px;margin-left:2px}
+
+  /* ---- nodes ---- */
+  .node{
+    position:absolute;z-index:4;transform:translate(-50%,-50%);
+    background:var(--surface);border:1px solid var(--surface-border);
+    border-radius:22px;padding:18px 24px;min-width:260px;
+  }
+  .node .nm{font-size:26px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+  .node .sub{margin-top:4px;font-size:19px;color:var(--text-secondary);white-space:nowrap}
+  .node .ms{
+    margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:21px;
+    font-weight:700;color:var(--neon-cyan);opacity:0;white-space:nowrap;
+  }
+  .node.hot{border-color:var(--neon-cyan);background:#0e1c2e}
+  .node.hot .ms,.node.done .ms{opacity:1}
+  .node.done{border-color:rgba(0,242,254,.4)}
+
+  svg.wires{position:absolute;inset:0;z-index:1}
+  svg.wires path{fill:none;stroke:rgba(255,255,255,.10);stroke-width:3}
+  svg.wires path.lit{stroke:rgba(124,255,178,.5)}
+  .packet{
+    position:absolute;z-index:6;width:26px;height:26px;border-radius:50%;
+    background:var(--green);transform:translate(-50%,-50%);
+    box-shadow:0 0 26px 10px rgba(124,255,178,.5);opacity:0;
+  }
+
+  .foot{position:absolute;left:70px;right:70px;bottom:120px;z-index:5}
+  .done-line{
+    font-size:34px;font-weight:700;letter-spacing:-.015em;color:var(--green);opacity:0;
+  }
+  .sub-line{
+    margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:23px;
+    color:var(--muted);opacity:0;
+  }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+
+  <div class="hdr">
+    <div class="eyebrow">Under the hood</div>
+    <h1>Teaching it something new.</h1>
+  </div>
+
+  <div class="editor">
+    <div class="bar"><i></i><i></i><i></i><span class="fn">data/05_certifications.txt</span></div>
+    <div class="code">
+      &nbsp;&nbsp;5. AWS SysOps Administrator<br>
+      &nbsp;&nbsp;6. AWS Cloud Practitioner<br>
+      <span class="add" id="added"></span><span class="cur" id="cur"></span>
+    </div>
+  </div>
+
+  <svg class="wires" id="wires" viewBox="0 0 1080 1920"></svg>
+
+  <div class="node" id="n_git" style="left:270px;top:800px">
+    <div class="nm">git push</div><div class="sub">GitHub Actions</div>
+  </div>
+  <div class="node" id="n_s3"  style="left:790px;top:980px">
+    <div class="nm">S3</div><div class="sub">aws s3 sync --delete</div>
+  </div>
+  <div class="node" id="n_lam" style="left:270px;top:1170px">
+    <div class="nm">Ingestion Lambda</div><div class="sub">fired by ObjectCreated</div>
+  </div>
+  <div class="node" id="n_chk" style="left:790px;top:1360px">
+    <div class="nm">Chunk + embed</div><div class="sub">1000 chars, Titan v2</div>
+    <div class="ms">3 chunks</div>
+  </div>
+  <div class="node" id="n_pgv" style="left:270px;top:1550px">
+    <div class="nm">pgvector</div><div class="sub">replaces the old chunks</div>
+    <div class="ms">~5 s total</div>
+  </div>
+
+  <div class="packet" id="pk"></div>
+
+  <div class="foot">
+    <div class="done-line" id="done">It knows it on the next question.</div>
+    <div class="sub-line" id="subl">No retraining. Just a git commit.</div>
+  </div>
+</div>
+
+<script>
+// Deterministic: state is a pure function of ?t=<seconds>, so each frame is an
+// independent screenshot and the render is reproducible.
+const ADDED = "  7. HashiCorp Terraform Associate";
+
+const P = {
+  ed:  [540, 590],
+  git: [270, 800],
+  s3:  [790, 980],
+  lam: [270, 1170],
+  chk: [790, 1360],
+  pgv: [270, 1550],
+};
+
+// [from, to, start, end]
+const LEGS = [
+  ["ed","git",  3.0, 3.7],
+  ["git","s3",  4.2, 5.0],
+  ["s3","lam",  5.5, 6.3],
+  ["lam","chk", 6.8, 7.5],
+  ["chk","pgv", 9.2, 10.0],
+];
+
+// when each stage is working
+const BUSY = {
+  n_git: [[3.7, 4.2]],
+  n_s3:  [[5.0, 5.5]],
+  n_lam: [[6.3, 10.4]],
+  n_chk: [[7.5, 9.2]],
+  n_pgv: [[10.0, 11.4]],
+};
+
+const WIRES = [["ed","git"],["git","s3"],["s3","lam"],["lam","chk"],["chk","pgv"]];
+document.getElementById('wires').innerHTML = WIRES.map(([a,b]) => {
+  const [x1,y1] = P[a], [x2,y2] = P[b];
+  const mx = (x1 + x2) / 2;
+  const d = (x1 === x2)
+    ? `M${x1},${y1} L${x2},${y2}`
+    : `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+  return `<path id="w_${a}_${b}" d="${d}"/>`;
+}).join('');
+
+const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+const ease = x => x < .5 ? 2*x*x : 1 - Math.pow(-2*x + 2, 2) / 2;
+
+function render(t){
+  // the new line types into the editor
+  const p = clamp01((t - 0.5) / 1.9);
+  document.getElementById('added').textContent = ADDED.slice(0, Math.round(p * ADDED.length));
+  document.getElementById('cur').style.opacity =
+    (t < 2.6 && Math.floor(t * 2.5) % 2 === 0) ? '1' : '0';
+
+  for (const [id, spans] of Object.entries(BUSY)) {
+    const el = document.getElementById(id);
+    const hot  = spans.some(([a,b]) => t >= a && t < b);
+    const done = t >= spans[spans.length-1][1];
+    el.classList.toggle('hot', hot);
+    el.classList.toggle('done', !hot && done);
+    el.style.boxShadow = hot
+      ? `0 0 ${26 + 14 * (0.5 + 0.5 * Math.sin(t * 7))}px rgba(0,242,254,.45)`
+      : 'none';
+  }
+
+  const pk = document.getElementById('pk');
+  const leg = LEGS.find(([,,t0,t1]) => t >= t0 && t <= t1);
+  if (leg) {
+    const [from, to, t0, t1] = leg;
+    const q = ease(clamp01((t - t0) / (t1 - t0)));
+    const [x1,y1] = P[from], [x2,y2] = P[to];
+    const mx = (x1 + x2) / 2;
+    let x, y;
+    if (x1 === x2) { x = x1; y = y1 + (y2 - y1) * q; }
+    else {
+      const u = 1 - q;
+      x = u*u*u*x1 + 3*u*u*q*mx + 3*u*q*q*mx + q*q*q*x2;
+      y = u*u*u*y1 + 3*u*u*q*y1 + 3*u*q*q*y2 + q*q*q*y2;
+    }
+    pk.style.left = x + 'px'; pk.style.top = y + 'px'; pk.style.opacity = '1';
+  } else {
+    pk.style.opacity = '0';
+  }
+
+  document.querySelectorAll('svg.wires path').forEach(w => w.classList.remove('lit'));
+  if (leg) {
+    const w = document.getElementById(`w_${leg[0]}_${leg[1]}`);
+    if (w) w.classList.add('lit');
+  }
+
+  document.getElementById('done').style.opacity = t >= 11.6 ? '1' : '0';
+  document.getElementById('subl').style.opacity = t >= 12.2 ? '1' : '0';
+}
+
+render(parseFloat(new URLSearchParams(location.search).get('t') || '0'));
+</script>
+</body>
+</html>
