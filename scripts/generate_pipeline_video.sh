@@ -14,11 +14,13 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC="$REPO_ROOT/scripts/pipeline.html"
+# Override to render a different animation, e.g.
+#   SRC_HTML=scripts/journey.html DURATION=15.6 ./scripts/generate_pipeline_video.sh out.mp4
+SRC="${SRC_HTML:-$REPO_ROOT/scripts/pipeline.html}"
 OUT="${1:-$REPO_ROOT/pipeline-explainer.mp4}"
 
 FPS=20
-DURATION=14.6
+DURATION="${DURATION:-14.6}"
 WIDTH=1080
 HEIGHT=1920
 JOBS=4          # parallel Chrome instances; frames are independent

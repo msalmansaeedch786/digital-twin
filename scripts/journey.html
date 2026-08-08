@@ -1,0 +1,261 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap");</style>
+<style>
+  /* Dark tokens from frontend/src/app/globals.css [data-theme='dark']. */
+  :root{
+    --bg-deep:#050b14; --bg-secondary:#0a1120;
+    --text-primary:#ffffff; --text-secondary:#8b9bb4;
+    --neon-cyan:#00f2fe; --cta:linear-gradient(135deg,#00f2fe,#4facfe);
+    --on-accent:#000000; --surface:#0d1626;
+    --surface-border:rgba(255,255,255,.10); --muted:#8b9bb4;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#000}
+
+  .canvas{
+    position:relative;width:1080px;height:1920px;overflow:hidden;
+    background:var(--bg-deep);
+    font-family:'Outfit',system-ui,sans-serif;color:var(--text-primary);
+  }
+  .canvas::before{
+    content:'';position:absolute;inset:0;
+    background-image:radial-gradient(rgba(255,255,255,.05) 2px, transparent 2px);
+    background-size:38px 38px;
+  }
+  .orb{position:absolute;border-radius:50%}
+  .orb-a{width:1100px;height:1100px;right:-360px;top:-420px;
+    background:radial-gradient(circle closest-side,
+      rgba(0,242,254,.16) 0%, rgba(0,242,254,.05) 45%, rgba(0,242,254,0) 100%)}
+  .orb-b{width:1000px;height:1000px;left:-380px;bottom:-360px;
+    background:radial-gradient(circle closest-side,
+      rgba(79,172,254,.14) 0%, rgba(79,172,254,.05) 45%, rgba(79,172,254,0) 100%)}
+
+  .hdr{position:absolute;top:120px;left:70px;z-index:5}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:21px;
+    letter-spacing:.22em;text-transform:uppercase;color:var(--neon-cyan);
+  }
+  h1{margin-top:14px;font-size:58px;line-height:1.05;font-weight:800;letter-spacing:-.03em}
+
+  /* ---- browser window ---- */
+  .browser{
+    position:absolute;left:90px;top:300px;width:900px;height:300px;z-index:4;
+    background:var(--surface);border:1px solid var(--surface-border);
+    border-radius:26px;overflow:hidden;
+  }
+  .bar{height:64px;background:#0a1322;border-bottom:1px solid var(--surface-border);
+       display:flex;align-items:center;gap:12px;padding:0 26px}
+  .bar i{width:14px;height:14px;border-radius:50%;background:#2a3550;display:block}
+  .bar .addr{margin-left:16px;font-family:'JetBrains Mono',monospace;
+             font-size:20px;color:var(--muted)}
+  .bwrap{padding:26px 30px}
+  .qb{
+    background:var(--cta);color:var(--on-accent);font-weight:600;font-size:26px;
+    line-height:1.3;padding:18px 24px;border-radius:22px 22px 6px 22px;
+    display:inline-block;float:right;max-width:80%;min-height:60px;
+  }
+  .ab{
+    clear:both;margin-top:16px;background:var(--bg-secondary);
+    border:1px solid var(--surface-border);font-size:23px;line-height:1.35;
+    padding:16px 22px;border-radius:22px 22px 22px 6px;display:inline-block;
+    max-width:88%;opacity:0;
+  }
+
+  /* ---- nodes ---- */
+  .node{
+    position:absolute;z-index:4;transform:translate(-50%,-50%);
+    background:var(--surface);border:1px solid var(--surface-border);
+    border-radius:22px;padding:18px 24px;min-width:250px;
+    transition:none;
+  }
+  .node .nm{font-size:26px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+  .node .sub{margin-top:4px;font-size:19px;color:var(--text-secondary);white-space:nowrap}
+  .node .ms{
+    margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:22px;
+    font-weight:700;color:var(--neon-cyan);opacity:0;
+  }
+  .node.hot{border-color:var(--neon-cyan);background:#0e1c2e}
+  .node.hot .ms,.node.done .ms{opacity:1}
+  .node.done{border-color:rgba(0,242,254,.4)}
+
+  /* ---- wires + packet ---- */
+  svg.wires{position:absolute;inset:0;z-index:1}
+  svg.wires path{fill:none;stroke:rgba(255,255,255,.10);stroke-width:3}
+  svg.wires path.lit{stroke:rgba(0,242,254,.45)}
+  .packet{
+    position:absolute;z-index:6;width:26px;height:26px;border-radius:50%;
+    background:var(--neon-cyan);transform:translate(-50%,-50%);
+    box-shadow:0 0 26px 10px rgba(0,242,254,.55);opacity:0;
+  }
+  .packet.ret{background:#7CFFB2;box-shadow:0 0 26px 10px rgba(124,255,178,.5)}
+
+  .foot{position:absolute;left:70px;right:70px;bottom:130px;z-index:5;
+        display:flex;align-items:center;justify-content:space-between}
+  .stat{font-family:'JetBrains Mono',monospace;font-size:24px;color:var(--neon-cyan);opacity:0}
+  .site{font-size:26px;font-weight:600;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+
+  <div class="hdr">
+    <div class="eyebrow">Under the hood</div>
+    <h1>One question, end to end.</h1>
+  </div>
+
+  <div class="browser">
+    <div class="bar"><i></i><i></i><i></i><span class="addr">msalmansaeedch.de</span></div>
+    <div class="bwrap">
+      <div class="qb" id="qb"></div>
+      <div class="ab" id="ab">I hold 6 AWS certifications, including both Professional-level ones.</div>
+    </div>
+  </div>
+
+  <svg class="wires" id="wires" viewBox="0 0 1080 1920"></svg>
+
+  <div class="node" id="n_api"  style="left:250px;top:840px">
+    <div class="nm">API Gateway</div><div class="sub">throttle 5 rps</div>
+  </div>
+  <div class="node" id="n_lam"  style="left:250px;top:1110px">
+    <div class="nm">Lambda</div><div class="sub">FastAPI on arm64</div>
+  </div>
+  <div class="node" id="n_emb"  style="left:790px;top:960px">
+    <div class="nm">Titan v2</div><div class="sub">embed the question</div>
+    <div class="ms">109 ms</div>
+  </div>
+  <div class="node" id="n_pgv"  style="left:790px;top:1240px">
+    <div class="nm">pgvector</div><div class="sub">k=5 nearest chunks</div>
+    <div class="ms">12 ms</div>
+  </div>
+  <div class="node" id="n_nov"  style="left:790px;top:1520px">
+    <div class="nm">Nova Lite</div><div class="sub">write the answer</div>
+    <div class="ms">712 ms</div>
+  </div>
+
+  <div class="packet" id="pk"></div>
+
+  <div class="foot">
+    <div class="stat" id="stat">845 ms in Lambda &nbsp;·&nbsp; 84% of it is the model</div>
+    <div class="site">msalmansaeedch.de</div>
+  </div>
+</div>
+
+<script>
+// Deterministic: every visual state is a pure function of ?t=<seconds>, so the
+// renderer screenshots each frame independently and the video is reproducible.
+const Q = "Which AWS certifications do you hold?";
+
+// Node anchor points, matching the inline left/top above.
+const P = {
+  browser: [540, 600],
+  api:     [250, 840],
+  lam:     [250, 1110],
+  emb:     [790, 960],
+  pgv:     [790, 1240],
+  nov:     [790, 1520],
+};
+
+// The packet's itinerary. Each leg is [from, to, start, end, isReturn].
+// Nova Lite's leg is deliberately the longest on screen: it really is 84% of
+// the time, so the animation should feel that way rather than flatten it.
+const LEGS = [
+  ["browser","api", 2.6, 3.3, 0],
+  ["api","lam",     3.3, 3.9, 0],
+  ["lam","emb",     4.3, 4.9, 0],
+  ["emb","lam",     5.6, 6.2, 1],
+  ["lam","pgv",     6.4, 6.9, 0],
+  ["pgv","lam",     7.1, 7.6, 1],
+  ["lam","nov",     7.9, 8.5, 0],
+  ["nov","lam",     11.0, 11.6, 1],
+  ["lam","api",     11.9, 12.5, 1],
+  ["api","browser", 12.5, 13.2, 1],
+];
+
+// When each service is actively working (drives the glow + time chip).
+const BUSY = {
+  n_api: [[3.3, 3.9],[11.9, 12.5]],
+  n_lam: [[3.9, 11.9]],
+  n_emb: [[4.9, 5.6]],
+  n_pgv: [[6.9, 7.1]],
+  n_nov: [[8.5, 11.0]],
+};
+
+// Wires are drawn once from the same anchor table, so the packet can never
+// drift off a line if the layout changes.
+const WIRES = [["browser","api"],["api","lam"],["lam","emb"],["lam","pgv"],["lam","nov"]];
+document.getElementById('wires').innerHTML = WIRES.map(([a,b]) => {
+  const [x1,y1] = P[a], [x2,y2] = P[b];
+  const mx = (x1 + x2) / 2;
+  // gentle S-curve for the side branches, straight for the spine
+  const d = (x1 === x2)
+    ? `M${x1},${y1} L${x2},${y2}`
+    : `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+  return `<path id="w_${a}_${b}" d="${d}"/>`;
+}).join('');
+
+const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+const ease = x => x < .5 ? 2*x*x : 1 - Math.pow(-2*x + 2, 2) / 2;
+
+function render(t){
+  // question types into the browser
+  const typed = clamp01((t - 0.4) / 2.0);
+  document.getElementById('qb').textContent = Q.slice(0, Math.round(typed * Q.length));
+
+  // node states
+  for (const [id, spans] of Object.entries(BUSY)) {
+    const el = document.getElementById(id);
+    const hot  = spans.some(([a,b]) => t >= a && t < b);
+    const done = spans.length && t >= spans[spans.length-1][1];
+    el.classList.toggle('hot', hot);
+    el.classList.toggle('done', !hot && done);
+    // Nova Lite works for ~2.5s on screen; without a pulse the frame looks stuck
+    el.style.boxShadow = hot
+      ? `0 0 ${28 + 16 * (0.5 + 0.5 * Math.sin(t * 7))}px rgba(0,242,254,.45)`
+      : 'none';
+  }
+
+  // packet position along its current leg
+  const pk = document.getElementById('pk');
+  const leg = LEGS.find(([,,t0,t1]) => t >= t0 && t <= t1);
+  if (leg) {
+    const [from, to, t0, t1, ret] = leg;
+    const p = ease(clamp01((t - t0) / (t1 - t0)));
+    const [x1,y1] = P[from], [x2,y2] = P[to];
+    // follow the same S-curve the wire uses, so the dot rides the line
+    const mx = (x1 + x2) / 2;
+    let x, y;
+    if (x1 === x2) { x = x1; y = y1 + (y2 - y1) * p; }
+    else {
+      const u = 1 - p;
+      x = u*u*u*x1 + 3*u*u*p*mx + 3*u*p*p*mx + p*p*p*x2;
+      y = u*u*u*y1 + 3*u*u*p*y1 + 3*u*p*p*y2 + p*p*p*y2;
+    }
+    pk.style.left = x + 'px';
+    pk.style.top  = y + 'px';
+    pk.style.opacity = '1';
+    pk.classList.toggle('ret', !!ret);
+  } else {
+    pk.style.opacity = '0';
+  }
+
+  // light the wire that is currently carrying the packet
+  document.querySelectorAll('svg.wires path').forEach(p => p.classList.remove('lit'));
+  if (leg) {
+    const [from, to] = leg;
+    const w = document.getElementById(`w_${from}_${to}`) || document.getElementById(`w_${to}_${from}`);
+    if (w) w.classList.add('lit');
+  }
+
+  // the answer lands back in the browser
+  document.getElementById('ab').style.opacity = t >= 13.2 ? '1' : '0';
+  document.getElementById('stat').style.opacity = t >= 13.8 ? '1' : '0';
+}
+
+render(parseFloat(new URLSearchParams(location.search).get('t') || '0'));
+</script>
+</body>
+</html>
