@@ -84,7 +84,7 @@ with Diagram(
 
         with Cluster("Security & Observability"):
             secrets = SecretsManager("RDS Credentials\n(auto-rotated)")
-            cw = Cloudwatch("Logs, Metrics,\nDashboard, 9 Alarms")
+            cw = Cloudwatch("Logs, Metrics,\nDashboard, 10 Alarms")
             trail = Cloudtrail("CloudTrail\n(log-file validation)")
             sns = SNS("SNS — Email Alerts")
 
