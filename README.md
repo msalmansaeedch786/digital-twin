@@ -245,7 +245,7 @@ npm run dev
 ## Observability
 
 The architecture integrates deeply with AWS native observability tools:
-- **Amazon CloudWatch**: Captures structured JSON logs from the Lambda functions for easy parsing and debugging, and drives a `digital-twin-ops` dashboard plus nine alarms covering API abuse, Lambda errors/throttles/p99 duration, RDS CPU/connections/storage, ingestion DLQ depth, and root-account usage.
+- **Amazon CloudWatch**: Captures structured JSON logs from the Lambda functions for easy parsing and debugging, and drives a `digital-twin-ops` dashboard plus ten alarms covering API abuse, Lambda errors/throttles/p99 duration, RDS CPU/connections/storage, ingestion DLQ depth, root-account usage, and ungrounded answers (retrieval returning zero documents).
 - **Per-request latency breakdown**: Every chat request logs `embed_ms`, `search_ms`, `generate_ms`, `chain_ms` and `docs_retrieved`, so Logs Insights can answer where the time actually goes rather than only reporting a total. Measured on warm requests, generation is ~84% of the chain, embedding ~13%, and the pgvector search ~1.4%. `docs_retrieved` also doubles as a grounding check: a sustained 0 means retrieval is returning nothing and answers are no longer grounded.
 - **Traffic attribution**: The API Gateway access log records `userAgent` and `path`, and the chat log records `user_agent` and `origin`, so real browser traffic can be separated from scripted calls and uptime pings.
 - **Amazon SNS**: Delivers every alarm, circuit-breaker action, budget threshold, and cost anomaly to email.

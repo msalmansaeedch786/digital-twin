@@ -209,6 +209,55 @@ resource "aws_cloudwatch_metric_alarm" "api_abuse" {
 # API Lambda Alarms
 # ===========================================================================
 
+# ===========================================================================
+# Ungrounded answers
+#
+# The nastiest failure in this system is silent: if the knowledge-base bucket
+# is empty (e.g. a rebuild recreated it and data_sync has not fired since),
+# retrieval returns zero documents, the prompt context is blank, and Nova Lite
+# answers from its own priors instead of erroring. Every technical alarm stays
+# green while the twin confidently invents a career.
+#
+# The API Lambda logs docs_retrieved on every chat request, so a count of
+# zero-document answers is the one metric that catches it.
+# ===========================================================================
+
+resource "aws_cloudwatch_log_metric_filter" "ungrounded_answers" {
+  name = "${var.project_name}-ungrounded-answers"
+  # Matches the structured chat log line where retrieval came back empty.
+  pattern        = "{ $.docs_retrieved = 0 }"
+  log_group_name = aws_cloudwatch_log_group.lambda_api.name
+
+  metric_transformation {
+    name      = "UngroundedAnswers"
+    namespace = "DigitalTwin"
+    value     = "1"
+    # Emit 0 when the pattern does not match, so the metric exists even on a
+    # healthy day. Without this the alarm sits in INSUFFICIENT_DATA forever.
+    default_value = "0"
+    unit          = "Count"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "ungrounded_answers" {
+  alarm_name          = "${var.project_name}-ungrounded-answers"
+  alarm_description   = "The twin answered with zero retrieved documents — the knowledge base is likely empty, so answers are no longer grounded. Re-sync data/ to the KB bucket."
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = aws_cloudwatch_log_metric_filter.ungrounded_answers.metric_transformation[0].name
+  namespace           = aws_cloudwatch_log_metric_filter.ungrounded_answers.metric_transformation[0].namespace
+  period              = 300 # 5 minutes
+  statistic           = "Sum"
+  # A populated collection returns k=5 essentially every time, so even one
+  # zero-document answer means something is wrong. Traffic is low enough that
+  # a threshold of 1 will not be noisy.
+  threshold          = 1
+  treat_missing_data = "notBreaching"
+
+  alarm_actions = [aws_sns_topic.alerts.arn]
+  ok_actions    = [aws_sns_topic.alerts.arn]
+}
+
 resource "aws_cloudwatch_metric_alarm" "lambda_api_errors" {
   alarm_name          = "${var.project_name}-api-errors"
   alarm_description   = "API Lambda error rate is elevated — check logs immediately"
