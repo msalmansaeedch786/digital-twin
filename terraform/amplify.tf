@@ -124,3 +124,20 @@ resource "terraform_data" "trigger_amplify_build" {
     command = "aws amplify start-job --app-id ${aws_amplify_app.frontend.id} --branch-name ${aws_amplify_branch.feature.branch_name} --job-type RELEASE --region ${var.aws_region}"
   }
 }
+
+# ===========================================================================
+# Amplify SSR log group
+#
+# Amplify creates /aws/amplify/<app-id> itself the first time the SSR compute
+# writes a log, and AWS's default for a service-created group is "never
+# expire". Declaring it here brings it under Terraform so retention matches
+# the Lambda groups instead of growing forever.
+#
+# It already existed when this was added, so it was adopted into state with:
+#   terraform import aws_cloudwatch_log_group.amplify /aws/amplify/<app-id>
+# ===========================================================================
+
+resource "aws_cloudwatch_log_group" "amplify" {
+  name              = "/aws/amplify/${aws_amplify_app.frontend.id}"
+  retention_in_days = 30
+}
