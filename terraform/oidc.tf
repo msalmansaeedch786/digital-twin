@@ -200,7 +200,11 @@ resource "aws_iam_policy" "github_actions_policy" {
         Resource = ["arn:aws:lambda:${var.aws_region}:${local.gha_account_id}:function:${var.project_name}-*"]
       },
 
-      # --- CloudWatch Logs: the four project log-group prefixes ---
+      # --- CloudWatch Logs: the project log-group prefixes ---
+      # Amplify's group is /aws/amplify/<app-id>, which matches none of the
+      # project-name prefixes below, so it is listed explicitly. Without it a
+      # plan that touches the group's retention fails at apply with
+      # AccessDenied on logs:PutRetentionPolicy.
       {
         Sid    = "LogsManagement"
         Effect = "Allow"
@@ -213,7 +217,9 @@ resource "aws_iam_policy" "github_actions_policy" {
           "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/rds/instance/${var.project_name}-*",
           "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/rds/instance/${var.project_name}-*:*",
           "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/cloudtrail/${var.project_name}*",
-          "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/cloudtrail/${var.project_name}*:*"
+          "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/cloudtrail/${var.project_name}*:*",
+          "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/amplify/${aws_amplify_app.frontend.id}",
+          "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/amplify/${aws_amplify_app.frontend.id}:*"
         ]
       },
 
