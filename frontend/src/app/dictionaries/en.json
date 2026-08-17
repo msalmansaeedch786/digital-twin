@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "title": "Salman | Senior Infrastructure Engineer",
+    "description": "Portfolio of Muhammad Salman, 6x AWS Certified Senior Infrastructure Consultant. Talk to his AI Digital Twin.",
+    "ogTitle": "AI Digital Twin: Serverless RAG Chatbot on AWS",
+    "ogDescription": "Chat with my AI digital twin and ask about my cloud, DevOps, and platform engineering experience. Built serverless on AWS.",
+    "twitterDescription": "Chat with my AI digital twin, built serverless on AWS."
+  },
+  "nav": {
+    "experience": "Experience",
+    "education": "Education",
+    "projects": "Projects",
+    "certifications": "Certifications",
+    "digitalTwin": "Digital Twin",
+    "toggleTheme": "Toggle Theme",
+    "toggleLanguage": "Switch to German",
+    "home": "Home"
+  },
+  "wordmark": [
+    "welcome to my portfolio",
+    "ask my twin anything"
+  ],
+  "hero": {
+    "greeting": "Hi, I'm",
+    "role": "Senior Infrastructure Consultant",
+    "location": "Munich, Germany",
+    "certBadge": "6x AWS Certified",
+    "summary": "6x AWS Certified professional specializing in Platform Engineering, Cloud Native architectures, and building scalable infrastructure for Generative AI. With over 4 years of experience, I automate complex, multi-account AWS environments using Terraform and Kubernetes to deliver resilient, enterprise-grade cloud solutions.",
+    "cta": "TALK TO MY DIGITAL TWIN"
+  },
+  "sections": {
+    "experience": "Experience",
+    "education": "Education",
+    "projects": "Projects",
+    "certifications": "Certifications & Badges"
+  },
+  "experiences": [
+    {
+      "role": "Senior Infrastructure Consultant",
+      "details": "Lead infrastructure consultant orchestrating enterprise-scale cloud transformations for major automotive clients including Porsche AG, MBition, and Mercedes-Benz. Architected robust CI/CD pipelines, automated AWS provisioning using Terraform, and engineered scalable 'Fleeting Runners' and containerized environments. Spearheaded the deployment of generative AI chat capabilities and internal developer platforms, significantly improving operational efficiency and security posture."
+    },
+    {
+      "role": "DevOps Engineer",
+      "details": "Led the provisioning of Infrastructure as Code using AWS CloudFormation and managed continuous deployment pipelines across Dev, QA, and Prod environments. Enforced robust cloud security by maintaining IAM permissions and auditing AWS resources for cost optimization. Directed the containerization strategy using Docker on AWS ECS Fargate, ensuring continuous security patching and vulnerability testing."
+    },
+    {
+      "role": "DevOps Engineer",
+      "details": "Spearheaded modular Infrastructure as Code provisioning using Terraform alongside GitLab CI/CD pipelines. Configured secure GKE clusters on GCP for staging environments and managed Kubernetes deployments using Helmfile. Oversaw the resolution of on-premises IT infrastructure and complex deployment challenges."
+    },
+    {
+      "role": "DevOps Engineer",
+      "details": "Architected comprehensive logging and monitoring dashboards utilizing AWS CloudWatch for server and application metrics. Deployed highly-available ECS services using on-demand CloudFormation stacks and Fargate. Managed large-scale distributed systems in production, focusing on debugging, failure handling, and advanced performance tuning."
+    },
+    {
+      "role": "Software Engineer",
+      "details": "Provisioned secure Infrastructure as Code via Terraform Cloud and CloudFormation nested stacks while optimizing CI/CD pipelines with GitLab, Octopus Deploy, and AWS CodePipeline. Led complex 'lift and shift' cloud migrations to AWS and developed serverless microservices using AWS SAM. Championed containerization workflows with Docker and ECR, and ensured high availability through AWS AutoScaling and Route53."
+    },
+    {
+      "role": "Full Stack Developer",
+      "details": "Developed 'CodeFreak', an interactive programming competition platform. Engineered a secure code compilation server with isolated Docker containers, a robust ASP.NET Core RESTful backend, and an Angular 6 user interface with real-time Chat via SignalR."
+    },
+    {
+      "role": "Blockchain and Application Developer",
+      "details": "Built 'Keyless', a permissionless decentralized peer-to-peer biometric authentication network. Developed an Ethereum Wallet and smart contracts (ERC-20), enabling a self-sovereign key management ecosystem without traditional private keys."
+    }
+  ],
+  "projects": [
+    { "desc": "Engineered infrastructure for AI/Chatbot capabilities using Model Context Protocol (MCP) skills and Platypus. Configured Kubernetes CSI drivers for persistent storage and secured DocumentDB access via in-database gateways." },
+    { "desc": "Designed a 'Fleeting Runner' architecture for GitLab CI/CD to optimize build times. Automated Base AMI processes using Packer and Terraform to dynamically scale self-hosted runners based on pipeline demand." },
+    { "desc": "Standardized cloud infrastructure through reusable automation and developed AWS base infrastructure tools. Implemented automated IAM role management, observability, and shared secrets management across development teams." },
+    { "desc": "Built a personalized market data terminal processing vendor data via S3, Lambda, and Glue into Parquet format. Visualized performance and inventory data using Apache Superset querying Athena directly." },
+    { "desc": "Provided AWS DevOps Architecture to migrate a RackSpace Production Environment to AWS. Lifted and shifted file and SFTP servers using AWS FSx and AWS Transfer for SFTP. Baked custom Windows AMIs using Sysprep and implemented CI/CD via Octopus Deploy." },
+    { "desc": "Maintained data pipelines integrating with on-premises Oracle databases. Configured AWS Elastic Beanstalk multi-container Docker environments and managed microservices via ECS Fargate and Minikube. Implemented CI/CD using Jenkins and CircleCI." },
+    { "desc": "Developed a collection of CloudFormation Custom Resources. Engineered the ELK Stack architecture for log visualization via Kibana. Installed Grafana via Terraform and instituted Linux shell scripting for automated log management." },
+    { "desc": "Developed a programming competition platform with embedded code editor and isolated Docker containers for code compilation." },
+    { "desc": "Built an Ethereum DApp and wallet with biometric authentication, creating a decentralized peer-to-peer network without private keys." }
+  ],
+  "education": [
+    { "degree": "Bachelor's degree, Computer Software Engineering", "grade": "Grade: 3.74" },
+    { "degree": "Intermediate, Pre-Engineering", "grade": "Grade: A+" },
+    { "degree": "Matriculation, Computer Science", "grade": "Grade: A+" }
+  ],
+  "certLevels": {
+    "Foundational": "Foundational",
+    "Associate": "Associate",
+    "Professional": "Professional"
+  },
+  "avatar": {
+    "greeting": "Hello. I am Salman's Digital Twin. Speak into the microphone or type a message below.",
+    "title": "Salman's Digital Twin",
+    "subtitle": "AI-Powered Professional Assistant",
+    "backToPortfolio": "PORTFOLIO",
+    "voiceEnabled": "Voice Enabled",
+    "voiceDisabled": "Voice Disabled",
+    "listening": "Listening...",
+    "placeholder": "Message Salman's twin...",
+    "stopListening": "Stop listening",
+    "rateLimited": "I'm getting a lot of questions at once — give me a few seconds and ask again.",
+    "connectionError": "Sorry, I lost my connection to the brain.",
+    "speechUnsupported": "Speech recognition is not supported in this browser. Try Chrome or Edge.",
+    "suggestions": [
+      "What is your core tech stack?",
+      "Tell me about your AWS experience",
+      "How do you approach cloud security?"
+    ]
+  }
+}

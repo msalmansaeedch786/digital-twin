@@ -4,16 +4,17 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, Home, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
+import { otherLocale } from "../../dictionaries";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-export default function AvatarMode() {
+export default function AvatarClient({ lang, dict }) {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isMuted, setIsMuted] = useState(true); // Default to muted so it doesn't auto-play
   const [inputText, setInputText] = useState("");
   const [messages, setMessages] = useState([
-    { role: "bot", content: "Hello. I am Salman's Digital Twin. Speak into the microphone or type a message below." }
+    { role: "bot", content: dict.avatar.greeting }
   ]);
   const [voices, setVoices] = useState([]);
 
@@ -91,7 +92,7 @@ export default function AvatarMode() {
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      recognition.lang = lang === 'de' ? 'de-DE' : 'en-US';
 
       recognition.onresult = (event) => {
         let currentTranscript = "";
@@ -119,11 +120,14 @@ export default function AvatarMode() {
         recognitionRef.current.abort();
       }
     };
-  }, []);
+    // Rebuild the recogniser when the language changes: recognition.lang is set
+    // once at construction, so a client-side move between /en/avatar and
+    // /de/avatar would otherwise keep listening in the previous language.
+  }, [lang]);
 
   const toggleListening = () => {
     if (!recognitionRef.current) {
-      alert("Speech recognition is not supported in this browser. Try Chrome or Edge.");
+      alert(dict.avatar.speechUnsupported);
       return;
     }
 
@@ -144,14 +148,18 @@ export default function AvatarMode() {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
 
-    // Try to find a good English male voice
-    const preferredVoice = voices.find(v =>
-      v.lang.includes('en-') && (v.name.includes('Male') || v.name.includes('Google UK English Male') || v.name.includes('Daniel'))
-    );
+    // Match the page language, otherwise German text is read aloud by an
+    // English voice and is close to unintelligible.
+    const wantPrefix = lang === 'de' ? 'de-' : 'en-';
+    const preferredVoice =
+      voices.find(v => v.lang.startsWith(wantPrefix) &&
+        (v.name.includes('Male') || v.name.includes('Google UK English Male') || v.name.includes('Daniel'))) ||
+      voices.find(v => v.lang.startsWith(wantPrefix));
     if (preferredVoice) {
       utterance.voice = preferredVoice;
     }
 
+    utterance.lang = lang === 'de' ? 'de-DE' : 'en-US';
     utterance.rate = 1.0;
     utterance.pitch = 0.9;
 
@@ -181,7 +189,9 @@ export default function AvatarMode() {
         // Send previous messages as history so AI remembers the context
         body: JSON.stringify({
           message: userMsg,
-          history: messages.map(m => ({ role: m.role, content: m.content }))
+          history: messages.map(m => ({ role: m.role, content: m.content })),
+          // Drives the twin's reply language; the API defaults to "en".
+          lang,
         }),
       });
 
@@ -200,8 +210,8 @@ export default function AvatarMode() {
     } catch (error) {
       console.error(error);
       const errorMsg = error.message === "RATE_LIMIT"
-        ? "I'm getting a lot of questions at once — give me a few seconds and ask again."
-        : "Sorry, I lost my connection to the brain.";
+        ? dict.avatar.rateLimited
+        : dict.avatar.connectionError;
       setMessages(prev => [...prev, { role: "bot", content: errorMsg }]);
       if (!isMuted) {
         speak(errorMsg);
@@ -230,12 +240,20 @@ export default function AvatarMode() {
 
       {/* Top Nav — in normal flow so the layout below it is stable */}
       <div className="avatar-topnav" style={{ flexShrink: 0, height: "70px", zIndex: 10, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 2rem", background: "rgba(8, 12, 22, 0.8)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "0.9rem", fontWeight: 600, letterSpacing: "1px", transition: "color 0.2s" }}>
+        <Link href={`/${lang}`} style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "0.9rem", fontWeight: 600, letterSpacing: "1px", transition: "color 0.2s" }}>
           <Home size={18} />
-          <span>PORTFOLIO</span>
+          <span>{dict.avatar.backToPortfolio}</span>
         </Link>
 
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <Link
+            href={`/${otherLocale(lang)}/avatar`}
+            aria-label={dict.nav.toggleLanguage}
+            title={dict.nav.toggleLanguage}
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)", padding: "0.4rem 0.8rem", borderRadius: "20px", textDecoration: "none", fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.05em", fontFamily: "'JetBrains Mono', monospace", transition: "all 0.3s" }}
+          >
+            {otherLocale(lang).toUpperCase()}
+          </Link>
           <button
             onClick={() => {
               setIsMuted(!isMuted);
@@ -247,7 +265,7 @@ export default function AvatarMode() {
             style={{ background: isMuted ? "rgba(255,255,255,0.05)" : "rgba(0, 242, 254, 0.1)", border: isMuted ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0, 242, 254, 0.3)", color: isMuted ? "rgba(255,255,255,0.6)" : "#00f2fe", padding: "0.4rem 1rem", borderRadius: "20px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem", fontWeight: 600, transition: "all 0.3s" }}
           >
             {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-            <span>{isMuted ? "Voice Disabled" : "Voice Enabled"}</span>
+            <span>{isMuted ? dict.avatar.voiceDisabled : dict.avatar.voiceEnabled}</span>
           </button>
         </div>
       </div>
@@ -273,8 +291,8 @@ export default function AvatarMode() {
             />
           )}
         </div>
-        <h2 className="avatar-title" style={{ fontSize: "1.1rem", fontWeight: 600, marginTop: "0.6rem", letterSpacing: "1px", color: "rgba(255,255,255,0.9)" }}>Salman's Digital Twin</h2>
-        <p className="avatar-subtitle" style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.5)", marginTop: "0.2rem" }}>AI-Powered Professional Assistant</p>
+        <h2 className="avatar-title" style={{ fontSize: "1.1rem", fontWeight: 600, marginTop: "0.6rem", letterSpacing: "1px", color: "rgba(255,255,255,0.9)" }}>{dict.avatar.title}</h2>
+        <p className="avatar-subtitle" style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.5)", marginTop: "0.2rem" }}>{dict.avatar.subtitle}</p>
       </div>
 
       {/* Scrollable messages — the ONLY thing that scrolls */}
@@ -346,14 +364,14 @@ export default function AvatarMode() {
       {/* Suggestion Pills */}
       {messages.length === 1 && !isSpeaking && (
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "0.8rem", width: "100%", maxWidth: "800px", margin: "0 auto", padding: "0 2rem", marginBottom: "1rem", zIndex: 10 }}>
-          <button onClick={() => handleSendText("What is your core tech stack?")} style={{ fontSize: "0.9rem", padding: "0.6rem 1.2rem", borderRadius: "20px", background: "var(--glass-bg)", border: "1px solid var(--glass-border)", color: "var(--text-primary)", cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit" }} onMouseOver={(e) => { e.currentTarget.style.background = "rgba(0, 242, 254, 0.1)"; e.currentTarget.style.borderColor = "rgba(0, 242, 254, 0.3)" }} onMouseOut={(e) => { e.currentTarget.style.background = "var(--glass-bg)"; e.currentTarget.style.borderColor = "var(--glass-border)" }}>
-            What is your core tech stack?
+          <button onClick={() => handleSendText(dict.avatar.suggestions[0])} style={{ fontSize: "0.9rem", padding: "0.6rem 1.2rem", borderRadius: "20px", background: "var(--glass-bg)", border: "1px solid var(--glass-border)", color: "var(--text-primary)", cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit" }} onMouseOver={(e) => { e.currentTarget.style.background = "rgba(0, 242, 254, 0.1)"; e.currentTarget.style.borderColor = "rgba(0, 242, 254, 0.3)" }} onMouseOut={(e) => { e.currentTarget.style.background = "var(--glass-bg)"; e.currentTarget.style.borderColor = "var(--glass-border)" }}>
+            {dict.avatar.suggestions[0]}
           </button>
-          <button onClick={() => handleSendText("Tell me about your AWS experience")} style={{ fontSize: "0.9rem", padding: "0.6rem 1.2rem", borderRadius: "20px", background: "var(--glass-bg)", border: "1px solid var(--glass-border)", color: "var(--text-primary)", cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit" }} onMouseOver={(e) => { e.currentTarget.style.background = "rgba(0, 242, 254, 0.1)"; e.currentTarget.style.borderColor = "rgba(0, 242, 254, 0.3)" }} onMouseOut={(e) => { e.currentTarget.style.background = "var(--glass-bg)"; e.currentTarget.style.borderColor = "var(--glass-border)" }}>
-            Tell me about your AWS experience
+          <button onClick={() => handleSendText(dict.avatar.suggestions[1])} style={{ fontSize: "0.9rem", padding: "0.6rem 1.2rem", borderRadius: "20px", background: "var(--glass-bg)", border: "1px solid var(--glass-border)", color: "var(--text-primary)", cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit" }} onMouseOver={(e) => { e.currentTarget.style.background = "rgba(0, 242, 254, 0.1)"; e.currentTarget.style.borderColor = "rgba(0, 242, 254, 0.3)" }} onMouseOut={(e) => { e.currentTarget.style.background = "var(--glass-bg)"; e.currentTarget.style.borderColor = "var(--glass-border)" }}>
+            {dict.avatar.suggestions[1]}
           </button>
-          <button onClick={() => handleSendText("How do you approach cloud security?")} style={{ fontSize: "0.9rem", padding: "0.6rem 1.2rem", borderRadius: "20px", background: "var(--glass-bg)", border: "1px solid var(--glass-border)", color: "var(--text-primary)", cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit" }} onMouseOver={(e) => { e.currentTarget.style.background = "rgba(0, 242, 254, 0.1)"; e.currentTarget.style.borderColor = "rgba(0, 242, 254, 0.3)" }} onMouseOut={(e) => { e.currentTarget.style.background = "var(--glass-bg)"; e.currentTarget.style.borderColor = "var(--glass-border)" }}>
-            How do you approach cloud security?
+          <button onClick={() => handleSendText(dict.avatar.suggestions[2])} style={{ fontSize: "0.9rem", padding: "0.6rem 1.2rem", borderRadius: "20px", background: "var(--glass-bg)", border: "1px solid var(--glass-border)", color: "var(--text-primary)", cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit" }} onMouseOver={(e) => { e.currentTarget.style.background = "rgba(0, 242, 254, 0.1)"; e.currentTarget.style.borderColor = "rgba(0, 242, 254, 0.3)" }} onMouseOut={(e) => { e.currentTarget.style.background = "var(--glass-bg)"; e.currentTarget.style.borderColor = "var(--glass-border)" }}>
+            {dict.avatar.suggestions[2]}
           </button>
         </div>
       )}
@@ -366,7 +384,7 @@ export default function AvatarMode() {
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder={isListening ? "Listening..." : "Message Salman's twin..."}
+            placeholder={isListening ? dict.avatar.listening : dict.avatar.placeholder}
             style={{
               flex: 1,
               background: "transparent",
@@ -392,7 +410,7 @@ export default function AvatarMode() {
               justifyContent: "center",
               transition: "color 0.3s"
             }}
-            aria-label={isListening ? "Stop listening" : "Start listening"}
+            aria-label={isListening ? dict.avatar.stopListening : "Start listening"}
           >
             {isListening ? <Mic size={22} /> : <MicOff size={22} />}
           </button>

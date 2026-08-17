@@ -68,6 +68,25 @@ resource "aws_amplify_app" "frontend" {
     AMPLIFY_DIFF_DEPLOY       = "false"
   }
 
+  # Locale redirects. Every page now lives under /en or /de, so the pre-i18n
+  # URLs already shared on LinkedIn and Instagram are redirected rather than
+  # broken. These must come BEFORE the catch-all below: Amplify evaluates rules
+  # in order and stops at the first match.
+  custom_rule {
+    source = "/"
+    target = "/en"
+    status = "301"
+  }
+
+  custom_rule {
+    source = "/avatar"
+    target = "/en/avatar"
+    status = "301"
+  }
+
+  # Inherited SPA fallback. Verified inactive on the WEB_COMPUTE platform (an
+  # unknown path returns a real 404, not a rewritten 200), so it is left in
+  # place rather than changed alongside the routing work.
   custom_rule {
     source = "/<*>"
     target = "/index.html"
