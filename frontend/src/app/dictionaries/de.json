@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "title": "Salman | Senior Infrastructure Engineer",
+    "description": "Portfolio von Muhammad Salman, 6x AWS zertifizierter Senior Infrastructure Consultant. Sprich mit seinem KI-Digital-Twin.",
+    "ogTitle": "KI Digital Twin: Serverloser RAG-Chatbot auf AWS",
+    "ogDescription": "Sprich mit meinem KI-Digital-Twin und frag ihn zu meiner Erfahrung in Cloud, DevOps und Platform Engineering. Serverlos auf AWS gebaut.",
+    "twitterDescription": "Sprich mit meinem KI-Digital-Twin, serverlos auf AWS gebaut."
+  },
+  "nav": {
+    "experience": "Berufserfahrung",
+    "education": "Ausbildung",
+    "projects": "Projekte",
+    "certifications": "Zertifizierungen",
+    "digitalTwin": "Digital Twin",
+    "toggleTheme": "Design wechseln",
+    "toggleLanguage": "Switch to English",
+    "home": "Startseite"
+  },
+  "wordmark": [
+    "willkommen in meinem Portfolio",
+    "frag meinen Twin alles"
+  ],
+  "hero": {
+    "greeting": "Hallo, ich bin",
+    "role": "Senior Infrastructure Consultant",
+    "location": "München, Deutschland",
+    "certBadge": "6x AWS zertifiziert",
+    "summary": "6x AWS zertifizierter Consultant mit Schwerpunkt auf Platform Engineering, Cloud-Native-Architekturen und skalierbarer Infrastruktur für Generative AI. Mit über 4 Jahren Erfahrung automatisiere ich komplexe AWS-Umgebungen über mehrere Accounts hinweg mit Terraform und Kubernetes und liefere robuste Cloud-Lösungen auf Enterprise-Niveau.",
+    "cta": "SPRICH MIT MEINEM DIGITAL TWIN"
+  },
+  "sections": {
+    "experience": "Berufserfahrung",
+    "education": "Ausbildung",
+    "projects": "Projekte",
+    "certifications": "Zertifizierungen & Badges"
+  },
+  "experiences": [
+    {
+      "role": "Senior Infrastructure Consultant",
+      "details": "Leitender Infrastructure Consultant für Cloud-Transformationen auf Enterprise-Niveau bei großen Automotive-Kunden wie Porsche AG, MBition und Mercedes-Benz. Konzeption robuster CI/CD-Pipelines, Automatisierung der AWS-Provisionierung mit Terraform sowie Entwicklung skalierbarer 'Fleeting Runner' und containerisierter Umgebungen. Federführend beim Rollout von Generative-AI-Chat-Funktionen und internen Developer-Plattformen, mit deutlichen Verbesserungen bei Effizienz und Sicherheit."
+    },
+    {
+      "role": "DevOps Engineer",
+      "details": "Verantwortlich für Infrastructure as Code mit AWS CloudFormation und für Continuous-Deployment-Pipelines über die Dev-, QA- und Prod-Umgebungen hinweg. Sicherstellung der Cloud-Sicherheit durch Pflege der IAM-Berechtigungen und regelmäßige Audits der AWS-Ressourcen zur Kostenoptimierung. Leitung der Containerisierungsstrategie mit Docker auf AWS ECS Fargate, inklusive laufender Security-Patches und Schwachstellentests."
+    },
+    {
+      "role": "DevOps Engineer",
+      "details": "Aufbau modularer Infrastructure-as-Code-Provisionierung mit Terraform in Verbindung mit GitLab-CI/CD-Pipelines. Konfiguration sicherer GKE-Cluster auf GCP für Staging-Umgebungen und Verwaltung von Kubernetes-Deployments mit Helmfile. Betreuung und Behebung von Problemen der On-Premises-IT-Infrastruktur und komplexer Deployments."
+    },
+    {
+      "role": "DevOps Engineer",
+      "details": "Konzeption umfassender Logging- und Monitoring-Dashboards mit AWS CloudWatch für Server- und Anwendungsmetriken. Deployment hochverfügbarer ECS-Services über On-Demand-CloudFormation-Stacks und Fargate. Betrieb großer verteilter Systeme in Produktion mit Fokus auf Debugging, Fehlerbehandlung und Performance-Tuning."
+    },
+    {
+      "role": "Software Engineer",
+      "details": "Bereitstellung sicherer Infrastructure as Code über Terraform Cloud und verschachtelte CloudFormation-Stacks sowie Optimierung von CI/CD-Pipelines mit GitLab, Octopus Deploy und AWS CodePipeline. Leitung komplexer 'Lift and Shift'-Cloud-Migrationen zu AWS und Entwicklung serverloser Microservices mit AWS SAM. Aufbau von Containerisierungs-Workflows mit Docker und ECR sowie Sicherstellung der Hochverfügbarkeit über AWS AutoScaling und Route53."
+    },
+    {
+      "role": "Full Stack Developer",
+      "details": "Entwicklung von 'CodeFreak', einer interaktiven Plattform für Programmierwettbewerbe. Aufbau eines sicheren Servers zur Codekompilierung mit isolierten Docker-Containern, eines RESTful-Backends in ASP.NET Core und einer Angular-6-Oberfläche mit Echtzeit-Chat über SignalR."
+    },
+    {
+      "role": "Blockchain and Application Developer",
+      "details": "Entwicklung von 'Keyless', einem permissionless dezentralen Peer-to-Peer-Netzwerk zur biometrischen Authentifizierung. Umsetzung einer Ethereum-Wallet und von Smart Contracts (ERC-20) für ein selbstbestimmtes Key-Management ohne klassische Private Keys."
+    }
+  ],
+  "projects": [
+    { "desc": "Aufbau der Infrastruktur für KI- und Chatbot-Funktionen mit Model Context Protocol (MCP) Skills und Platypus. Konfiguration von Kubernetes-CSI-Treibern für persistenten Speicher und Absicherung des DocumentDB-Zugriffs über In-Database-Gateways." },
+    { "desc": "Entwurf einer 'Fleeting Runner'-Architektur für GitLab CI/CD zur Verkürzung der Build-Zeiten. Automatisierung der Base-AMI-Erstellung mit Packer und Terraform, um selbst gehostete Runner dynamisch nach Pipeline-Bedarf zu skalieren." },
+    { "desc": "Standardisierung der Cloud-Infrastruktur durch wiederverwendbare Automatisierung und Entwicklung von AWS-Basis-Infrastrukturtools. Einführung von automatisiertem IAM-Rollenmanagement, Observability und geteiltem Secrets-Management über Entwicklungsteams hinweg." },
+    { "desc": "Aufbau eines personalisierten Marktdaten-Terminals, das Anbieterdaten über S3, Lambda und Glue in das Parquet-Format überführt. Visualisierung von Performance- und Bestandsdaten mit Apache Superset direkt auf Athena." },
+    { "desc": "AWS-DevOps-Architektur für die Migration einer RackSpace-Produktionsumgebung zu AWS. Lift and Shift von Datei- und SFTP-Servern mit AWS FSx und AWS Transfer for SFTP. Erstellung eigener Windows-AMIs mit Sysprep und Umsetzung von CI/CD über Octopus Deploy." },
+    { "desc": "Betreuung von Datenpipelines mit Anbindung an On-Premises-Oracle-Datenbanken. Konfiguration von AWS Elastic Beanstalk als Multi-Container-Docker-Umgebung und Verwaltung von Microservices über ECS Fargate und Minikube. Umsetzung von CI/CD mit Jenkins und CircleCI." },
+    { "desc": "Entwicklung einer Sammlung von CloudFormation Custom Resources. Aufbau der ELK-Stack-Architektur zur Log-Visualisierung über Kibana. Installation von Grafana per Terraform und Einführung von Linux-Shell-Skripten für automatisiertes Log-Management." },
+    { "desc": "Entwicklung einer Plattform für Programmierwettbewerbe mit eingebettetem Code-Editor und isolierten Docker-Containern für die Codekompilierung." },
+    { "desc": "Entwicklung einer Ethereum-DApp und -Wallet mit biometrischer Authentifizierung als dezentrales Peer-to-Peer-Netzwerk ohne Private Keys." }
+  ],
+  "education": [
+    { "degree": "Bachelor, Computer Software Engineering", "grade": "Note: 3,74" },
+    { "degree": "Intermediate, Pre-Engineering", "grade": "Note: A+" },
+    { "degree": "Matriculation, Computer Science", "grade": "Note: A+" }
+  ],
+  "certLevels": {
+    "Foundational": "Foundational",
+    "Associate": "Associate",
+    "Professional": "Professional"
+  },
+  "avatar": {
+    "greeting": "Hallo. Ich bin Salmans Digital Twin. Sprich ins Mikrofon oder schreib mir unten eine Nachricht.",
+    "title": "Salmans Digital Twin",
+    "subtitle": "KI-gestützter beruflicher Assistent",
+    "backToPortfolio": "PORTFOLIO",
+    "voiceEnabled": "Sprachausgabe an",
+    "voiceDisabled": "Sprachausgabe aus",
+    "listening": "Ich höre zu...",
+    "placeholder": "Schreib Salmans Twin...",
+    "stopListening": "Aufnahme stoppen",
+    "rateLimited": "Gerade kommen sehr viele Fragen auf einmal — gib mir ein paar Sekunden und frag noch einmal.",
+    "connectionError": "Entschuldige, ich habe die Verbindung zu meinem Gehirn verloren.",
+    "speechUnsupported": "Spracherkennung wird von diesem Browser nicht unterstützt. Probier es mit Chrome oder Edge.",
+    "suggestions": [
+      "Was ist dein zentraler Tech-Stack?",
+      "Erzähl mir von deiner AWS-Erfahrung",
+      "Wie gehst du an Cloud-Sicherheit heran?"
+    ]
+  }
+}
