@@ -4,7 +4,9 @@
     "description": "Portfolio von Muhammad Salman, 6x AWS zertifizierter Senior Infrastructure Consultant. Sprich mit seinem KI-Digital-Twin.",
     "ogTitle": "KI Digital Twin: Serverloser RAG-Chatbot auf AWS",
     "ogDescription": "Sprich mit meinem KI-Digital-Twin und frag ihn zu meiner Erfahrung in Cloud, DevOps und Platform Engineering. Serverlos auf AWS gebaut.",
-    "twitterDescription": "Sprich mit meinem KI-Digital-Twin, serverlos auf AWS gebaut."
+    "twitterDescription": "Sprich mit meinem KI-Digital-Twin, serverlos auf AWS gebaut.",
+    "avatarTitle": "Chatte mit Salmans Digital Twin",
+    "avatarDescription": "Frag meinen KI-Digital-Twin zu meiner Erfahrung in Cloud, DevOps und Platform Engineering. Serverlos auf AWS gebaut – mit Bedrock, pgvector und Terraform."
   },
   "nav": {
     "experience": "Berufserfahrung",
@@ -27,6 +29,15 @@
     "certBadge": "6x AWS zertifiziert",
     "summary": "6x AWS zertifizierter Consultant mit Schwerpunkt auf Platform Engineering, Cloud-Native-Architekturen und skalierbarer Infrastruktur für Generative AI. Mit über 4 Jahren Erfahrung automatisiere ich komplexe AWS-Umgebungen über mehrere Accounts hinweg mit Terraform und Kubernetes und liefere robuste Cloud-Lösungen auf Enterprise-Niveau.",
     "cta": "SPRICH MIT MEINEM DIGITAL TWIN"
+  },
+  "twin": {
+    "online": "online",
+    "avatarAlt": "Digital Twin",
+    "headlineBefore": "Ich bin Salmans ",
+    "headlineAccent": "Digital Twin",
+    "tagline": "Frag mich alles – der echte Salman meldet sich vielleicht selbst.",
+    "blurb": "Ich kenne Salmans gesamten Werdegang, seine Projekte und seinen Tech-Stack. Ich kann dich auch direkt mit ihm in Kontakt bringen.",
+    "cta": "Mit dem Digital Twin chatten"
   },
   "sections": {
     "experience": "Berufserfahrung",
@@ -65,20 +76,47 @@
     }
   ],
   "projects": [
-    { "desc": "Aufbau der Infrastruktur für KI- und Chatbot-Funktionen mit Model Context Protocol (MCP) Skills und Platypus. Konfiguration von Kubernetes-CSI-Treibern für persistenten Speicher und Absicherung des DocumentDB-Zugriffs über In-Database-Gateways." },
-    { "desc": "Entwurf einer 'Fleeting Runner'-Architektur für GitLab CI/CD zur Verkürzung der Build-Zeiten. Automatisierung der Base-AMI-Erstellung mit Packer und Terraform, um selbst gehostete Runner dynamisch nach Pipeline-Bedarf zu skalieren." },
-    { "desc": "Standardisierung der Cloud-Infrastruktur durch wiederverwendbare Automatisierung und Entwicklung von AWS-Basis-Infrastrukturtools. Einführung von automatisiertem IAM-Rollenmanagement, Observability und geteiltem Secrets-Management über Entwicklungsteams hinweg." },
-    { "desc": "Aufbau eines personalisierten Marktdaten-Terminals, das Anbieterdaten über S3, Lambda und Glue in das Parquet-Format überführt. Visualisierung von Performance- und Bestandsdaten mit Apache Superset direkt auf Athena." },
-    { "desc": "AWS-DevOps-Architektur für die Migration einer RackSpace-Produktionsumgebung zu AWS. Lift and Shift von Datei- und SFTP-Servern mit AWS FSx und AWS Transfer for SFTP. Erstellung eigener Windows-AMIs mit Sysprep und Umsetzung von CI/CD über Octopus Deploy." },
-    { "desc": "Betreuung von Datenpipelines mit Anbindung an On-Premises-Oracle-Datenbanken. Konfiguration von AWS Elastic Beanstalk als Multi-Container-Docker-Umgebung und Verwaltung von Microservices über ECS Fargate und Minikube. Umsetzung von CI/CD mit Jenkins und CircleCI." },
-    { "desc": "Entwicklung einer Sammlung von CloudFormation Custom Resources. Aufbau der ELK-Stack-Architektur zur Log-Visualisierung über Kibana. Installation von Grafana per Terraform und Einführung von Linux-Shell-Skripten für automatisiertes Log-Management." },
-    { "desc": "Entwicklung einer Plattform für Programmierwettbewerbe mit eingebettetem Code-Editor und isolierten Docker-Containern für die Codekompilierung." },
-    { "desc": "Entwicklung einer Ethereum-DApp und -Wallet mit biometrischer Authentifizierung als dezentrales Peer-to-Peer-Netzwerk ohne Private Keys." }
+    {
+      "desc": "Aufbau der Infrastruktur für KI- und Chatbot-Funktionen mit Model Context Protocol (MCP) Skills und Platypus. Konfiguration von Kubernetes-CSI-Treibern für persistenten Speicher und Absicherung des DocumentDB-Zugriffs über In-Database-Gateways."
+    },
+    {
+      "desc": "Entwurf einer 'Fleeting Runner'-Architektur für GitLab CI/CD zur Verkürzung der Build-Zeiten. Automatisierung der Base-AMI-Erstellung mit Packer und Terraform, um selbst gehostete Runner dynamisch nach Pipeline-Bedarf zu skalieren."
+    },
+    {
+      "desc": "Standardisierung der Cloud-Infrastruktur durch wiederverwendbare Automatisierung und Entwicklung von AWS-Basis-Infrastrukturtools. Einführung von automatisiertem IAM-Rollenmanagement, Observability und geteiltem Secrets-Management über Entwicklungsteams hinweg."
+    },
+    {
+      "desc": "Aufbau eines personalisierten Marktdaten-Terminals, das Anbieterdaten über S3, Lambda und Glue in das Parquet-Format überführt. Visualisierung von Performance- und Bestandsdaten mit Apache Superset direkt auf Athena."
+    },
+    {
+      "desc": "AWS-DevOps-Architektur für die Migration einer RackSpace-Produktionsumgebung zu AWS. Lift and Shift von Datei- und SFTP-Servern mit AWS FSx und AWS Transfer for SFTP. Erstellung eigener Windows-AMIs mit Sysprep und Umsetzung von CI/CD über Octopus Deploy."
+    },
+    {
+      "desc": "Betreuung von Datenpipelines mit Anbindung an On-Premises-Oracle-Datenbanken. Konfiguration von AWS Elastic Beanstalk als Multi-Container-Docker-Umgebung und Verwaltung von Microservices über ECS Fargate und Minikube. Umsetzung von CI/CD mit Jenkins und CircleCI."
+    },
+    {
+      "desc": "Entwicklung einer Sammlung von CloudFormation Custom Resources. Aufbau der ELK-Stack-Architektur zur Log-Visualisierung über Kibana. Installation von Grafana per Terraform und Einführung von Linux-Shell-Skripten für automatisiertes Log-Management."
+    },
+    {
+      "desc": "Entwicklung einer Plattform für Programmierwettbewerbe mit eingebettetem Code-Editor und isolierten Docker-Containern für die Codekompilierung."
+    },
+    {
+      "desc": "Entwicklung einer Ethereum-DApp und -Wallet mit biometrischer Authentifizierung als dezentrales Peer-to-Peer-Netzwerk ohne Private Keys."
+    }
   ],
   "education": [
-    { "degree": "Bachelor, Computer Software Engineering", "grade": "Note: 3,74" },
-    { "degree": "Intermediate, Pre-Engineering", "grade": "Note: A+" },
-    { "degree": "Matriculation, Computer Science", "grade": "Note: A+" }
+    {
+      "degree": "Bachelor, Computer Software Engineering",
+      "grade": "Note: 3,74"
+    },
+    {
+      "degree": "Intermediate, Pre-Engineering",
+      "grade": "Note: A+"
+    },
+    {
+      "degree": "Matriculation, Computer Science",
+      "grade": "Note: A+"
+    }
   ],
   "certLevels": {
     "Foundational": "Foundational",
@@ -102,6 +140,14 @@
       "Was ist dein zentraler Tech-Stack?",
       "Erzähl mir von deiner AWS-Erfahrung",
       "Wie gehst du an Cloud-Sicherheit heran?"
-    ]
+    ],
+    "disclaimer": "KI kann Fehler machen. Wichtige Informationen bitte überprüfen.",
+    "startListening": "Aufnahme starten"
+  },
+  "footer": {
+    "nav": "Fußzeile"
+  },
+  "common": {
+    "email": "E-Mail"
   }
 }

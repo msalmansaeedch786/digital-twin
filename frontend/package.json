@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:i18n": "node tests/i18n.test.js",
+    "test:i18n:sweep": "node tests/i18n-sweep.js"
   },
   "dependencies": {
     "framer-motion": "^12.40.0",
@@ -17,5 +19,8 @@
     "react-markdown": "^10.1.0",
     "react-parallax-tilt": "^1.7.330",
     "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.1"
   }
 }
