@@ -7,7 +7,7 @@ import { Sun, Moon, Mail, Award, ExternalLink, MessageSquare, MapPin } from "luc
 import { FiGithub, FiLinkedin, FiYoutube } from "react-icons/fi";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { otherLocale } from "../dictionaries";
+import { otherLocale } from "../dictionaries/locales";
 
 export default function PortfolioClient({ lang, dict }) {
   const [theme, setTheme] = useState("light");
@@ -171,7 +171,7 @@ export default function PortfolioClient({ lang, dict }) {
               <p style={{ maxWidth: "600px", fontSize: "1.15rem", marginBottom: "0.5rem", lineHeight: 1.7 }}>
                 {dict.hero.summary}</p>
               <div className="hero-contact">
-                <a href="mailto:msalmansaeedch786@gmail.com" className="contact-btn"><Mail size={18} /> Email</a>
+                <a href="mailto:msalmansaeedch786@gmail.com" className="contact-btn"><Mail size={18} /> {dict.common.email}</a>
                 <a href="https://github.com/msalmansaeedch" target="_blank" rel="noreferrer" className="contact-btn"><FiGithub size={18} /> GitHub</a>
                 <a href="https://linkedin.com/in/msalmansaeedch" target="_blank" rel="noreferrer" className="contact-btn"><FiLinkedin size={18} /> LinkedIn</a>
                 <a href="https://www.youtube.com/@msalmansaeedch" target="_blank" rel="noreferrer" className="contact-btn"><FiYoutube size={18} /> YouTube</a>
@@ -199,26 +199,26 @@ export default function PortfolioClient({ lang, dict }) {
                 margin: "0 auto"
               }}
             >
-              <span className="online-pill"><span className="online-dot" />online</span>
+              <span className="online-pill"><span className="online-dot" />{dict.twin.online}</span>
               <img
                 src="/salman-avatar.jpg"
-                alt="Digital Twin"
+                alt={dict.twin.avatarAlt}
                 style={{ width: "90px", height: "90px", borderRadius: "50%", objectFit: "cover", objectPosition: "center 20%", border: "2px solid var(--accent-soft-border)", marginBottom: "1.5rem" }}
               />
               <h3 style={{ fontSize: "1.6rem", fontWeight: 500, marginBottom: "0.5rem", letterSpacing: "0.5px" }}>
-                I'm Salman's <span style={{ fontStyle: "italic", color: "var(--neon-cyan)", fontWeight: 600 }}>digital twin</span>.
+                {dict.twin.headlineBefore}<span style={{ fontStyle: "italic", color: "var(--neon-cyan)", fontWeight: 600 }}>{dict.twin.headlineAccent}</span>.
               </h3>
               <p style={{ fontSize: "1.2rem", fontWeight: 400, marginBottom: "1rem", lineHeight: 1.4 }}>
-                Ask me anything – the real Salman might just chime in.
+                {dict.twin.tagline}
               </p>
               <p style={{ fontSize: "0.95rem", color: "var(--text-secondary)", marginBottom: "2rem", maxWidth: "90%" }}>
-                I know Salman's complete background, projects, and tech stack. I can also put you in touch directly.
+                {dict.twin.blurb}
               </p>
 
               <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "0.8rem", width: "100%" }}>
                 <Link href={`/${lang}/avatar`} style={{ fontSize: "1rem", fontWeight: 600, padding: "0.8rem 1.8rem", borderRadius: "25px", background: "linear-gradient(135deg, #00f2fe, #4facfe)", border: "none", color: "#000", textDecoration: "none", transition: "all 0.2s", marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }} onMouseOver={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(0, 242, 254, 0.4)" }} onMouseOut={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none" }}>
                   <MessageSquare size={20} />
-                  Chat with Digital Twin
+                  {dict.twin.cta}
                 </Link>
               </div>
             </motion.div>
@@ -373,7 +373,7 @@ export default function PortfolioClient({ lang, dict }) {
       {/* Footer: navigation + social, then legal. No closing CTA here, the
           "Talk to my digital twin" button sits directly above it. */}
       <footer className="site-footer">
-        <nav className="footer-nav" aria-label="Footer">
+        <nav className="footer-nav" aria-label={dict.footer.nav}>
           <a href="#experience">{dict.nav.experience}</a>
           <a href="#education">{dict.nav.education}</a>
           <a href="#projects">{dict.nav.projects}</a>
@@ -381,14 +381,14 @@ export default function PortfolioClient({ lang, dict }) {
         </nav>
 
         <div className="footer-socials">
-          <a href="mailto:msalmansaeedch786@gmail.com" aria-label="Email"><Mail size={20} /></a>
+          <a href="mailto:msalmansaeedch786@gmail.com" aria-label={dict.common.email}><Mail size={20} /></a>
           <a href="https://github.com/msalmansaeedch" target="_blank" rel="noreferrer" aria-label="GitHub"><FiGithub size={20} /></a>
           <a href="https://linkedin.com/in/msalmansaeedch" target="_blank" rel="noreferrer" aria-label="LinkedIn"><FiLinkedin size={20} /></a>
           <a href="https://www.youtube.com/@msalmansaeedch" target="_blank" rel="noreferrer" aria-label="YouTube"><FiYoutube size={20} /></a>
         </div>
 
         <div className="footer-legal">
-          <span>© {new Date().getFullYear()} Muhammad Salman · Munich, Germany</span>
+          <span>© {new Date().getFullYear()} Muhammad Salman · {dict.hero.location}</span>
           <span>Next.js · AWS Bedrock · Terraform</span>
         </div>
       </footer>

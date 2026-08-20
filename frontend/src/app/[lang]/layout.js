@@ -1,7 +1,6 @@
 import "../globals.css";
 import { getDictionary, LOCALES, isLocale } from "../dictionaries";
-
-const SITE = "https://msalmansaeedch.de";
+import { SITE, localeAlternates } from "../seo";
 
 // Prerenders /en and /de at build time, so both locales stay static files on
 // Amplify rather than becoming on-demand renders.
@@ -24,16 +23,9 @@ export async function generateMetadata({ params }) {
     metadataBase: new URL(SITE),
     title: t.title,
     description: t.description,
-    alternates: {
-      canonical: `${SITE}/${locale}`,
-      // hreflang: this is what lets Google serve the German page to German
-      // searchers instead of treating it as a duplicate of the English one.
-      languages: {
-        en: `${SITE}/en`,
-        de: `${SITE}/de`,
-        "x-default": `${SITE}/en`,
-      },
-    },
+    // hreflang: this is what lets Google serve the German page to German
+    // searchers instead of treating it as a duplicate of the English one.
+    alternates: localeAlternates(locale),
     openGraph: {
       title: t.ogTitle,
       description: t.ogDescription,

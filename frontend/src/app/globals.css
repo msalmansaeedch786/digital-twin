@@ -953,3 +953,113 @@ p {
     padding: 0.5rem 0.5rem 0.5rem 1rem !important;
   }
 }
+
+/* Language hint: offered to visitors whose browser is set to the other
+   locale. Fixed to the bottom so it never displaces the hero or the chat
+   input, and above the nav's z-index so it is not painted over.
+
+   Anchored bottom-LEFT rather than centred: the portfolio keeps its primary
+   buttons ("Chat with Digital Twin", the closing CTA) in the centre column, and
+   a centred banner sat on top of them. Insets on both sides with margin auto
+   instead of left:50% + translateX — a fixed element with only `left` set
+   shrink-to-fits against the space from that offset to the viewport edge, which
+   on a phone squeezed the text into a 56px column six lines tall. */
+.lang-hint {
+  position: fixed;
+  left: 1rem;
+  right: 1rem;
+  margin-inline: auto;
+  width: fit-content;
+  max-width: 32rem;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 1000;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.7rem 0.8rem 0.7rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--nav-bg);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--glass-shadow);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  animation: lang-hint-in 0.3s ease-out;
+}
+
+@media (min-width: 768px) {
+  .lang-hint {
+    margin-inline: 0;
+    right: auto;
+    left: 1.5rem;
+  }
+}
+
+.lang-hint-text {
+  flex: 1 1 12rem;
+  line-height: 1.35;
+}
+
+/* Narrow screens: give the message the whole first row so the CTA and the
+   close button share the second one, instead of the close button wrapping
+   alone onto a third. */
+@media (max-width: 520px) {
+  .lang-hint {
+    justify-content: flex-end;
+  }
+
+  .lang-hint-text {
+    flex: 1 1 100%;
+  }
+}
+
+.lang-hint-cta {
+  flex-shrink: 0;
+  /* 44px minimum: these are the only two controls in the banner and both were
+     under the touch-target floor (the close button was 21x22). */
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  background: var(--neon-cyan);
+  color: var(--bg-deep);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.lang-hint-cta:hover {
+  filter: brightness(1.1);
+}
+
+.lang-hint-close {
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.lang-hint-close:hover {
+  color: var(--text-primary);
+}
+
+@keyframes lang-hint-in {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lang-hint { animation: none; }
+}

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, Home, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
-import { otherLocale } from "../../dictionaries";
+import { otherLocale } from "../../dictionaries/locales";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -410,7 +410,7 @@ export default function AvatarClient({ lang, dict }) {
               justifyContent: "center",
               transition: "color 0.3s"
             }}
-            aria-label={isListening ? dict.avatar.stopListening : "Start listening"}
+            aria-label={isListening ? dict.avatar.stopListening : dict.avatar.startListening}
           >
             {isListening ? <Mic size={22} /> : <MicOff size={22} />}
           </button>
@@ -438,7 +438,7 @@ export default function AvatarClient({ lang, dict }) {
 
       {/* Footer text */}
       <div style={{ textAlign: "center", paddingBottom: "1rem", color: "rgba(255,255,255,0.3)", fontSize: "0.75rem", zIndex: 10 }}>
-        AI can make mistakes. Consider verifying important information.
+        {dict.avatar.disclaimer}
       </div>
 
     </div>

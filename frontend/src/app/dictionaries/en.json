@@ -4,7 +4,9 @@
     "description": "Portfolio of Muhammad Salman, 6x AWS Certified Senior Infrastructure Consultant. Talk to his AI Digital Twin.",
     "ogTitle": "AI Digital Twin: Serverless RAG Chatbot on AWS",
     "ogDescription": "Chat with my AI digital twin and ask about my cloud, DevOps, and platform engineering experience. Built serverless on AWS.",
-    "twitterDescription": "Chat with my AI digital twin, built serverless on AWS."
+    "twitterDescription": "Chat with my AI digital twin, built serverless on AWS.",
+    "avatarTitle": "Chat with Salman's Digital Twin",
+    "avatarDescription": "Ask my AI digital twin about my cloud, DevOps, and platform engineering experience. Built serverless on AWS with Bedrock, pgvector, and Terraform."
   },
   "nav": {
     "experience": "Experience",
@@ -27,6 +29,15 @@
     "certBadge": "6x AWS Certified",
     "summary": "6x AWS Certified professional specializing in Platform Engineering, Cloud Native architectures, and building scalable infrastructure for Generative AI. With over 4 years of experience, I automate complex, multi-account AWS environments using Terraform and Kubernetes to deliver resilient, enterprise-grade cloud solutions.",
     "cta": "TALK TO MY DIGITAL TWIN"
+  },
+  "twin": {
+    "online": "online",
+    "avatarAlt": "Digital Twin",
+    "headlineBefore": "I'm Salman's ",
+    "headlineAccent": "digital twin",
+    "tagline": "Ask me anything – the real Salman might just chime in.",
+    "blurb": "I know Salman's complete background, projects, and tech stack. I can also put you in touch directly.",
+    "cta": "Chat with Digital Twin"
   },
   "sections": {
     "experience": "Experience",
@@ -65,20 +76,47 @@
     }
   ],
   "projects": [
-    { "desc": "Engineered infrastructure for AI/Chatbot capabilities using Model Context Protocol (MCP) skills and Platypus. Configured Kubernetes CSI drivers for persistent storage and secured DocumentDB access via in-database gateways." },
-    { "desc": "Designed a 'Fleeting Runner' architecture for GitLab CI/CD to optimize build times. Automated Base AMI processes using Packer and Terraform to dynamically scale self-hosted runners based on pipeline demand." },
-    { "desc": "Standardized cloud infrastructure through reusable automation and developed AWS base infrastructure tools. Implemented automated IAM role management, observability, and shared secrets management across development teams." },
-    { "desc": "Built a personalized market data terminal processing vendor data via S3, Lambda, and Glue into Parquet format. Visualized performance and inventory data using Apache Superset querying Athena directly." },
-    { "desc": "Provided AWS DevOps Architecture to migrate a RackSpace Production Environment to AWS. Lifted and shifted file and SFTP servers using AWS FSx and AWS Transfer for SFTP. Baked custom Windows AMIs using Sysprep and implemented CI/CD via Octopus Deploy." },
-    { "desc": "Maintained data pipelines integrating with on-premises Oracle databases. Configured AWS Elastic Beanstalk multi-container Docker environments and managed microservices via ECS Fargate and Minikube. Implemented CI/CD using Jenkins and CircleCI." },
-    { "desc": "Developed a collection of CloudFormation Custom Resources. Engineered the ELK Stack architecture for log visualization via Kibana. Installed Grafana via Terraform and instituted Linux shell scripting for automated log management." },
-    { "desc": "Developed a programming competition platform with embedded code editor and isolated Docker containers for code compilation." },
-    { "desc": "Built an Ethereum DApp and wallet with biometric authentication, creating a decentralized peer-to-peer network without private keys." }
+    {
+      "desc": "Engineered infrastructure for AI/Chatbot capabilities using Model Context Protocol (MCP) skills and Platypus. Configured Kubernetes CSI drivers for persistent storage and secured DocumentDB access via in-database gateways."
+    },
+    {
+      "desc": "Designed a 'Fleeting Runner' architecture for GitLab CI/CD to optimize build times. Automated Base AMI processes using Packer and Terraform to dynamically scale self-hosted runners based on pipeline demand."
+    },
+    {
+      "desc": "Standardized cloud infrastructure through reusable automation and developed AWS base infrastructure tools. Implemented automated IAM role management, observability, and shared secrets management across development teams."
+    },
+    {
+      "desc": "Built a personalized market data terminal processing vendor data via S3, Lambda, and Glue into Parquet format. Visualized performance and inventory data using Apache Superset querying Athena directly."
+    },
+    {
+      "desc": "Provided AWS DevOps Architecture to migrate a RackSpace Production Environment to AWS. Lifted and shifted file and SFTP servers using AWS FSx and AWS Transfer for SFTP. Baked custom Windows AMIs using Sysprep and implemented CI/CD via Octopus Deploy."
+    },
+    {
+      "desc": "Maintained data pipelines integrating with on-premises Oracle databases. Configured AWS Elastic Beanstalk multi-container Docker environments and managed microservices via ECS Fargate and Minikube. Implemented CI/CD using Jenkins and CircleCI."
+    },
+    {
+      "desc": "Developed a collection of CloudFormation Custom Resources. Engineered the ELK Stack architecture for log visualization via Kibana. Installed Grafana via Terraform and instituted Linux shell scripting for automated log management."
+    },
+    {
+      "desc": "Developed a programming competition platform with embedded code editor and isolated Docker containers for code compilation."
+    },
+    {
+      "desc": "Built an Ethereum DApp and wallet with biometric authentication, creating a decentralized peer-to-peer network without private keys."
+    }
   ],
   "education": [
-    { "degree": "Bachelor's degree, Computer Software Engineering", "grade": "Grade: 3.74" },
-    { "degree": "Intermediate, Pre-Engineering", "grade": "Grade: A+" },
-    { "degree": "Matriculation, Computer Science", "grade": "Grade: A+" }
+    {
+      "degree": "Bachelor's degree, Computer Software Engineering",
+      "grade": "Grade: 3.74"
+    },
+    {
+      "degree": "Intermediate, Pre-Engineering",
+      "grade": "Grade: A+"
+    },
+    {
+      "degree": "Matriculation, Computer Science",
+      "grade": "Grade: A+"
+    }
   ],
   "certLevels": {
     "Foundational": "Foundational",
@@ -102,6 +140,14 @@
       "What is your core tech stack?",
       "Tell me about your AWS experience",
       "How do you approach cloud security?"
-    ]
+    ],
+    "disclaimer": "AI can make mistakes. Consider verifying important information.",
+    "startListening": "Start listening"
+  },
+  "footer": {
+    "nav": "Footer"
+  },
+  "common": {
+    "email": "Email"
   }
 }
