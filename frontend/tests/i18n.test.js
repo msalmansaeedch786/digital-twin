@@ -144,6 +144,25 @@ const ok = (n, c, extra='') => { c ? (pass++, console.log(`  PASS  ${n}`)) : (fa
   await page.screenshot({ path: 'shot-10-mobile.png' });
   await ctx.close();
 
+  console.log('\n=== 12. Locale toggle always lands at the top of the page ===');
+  // Regression: switching locale swaps the [lang] root layout, and Next's
+  // soft-navigation scroll handler picked the wrong node for that case —
+  // clicking DE from the top of /en dropped the reader ~6100px down, into the
+  // footer. The toggle is a plain <a> for this reason; keep it that way.
+  for (const start of [0, 2000, 5000]) {
+    ctx = await newCtx({ viewport: { width: 1440, height: 900 } });
+    page = await newPage(ctx, `scroll-${start}`);
+    await page.goto(`${B}/en`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(400);
+    if (start) { await page.evaluate((s) => window.scrollTo(0, s), start); await page.waitForTimeout(300); }
+    await page.click('.lang-toggle');
+    await page.waitForURL('**/de');
+    await page.waitForTimeout(1000);
+    const after = await page.evaluate(() => Math.round(window.scrollY));
+    ok(`from scrollY=${start} -> lands at top`, after < 50, `landed at ${after}`);
+    await ctx.close();
+  }
+
   console.log('\n=== 11. No console errors / hydration mismatches anywhere ===');
   const hydration = errs.filter(e => /hydrat|did not match|Minified React error #41[08]/i.test(e));
   ok('no hydration errors', hydration.length === 0, JSON.stringify(hydration, null, 2));
