@@ -140,14 +140,21 @@ export default function PortfolioClient({ lang, dict }) {
           <a href="#projects" className="nav-link">{dict.nav.projects}</a>
           <a href="#certifications" className="nav-link">{dict.nav.certifications}</a>
           <Link href={`/${lang}/avatar`} className="nav-link text-accent" style={{ fontWeight: 600 }}>{dict.nav.digitalTwin}</Link>
-          <Link
+          {/* A plain <a>, not <Link>, on purpose. Switching locale swaps the
+              [lang] root layout, and Next's soft-navigation scroll handler
+              picks the wrong node for that case: arriving from the top of /en
+              it landed the reader ~6100px down /de, in the footer. A real
+              document navigation always starts at the top, and a locale switch
+              is a new document anyway — both pages are static and edge-cached,
+              so the reload is cheap. */}
+          <a
             href={switchLocaleHref}
             className="lang-toggle"
             aria-label={dict.nav.toggleLanguage}
             title={dict.nav.toggleLanguage}
           >
             {otherLocale(lang).toUpperCase()}
-          </Link>
+          </a>
           <button onClick={toggleTheme} className="theme-toggle" aria-label={dict.nav.toggleTheme}>
             {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
           </button>
