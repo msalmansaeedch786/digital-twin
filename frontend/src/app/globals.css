@@ -410,6 +410,10 @@ p {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  /* These labels are one short word ("GitHub", "E-Mail"). Without this the
+     German "E-Mail" breaks at its hyphen and renders as two stacked lines,
+     making that one button taller and narrower than the rest of the row. */
+  white-space: nowrap;
   padding: 0.8rem 1.5rem;
   background: var(--glass-border);
   border: 1px solid var(--glass-border);
