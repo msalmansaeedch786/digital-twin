@@ -6,6 +6,14 @@ on:
     branches:
       - main # Update GIT_BRANCH env var below when changing branch
 
+# Terraform holds a DynamoDB state lock for the length of a plan/apply, so two
+# runs overlapping means the second dies on ConditionalCheckFailedException.
+# Two pushes a minute apart is enough to trigger it. Queue runs instead, and
+# never cancel one mid-apply: that would drop the lock with state half-written.
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   id-token: write # Required for AWS OIDC authentication
   contents: read  # Required to checkout code
