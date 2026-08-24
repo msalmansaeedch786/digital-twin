@@ -142,7 +142,12 @@
       "Wie gehst du an Cloud-Sicherheit heran?"
     ],
     "disclaimer": "KI kann Fehler machen. Wichtige Informationen bitte überprüfen.",
-    "startListening": "Aufnahme starten"
+    "startListening": "Aufnahme starten",
+    "namePlaceholder": "Dein Name / Initialen",
+    "you": "Du",
+    "hintSend": "zum Senden",
+    "hintNewline": "für eine neue Zeile",
+    "nameLabel": "Dein Name"
   },
   "footer": {
     "nav": "Fußzeile"

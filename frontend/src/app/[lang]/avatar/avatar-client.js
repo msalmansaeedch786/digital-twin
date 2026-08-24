@@ -8,6 +8,21 @@ import { otherLocale } from "../../dictionaries/locales";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+const NAME_STORAGE_KEY = "chat-user-name";
+const MAX_TEXTAREA_PX = 160; // ~6 lines, then the textarea scrolls internally
+
+/**
+ * Up to two letters for the little chip beside a reader's own messages:
+ * "Muhammad Salman" -> MS, "Salman" -> SA. Falls back to the localised "You"
+ * label when no name has been given.
+ */
+function initialsOf(name) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
 export default function AvatarClient({ lang, dict }) {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -17,10 +32,34 @@ export default function AvatarClient({ lang, dict }) {
     { role: "bot", content: dict.avatar.greeting }
   ]);
   const [voices, setVoices] = useState([]);
+  // Empty until the effect below reads localStorage: reading it during render
+  // would put a different value in the server HTML than the first client paint.
+  const [userName, setUserName] = useState("");
 
   const recognitionRef = useRef(null);
   const chatScrollRef = useRef(null);
   const rootRef = useRef(null);
+  const textareaRef = useRef(null);
+
+  // Remember who is typing across visits, so a returning reader is not asked
+  // for their name again.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(NAME_STORAGE_KEY);
+      if (saved) setUserName(saved);
+    } catch {
+      // Safari private mode throws on localStorage; the name is a nicety, so
+      // carry on without it.
+    }
+  }, []);
+
+  const handleNameChange = (value) => {
+    setUserName(value);
+    try {
+      if (value.trim()) localStorage.setItem(NAME_STORAGE_KEY, value);
+      else localStorage.removeItem(NAME_STORAGE_KEY);
+    } catch {}
+  };
 
   // Scroll ONLY the messages container. scrollIntoView() walks every scrollable
   // ancestor including the document itself — on iOS that panned the whole app
@@ -221,6 +260,25 @@ export default function AvatarClient({ lang, dict }) {
     }
   };
 
+  // Enter sends, Shift+Enter inserts a newline. isComposing guards IME input:
+  // mid-composition Enter commits the candidate word and must not send.
+  const handleInputKeyDown = (e) => {
+    if (e.key !== "Enter" || e.shiftKey) return;
+    if (e.nativeEvent?.isComposing) return;
+    e.preventDefault();
+    if (isListening) recognitionRef.current?.stop();
+    handleSendText(inputText);
+  };
+
+  // Match the box to its content up to MAX_TEXTAREA_PX. Runs on every change,
+  // including the reset to "" after sending, which shrinks it back to one row.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_PX)}px`;
+  }, [inputText]);
+
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (isListening) {
@@ -240,12 +298,32 @@ export default function AvatarClient({ lang, dict }) {
 
       {/* Top Nav — in normal flow so the layout below it is stable */}
       <div className="avatar-topnav" style={{ flexShrink: 0, height: "70px", zIndex: 10, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 2rem", background: "rgba(8, 12, 22, 0.8)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-        <Link href={`/${lang}`} style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "0.9rem", fontWeight: 600, letterSpacing: "1px", transition: "color 0.2s" }}>
+        <Link href={`/${lang}`} aria-label={dict.avatar.backToPortfolio} style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "0.9rem", fontWeight: 600, letterSpacing: "1px", transition: "color 0.2s" }}>
           <Home size={18} />
-          <span>{dict.avatar.backToPortfolio}</span>
+          <span className="avatar-back-label">{dict.avatar.backToPortfolio}</span>
         </Link>
 
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <input
+            className="avatar-name-input"
+            type="text"
+            value={userName}
+            onChange={(e) => handleNameChange(e.target.value)}
+            placeholder={dict.avatar.namePlaceholder}
+            aria-label={dict.avatar.nameLabel}
+            maxLength={40}
+            style={{
+              width: "150px",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "20px",
+              color: "rgba(255,255,255,0.85)",
+              padding: "0.4rem 0.9rem",
+              fontSize: "0.85rem",
+              outline: "none",
+              fontFamily: "'Outfit', sans-serif"
+            }}
+          />
           <Link
             href={`/${otherLocale(lang)}/avatar`}
             aria-label={dict.nav.toggleLanguage}
@@ -255,6 +333,8 @@ export default function AvatarClient({ lang, dict }) {
             {otherLocale(lang).toUpperCase()}
           </Link>
           <button
+            aria-label={isMuted ? dict.avatar.voiceDisabled : dict.avatar.voiceEnabled}
+            title={isMuted ? dict.avatar.voiceDisabled : dict.avatar.voiceEnabled}
             onClick={() => {
               setIsMuted(!isMuted);
               if (!isMuted) {
@@ -265,7 +345,7 @@ export default function AvatarClient({ lang, dict }) {
             style={{ background: isMuted ? "rgba(255,255,255,0.05)" : "rgba(0, 242, 254, 0.1)", border: isMuted ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0, 242, 254, 0.3)", color: isMuted ? "rgba(255,255,255,0.6)" : "#00f2fe", padding: "0.4rem 1rem", borderRadius: "20px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem", fontWeight: 600, transition: "all 0.3s" }}
           >
             {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-            <span>{isMuted ? dict.avatar.voiceDisabled : dict.avatar.voiceEnabled}</span>
+            <span className="avatar-voice-label">{isMuted ? dict.avatar.voiceDisabled : dict.avatar.voiceEnabled}</span>
           </button>
         </div>
       </div>
@@ -315,6 +395,34 @@ export default function AvatarClient({ lang, dict }) {
             {msg.role === "bot" && (
                <img className="avatar-msg-icon" src="/salman-avatar.jpg" alt="AI" style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover", objectPosition: "center 20%", flexShrink: 0, border: "1px solid rgba(0, 242, 254, 0.3)" }} />
             )}
+            {msg.role === "user" && (
+              /* Mirrors the twin's avatar on the other side. Shows the reader's
+                 initials once they have given a name, and the localised "You"
+                 until then. order:2 puts it after the bubble without needing a
+                 second branch in the JSX. */
+              <span
+                className="avatar-msg-icon avatar-user-chip"
+                title={userName || dict.avatar.you}
+                style={{
+                  order: 2,
+                  flexShrink: 0,
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(0, 242, 254, 0.12)",
+                  border: "1px solid rgba(0, 242, 254, 0.3)",
+                  color: "#00f2fe",
+                  fontSize: userName ? "0.75rem" : "0.65rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.02em"
+                }}
+              >
+                {userName ? initialsOf(userName) : dict.avatar.you}
+              </span>
+            )}
 
             <div className={`avatar-message-bubble ${msg.role === "bot" ? "markdown-body" : ""}`} style={{
               padding: "1rem 1.5rem",
@@ -326,7 +434,10 @@ export default function AvatarClient({ lang, dict }) {
               fontSize: "1.05rem",
               lineHeight: 1.6,
               color: msg.role === "user" ? "#fff" : "rgba(255,255,255,0.85)",
-              textAlign: "left"
+              textAlign: "left",
+              // Reader messages are rendered as plain text, so the newlines
+              // Shift+Enter produces would otherwise collapse into spaces.
+              whiteSpace: msg.role === "user" ? "pre-wrap" : undefined
             }}>
               {msg.role === "bot" ? (
                 <ReactMarkdown
@@ -378,12 +489,14 @@ export default function AvatarClient({ lang, dict }) {
 
       {/* Input Area */}
       <div className="avatar-input-wrapper" style={{ padding: "0 2rem 2rem 2rem", zIndex: 10, display: "flex", justifyContent: "center", flexDirection: "column", alignItems: "center" }}>
-        <form onSubmit={handleFormSubmit} style={{ display: "flex", gap: "0.5rem", maxWidth: "800px", width: "100%", alignItems: "center", background: "#0D1322", padding: "0.6rem 0.6rem 0.6rem 1.5rem", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
+        <form onSubmit={handleFormSubmit} style={{ display: "flex", gap: "0.5rem", maxWidth: "800px", width: "100%", alignItems: "flex-end", background: "#0D1322", padding: "0.6rem 0.6rem 0.6rem 1.5rem", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
 
-          <input
-            type="text"
+          <textarea
+            ref={textareaRef}
+            rows={1}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={handleInputKeyDown}
             placeholder={isListening ? dict.avatar.listening : dict.avatar.placeholder}
             style={{
               flex: 1,
@@ -392,7 +505,14 @@ export default function AvatarClient({ lang, dict }) {
               color: "#fff",
               fontSize: "1.05rem",
               outline: "none",
-              fontFamily: "'Outfit', sans-serif"
+              fontFamily: "'Outfit', sans-serif",
+              // Grown to fit by autoGrow(); resize is disabled so the drag
+              // handle cannot fight the app shell's fixed height.
+              resize: "none",
+              overflowY: "auto",
+              lineHeight: 1.5,
+              maxHeight: `${MAX_TEXTAREA_PX}px`,
+              padding: 0
             }}
           />
 
@@ -434,6 +554,14 @@ export default function AvatarClient({ lang, dict }) {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
           </button>
         </form>
+
+        {/* Discoverability for the shortcut. Hidden on touch layouts, where
+            there is no Shift key and vertical space is scarce. */}
+        <p className="avatar-kbd-hint">
+          <kbd>Enter</kbd> {dict.avatar.hintSend}
+          <span className="avatar-kbd-sep">·</span>
+          <kbd>Shift</kbd>+<kbd>Enter</kbd> {dict.avatar.hintNewline}
+        </p>
       </div>
 
       {/* Footer text */}
