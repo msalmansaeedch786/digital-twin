@@ -1067,3 +1067,56 @@ p {
 @media (prefers-reduced-motion: reduce) {
   .lang-hint { animation: none; }
 }
+
+/* Chat input affordances: the keyboard hint and the reader's initials chip. */
+.avatar-kbd-hint {
+  margin: 0.55rem 0 0;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.avatar-kbd-hint kbd {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.avatar-kbd-sep { margin: 0 0.35rem; }
+
+/* The chip carries "You"/"Du" before a name is given, which needs more room
+   than two initials. */
+.avatar-user-chip { text-transform: none; }
+
+@media (max-width: 768px) {
+  /* No Shift key on a touch keyboard, and the space is needed for messages. */
+  .avatar-kbd-hint { display: none; }
+
+  /* The 52px nav cannot hold a back label, a name field, the locale toggle and
+     a labelled voice button — the German "Sprachausgabe aus" alone is wider
+     than the name field. Drop to the icon; the button keeps its aria-label. */
+  .avatar-voice-label { display: none; }
+  .avatar-topnav button { padding: 0.4rem 0.6rem !important; }
+  .avatar-topnav > div { gap: 0.5rem !important; }
+
+  /* The top nav is already carrying the back link, locale toggle and voice
+     button at 52px; the name field takes what is left rather than pushing
+     them off-screen. */
+  .avatar-name-input {
+    width: 96px !important;
+    padding: 0.35rem 0.6rem !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .avatar-name-input { width: 72px !important; }
+  /* Last thing to go: the home icon still carries the link on its own. */
+  .avatar-back-label { display: none; }
+}

@@ -142,7 +142,12 @@
       "How do you approach cloud security?"
     ],
     "disclaimer": "AI can make mistakes. Consider verifying important information.",
-    "startListening": "Start listening"
+    "startListening": "Start listening",
+    "namePlaceholder": "Your name / initials",
+    "you": "You",
+    "hintSend": "to send",
+    "hintNewline": "for a new line",
+    "nameLabel": "Your name"
   },
   "footer": {
     "nav": "Footer"

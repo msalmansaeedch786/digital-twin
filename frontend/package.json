@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "test:i18n": "node tests/i18n.test.js",
-    "test:i18n:sweep": "node tests/i18n-sweep.js"
+    "test:i18n:sweep": "node tests/i18n-sweep.js",
+    "test:chat": "node tests/chat.test.js"
   },
   "dependencies": {
     "framer-motion": "^12.40.0",
