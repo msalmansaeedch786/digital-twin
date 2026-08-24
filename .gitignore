@@ -44,3 +44,7 @@ scripts/generate_cover.sh
 scripts/generate_onepager.sh
 scripts/generate_stories.sh
 scripts/generate_pipeline_video.sh
+
+# Claude Code local permissions — personal and machine-specific.
+# .claude/settings.json (shared config) stays tracked if it is ever added.
+.claude/settings.local.json
