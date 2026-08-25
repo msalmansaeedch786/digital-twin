@@ -42,6 +42,7 @@ The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline
 - **Event-Driven Data Ingestion**: Simply uploading a PDF or Text file to an S3 bucket automatically triggers an asynchronous Lambda pipeline that chunks, embeds, and stores the knowledge in the database.
 - **Automated CI/CD Pipeline**: Employs GitHub Actions to automatically build the Lambda packages and run `terraform plan` / `terraform apply` on every push to the deployment branch, using AWS OpenID Connect (OIDC) for passwordless, keyless deployments.
 - **History-Aware Conversations**: Employs an LLM-driven query rewriting step that maintains context across long conversational threads.
+- **Bilingual (English / German)**: The portfolio and the twin are served under locale-segmented routes (`/en`, `/de`), both statically prerendered and edge-cached, with canonical + `hreflang` metadata and a generated `sitemap.xml`. The knowledge base stays English: a request carries a `lang` field and only the final generation switches language, so German answers are still grounded in the same vectors.
 - **Hardened Security**: Features rate limiting, payload sanitization, AWS Secrets Manager integration, and IAM Least Privilege policies.
 
 ---
@@ -103,7 +104,7 @@ sequenceDiagram
     participant LLM2 as Bedrock<br/>(Nova Lite — Generator)
 
     User->>FE: "How long were you at MBition?"
-    FE->>GW: POST /chat + message + history[]
+    FE->>GW: POST /chat + message + history[] + lang
     GW->>LB: AWS_PROXY integration
 
     Note over LB: Validate input (Pydantic)<br/>Rate limit check (slowapi)<br/>CORS enforcement
@@ -118,7 +119,7 @@ sequenceDiagram
     DB-->>LB: Top 5 relevant text chunks
 
     LB->>LLM2: System prompt + retrieved facts + question
-    Note over LLM2: Generate response<br/>using ONLY provided context
+    Note over LLM2: Generate response<br/>using ONLY provided context<br/>in the requested language
 
     LLM2-->>LB: "I worked at MBition from Jul 2023..."
     LB-->>GW: 200 OK — {"reply": "..."}
@@ -138,7 +139,7 @@ digital-twin/
 │   │   ├── main.py                 # API routes, RAG chain, Secrets/DB access, rate limiting, CORS
 │   │   ├── ingest.py               # Local one-off ingestion script (dev use)
 │   │   ├── build.sh                # Builds the arm64 / manylinux2014 Lambda zip
-│   │   ├── test_lambda.py          # Backend tests
+│   │   ├── test_lambda.py          # Ad-hoc import check (not a pytest suite)
 │   │   └── requirements.txt        # Python dependencies (pinned for arm64)
 │   ├── ingestion/                  # Document-ingestion Lambda (S3-triggered)
 │   │   ├── lambda_function.py      # Chunk + embed + store handler
@@ -147,7 +148,16 @@ digital-twin/
 │   └── breaker/                    # Circuit-breaker Lambda (no build.sh: Terraform
 │       └── lambda_function.py      #   packages this single file via archive_file)
 ├── frontend/                       # Next.js app (JavaScript, hosted on AWS Amplify)
-│   └── src/app/                    # App Router: page.js, layout.js, avatar/page.js, globals.css
+│   ├── src/app/                    # App Router, locale-segmented
+│   │   ├── [lang]/                 # layout.js (root layout), page.js + portfolio-client.js,
+│   │   │                           #   avatar/page.js + avatar-client.js
+│   │   ├── dictionaries/           # en.json / de.json + locales.js (no-JSON helpers)
+│   │   ├── seo.js                  # canonical + hreflang, derived from LOCALES
+│   │   ├── sitemap.js / robots.js  # generated metadata routes
+│   │   ├── lang-hint.js            # "also available in German" banner
+│   │   ├── page.js                 # in-app redirect / -> /en (Amplify 301s at the edge)
+│   │   └── globals.css
+│   └── tests/                      # Playwright browser tests (i18n, chat, locale sweep)
 ├── data/                           # Knowledge-base source documents (synced to S3)
 ├── terraform/                      # Infrastructure as Code (references ../lambdas)
 │   ├── provider.tf                 # Provider + S3/DynamoDB remote state backend
@@ -266,6 +276,24 @@ To install the hooks locally:
    pre-commit install
    ```
 From now on, every time you run `git commit`, tools like `terraform fmt` and `terraform validate` will automatically execute to ensure your code is perfectly styled!
+
+### Frontend Tests
+
+The bilingual routing and the chat input behave correctly only in a real browser, so they are covered by Playwright rather than static checks. Run them against a production build:
+
+```bash
+cd frontend
+npm run build
+npx next start -p 3100 &
+
+npm run test:i18n        # locales, canonical/hreflang, language hint, toggle scroll
+npm run test:chat        # Enter / Shift+Enter, reader name + initials, nav layout
+npm run test:i18n:sweep  # prints every string identical in /en and /de
+```
+
+`test:chat` stubs the `/chat` endpoint, so it never calls Bedrock. The sweep is a report rather than a pass/fail: proper nouns (company names, dates, certification titles) are expected in its output, because they stay in the component so they cannot drift between languages.
+
+First run needs the browser: `npx playwright install chromium`.
 
 ## License
 
