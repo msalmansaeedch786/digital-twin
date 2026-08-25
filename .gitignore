@@ -31,7 +31,8 @@ tutorial.md
 
 # Marketing and social assets: generated locally, not part of the deployable
 # project. The HTML sources and their generators live on the author's machine.
-instagram-stories/
+# media/ holds the rendered output (media/instagram-stories, media/videos).
+media/
 digital-twin-onepager.pdf
 *.mp4
 scripts/cover.html
