@@ -23,7 +23,8 @@ from langchain_postgres import PGVector
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.callbacks import BaseCallbackHandler
-from langchain.chains.history_aware_retriever import create_history_aware_retriever
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableBranch
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain.chains.combine_documents.stuff import create_stuff_documents_chain
 
@@ -180,18 +181,34 @@ class StageTimer(BaseCallbackHandler):
         if bucket is not None:
             bucket["docs_retrieved"] = len(documents)
 
-    # -- generation. ChatBedrock is a chat model, so on_chat_model_start is
-    # what fires; on_llm_start is kept for safety if that ever changes. --
-    def on_chat_model_start(self, serialized, messages, **kwargs) -> None:
-        self._started.setdefault("llm", time.perf_counter())
+    # -- LLM spans. ChatBedrock is a chat model, so on_chat_model_start is
+    # what fires; on_llm_start is kept for safety if that ever changes.
+    #
+    # Two different calls land here: the query rewrite and the answer. They are
+    # keyed by run_id rather than a single slot, because billing both to
+    # generate_ms would quietly break the "generation is ~84% of the time"
+    # reading that these metrics exist to give. The rewrite carries a tag. --
+    def _llm_start(self, run_id, tags) -> None:
+        self._started[("llm", run_id)] = (
+            time.perf_counter(),
+            "query_rewrite" in (tags or []),
+        )
 
-    def on_llm_start(self, serialized, prompts, **kwargs) -> None:
-        self._started.setdefault("llm", time.perf_counter())
+    def on_chat_model_start(self, serialized, messages, *, run_id=None, tags=None, **kwargs) -> None:
+        self._llm_start(run_id, tags)
 
-    def on_llm_end(self, response, **kwargs) -> None:
-        start = self._started.pop("llm", None)
-        if start is not None:
-            _record("generate_ms", (time.perf_counter() - start) * 1000)
+    def on_llm_start(self, serialized, prompts, *, run_id=None, tags=None, **kwargs) -> None:
+        self._llm_start(run_id, tags)
+
+    def on_llm_end(self, response, *, run_id=None, **kwargs) -> None:
+        entry = self._started.pop(("llm", run_id), None)
+        if entry is None:
+            return
+        start, is_rewrite = entry
+        _record(
+            "rewrite_ms" if is_rewrite else "generate_ms",
+            (time.perf_counter() - start) * 1000,
+        )
 
 
 class AIEngine:
@@ -243,15 +260,38 @@ class AIEngine:
                 ("system", (
                     "Given a chat history and the latest user question which might reference "
                     "context in the chat history, formulate a standalone question which can be "
-                    "understood without the chat history. Do NOT answer the question, just "
-                    "reformulate it if needed and otherwise return it as is."
+                    "understood without the chat history. Do NOT answer the question.\n"
+                    "Write the standalone question in ENGLISH, translating it if the user "
+                    "wrote in another language. The documents being searched are all in "
+                    "English, so an English query is what retrieves them. Keep company names, "
+                    "job titles, certification names and technology names unchanged. Output "
+                    "only the question."
                 )),
                 MessagesPlaceholder("chat_history"),
                 ("human", "{input}"),
             ])
-            history_aware_retriever = create_history_aware_retriever(
-                llm, retriever, contextualize_q_prompt
+
+            # Tagged so StageTimer can bill this call to rewrite_ms instead of
+            # letting it inflate generate_ms.
+            rewrite_chain = (
+                contextualize_q_prompt
+                | llm.with_config(tags=["query_rewrite"])
+                | StrOutputParser()
             )
+
+            # create_history_aware_retriever() would short-circuit to the raw
+            # input whenever chat_history is empty — which is the common case,
+            # and exactly when a German question would reach the English
+            # vectors untranslated. Rewrite whenever there is history to
+            # resolve OR the question is not in English; skip the extra call
+            # for a plain English first question, where it buys nothing.
+            def _needs_rewrite(x: dict) -> bool:
+                return bool(x.get("chat_history")) or x.get("query_language", "en") != "en"
+
+            history_aware_retriever = RunnableBranch(
+                (lambda x: not _needs_rewrite(x), (lambda x: x["input"]) | retriever),
+                rewrite_chain | retriever,
+            ).with_config(run_name="chat_retriever_chain")
 
             # 5. QA chain with hardened system prompt
             system_prompt = (
@@ -455,6 +495,11 @@ async def chat_endpoint(request: Request, chat_request: ChatRequest):
                     # AIEngine chain is built once per warm container and shared
                     # by every caller, so it cannot hold one language.
                     "answer_language": SUPPORTED_LANGUAGES[chat_request.lang],
+                    # Decides whether retrieval needs the translate-to-English
+                    # rewrite. Separate from answer_language because they move
+                    # in opposite directions: the search goes TO English, the
+                    # answer comes back FROM it.
+                    "query_language": chat_request.lang,
                 },
                 config={"callbacks": [StageTimer()]},
             )
@@ -462,7 +507,9 @@ async def chat_endpoint(request: Request, chat_request: ChatRequest):
             _stage_ms.reset(token)
 
         # retrieve_ms wraps the embedding call, so subtract it to get the time
-        # actually spent in the pgvector round trip.
+        # actually spent in the pgvector round trip. The rewrite runs before the
+        # retriever span opens, so it is not part of this and does not need
+        # subtracting too.
         embed_ms = stages.get("embed_ms", 0.0)
         search_ms = round(max(stages.get("retrieve_ms", 0.0) - embed_ms, 0.0), 1)
         logger.info(
@@ -471,6 +518,9 @@ async def chat_endpoint(request: Request, chat_request: ChatRequest):
                 "embed_ms": embed_ms,
                 "search_ms": search_ms,
                 "generate_ms": stages.get("generate_ms", 0.0),
+                # 0.0 when the question was English with no history, i.e. the
+                # rewrite was skipped.
+                "rewrite_ms": stages.get("rewrite_ms", 0.0),
                 "chain_ms": round((time.perf_counter() - invoke_started) * 1000, 1),
                 "docs_retrieved": stages.get("docs_retrieved", 0),
                 "lang": chat_request.lang,
