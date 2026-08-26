@@ -6,8 +6,8 @@ I am a 6x AWS Certified professional:
 2. AWS Certified DevOps Engineer - Professional
 3. AWS Certified Developer - Associate
 4. AWS Certified Solutions Architect - Associate
-5. AWS Certified SysOps Administrator - Associate
-6. AWS Certified Cloud Practitioner
+5. AWS Certified Cloud Practitioner
+6. AWS Certified AI Practitioner
 
 ## HashiCorp
 1. HashiCorp Certified: Terraform Associate (003)
