@@ -322,11 +322,19 @@ export default function PortfolioClient({ lang, dict }) {
         <section id="certifications" className="section">
           <h2>{dict.sections.certifications}</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.5rem" }}>
-            {certifications.map((cert, index) => (
-              <motion.a
-                href={cert.url}
-                target="_blank"
-                rel="noreferrer"
+            {certifications.map((cert, index) => {
+              // Not every credential has a public verification page. A card
+              // without `url` renders as a plain element rather than an anchor
+              // with href={undefined}, which would look clickable, be focusable
+              // and go nowhere. The external-link glyph is dropped with it, so
+              // the card does not advertise a link it does not have.
+              const CardTag = cert.url ? motion.a : motion.div;
+              const linkProps = cert.url
+                ? { href: cert.url, target: "_blank", rel: "noreferrer" }
+                : {};
+              return (
+              <CardTag
+                {...linkProps}
                 key={index}
                 className="glass-panel"
                 style={{ padding: "2rem", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", textDecoration: "none", color: "var(--text-primary)", position: "relative" }}
@@ -336,17 +344,20 @@ export default function PortfolioClient({ lang, dict }) {
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
               >
-                <div style={{ position: "absolute", top: "1rem", right: "1rem" }}>
-                  <ExternalLink size={20} style={{ color: "var(--text-secondary)" }} />
-                </div>
+                {cert.url && (
+                  <div style={{ position: "absolute", top: "1rem", right: "1rem" }}>
+                    <ExternalLink size={20} style={{ color: "var(--text-secondary)" }} />
+                  </div>
+                )}
                 <img src={cert.image} alt={cert.title} style={{ width: "150px", height: "150px", objectFit: "contain", filter: "var(--badge-shadow)", marginBottom: "1.25rem" }} />
                 <span style={{ background: "rgba(0, 242, 254, 0.1)", color: "var(--neon-cyan)", padding: "0.3rem 0.8rem", borderRadius: "20px", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase", marginBottom: "1rem" }}>
                   {dict.certLevels[cert.type] ?? cert.type}
                 </span>
                 <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.1rem", lineHeight: 1.4 }}>{cert.title}</h3>
                 <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.85rem", fontWeight: 600 }}>{cert.issuer}</p>
-              </motion.a>
-            ))}
+              </CardTag>
+              );
+            })}
           </div>
         </section>
 
