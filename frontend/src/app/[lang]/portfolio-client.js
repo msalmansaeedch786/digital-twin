@@ -118,7 +118,10 @@ export default function PortfolioClient({ lang, dict }) {
     { title: "AWS Certified DevOps Engineer – Professional", issuer: "Amazon Web Services", type: "Professional", url: "https://www.credly.com/badges/e68bf65e-ed5d-4a02-bdb5-5a76d6537b65/public_url", image: "https://images.credly.com/size/600x600/images/bd31ef42-d460-493e-8503-39592aaf0458/image.png" },
     { title: "AWS Certified Solutions Architect – Professional", issuer: "Amazon Web Services", type: "Professional", url: "https://www.credly.com/badges/2cf52be8-6b84-47bb-9c27-314bd07aa26b/public_url", image: "https://images.credly.com/size/600x600/images/2d84e428-9078-49b6-a804-13c15383d0de/image.png" },
     { title: "HashiCorp Certified: Terraform Associate (002)", issuer: "HashiCorp", type: "Associate", url: "https://www.credly.com/badges/a84d064f-d569-4211-b436-bab57aa7136c/public_url", image: "https://images.credly.com/size/600x600/images/cd038261-9d1c-4792-bc62-3a3b5bda175c/blob" },
-    { title: "HashiCorp Certified: Terraform Associate (003)", issuer: "HashiCorp", type: "Associate", url: "https://www.credly.com/badges/959c19da-8a16-44c4-8c1d-4a76d5802afc/public_url", image: "https://images.credly.com/size/600x600/images/0dc62494-dc94-469a-83af-e35309f27356/blob" }
+    { title: "HashiCorp Certified: Terraform Associate (003)", issuer: "HashiCorp", type: "Associate", url: "https://www.credly.com/badges/959c19da-8a16-44c4-8c1d-4a76d5802afc/public_url", image: "https://images.credly.com/size/600x600/images/0dc62494-dc94-469a-83af-e35309f27356/blob" },
+    // Issued as a certificate rather than a Credly badge, so there is no
+    // verification URL — the card renders without a link (see the map below).
+    { title: "Docker Certified Associate", issuer: "Docker", type: "Associate", url: null, image: "/docker-certified-associate.png" },
   ];
 
   return (
