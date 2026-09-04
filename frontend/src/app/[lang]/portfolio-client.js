@@ -119,9 +119,11 @@ export default function PortfolioClient({ lang, dict }) {
     { title: "AWS Certified Solutions Architect – Professional", issuer: "Amazon Web Services", type: "Professional", url: "https://www.credly.com/badges/2cf52be8-6b84-47bb-9c27-314bd07aa26b/public_url", image: "https://images.credly.com/size/600x600/images/2d84e428-9078-49b6-a804-13c15383d0de/image.png" },
     { title: "HashiCorp Certified: Terraform Associate (002)", issuer: "HashiCorp", type: "Associate", url: "https://www.credly.com/badges/a84d064f-d569-4211-b436-bab57aa7136c/public_url", image: "https://images.credly.com/size/600x600/images/cd038261-9d1c-4792-bc62-3a3b5bda175c/blob" },
     { title: "HashiCorp Certified: Terraform Associate (003)", issuer: "HashiCorp", type: "Associate", url: "https://www.credly.com/badges/959c19da-8a16-44c4-8c1d-4a76d5802afc/public_url", image: "https://images.credly.com/size/600x600/images/0dc62494-dc94-469a-83af-e35309f27356/blob" },
-    // Issued as a certificate rather than a Credly badge, so there is no
-    // verification URL — the card renders without a link (see the map below).
-    { title: "Docker Certified Associate", issuer: "Docker", type: "Associate", url: null, image: "/docker-certified-associate.png" },
+    // Verified through Mirantis, who administer the Docker certification, rather
+    // than Credly like the others. Badge art is the docker/CERTIFIED ASSOCIATE
+    // lockup lifted off the issued certificate — there is no Credly template
+    // for this one to link to.
+    { title: "Docker Certified Associate", issuer: "Docker", type: "Associate", url: "https://certification.mirantis.com/326247ca-6e5e-4749-9f3e-4fa8c958d3eb#acc.cq4PXmDO", image: "/docker-certified-associate.png" },
   ];
 
   return (
