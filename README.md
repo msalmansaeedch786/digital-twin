@@ -190,7 +190,7 @@ digital-twin/
 
 - An AWS Account. **Administrator access is only required for the initial bootstrap** (creating the OIDC provider and remote-state backend); ongoing deployments run through the scoped GitHub Actions OIDC role.
 - `Terraform` (>= 1.5.0)
-- `Python` (>= 3.12)
+- `Python` **3.12** — the Lambda runtime. Not "3.12 or newer": the pinned dependencies have no wheels for 3.14 and `pydantic-core` 2.7.4 fails to build there, so a newer default interpreter produces a broken backend venv.
 - `Node.js` (>= 20.9 — required by Next.js 16)
 - `AWS CLI` configured with appropriate credentials.
 
@@ -243,6 +243,8 @@ terraform apply
 ### 4. Run the Frontend Locally
 
 Point the frontend at your deployed API Gateway endpoint and start the dev server.
+
+> **Why the deployed API and not a local one?** RDS is `publicly_accessible = false` and sits in private subnets, so a backend running on your laptop cannot reach the database — `/chat` will fail on connection even though the process starts. Running the frontend against the deployed API is the normal local loop. `./scripts/start.sh` does start both, but the local backend is only useful with a tunnel or a local Postgres.
 
 ```bash
 cd frontend
