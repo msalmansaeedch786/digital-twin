@@ -89,12 +89,24 @@ def main():
     for chunk in chunks:
         chunk.metadata["source_key"] = os.path.basename(chunk.metadata.get("source", "unknown"))
 
-    # 3. Setup Bedrock Embeddings and PGVector
+    # 3. Setup embeddings and PGVector. AI_PROVIDER must match whatever the API
+    #    is configured with — vectors written by one model are not searchable by
+    #    another, and the dimensions differ (Titan v2 1024, bge-m3 1024,
+    #    nomic-embed-text 768), so mixing them corrupts the collection.
+    provider = os.environ.get("AI_PROVIDER", "bedrock").lower()
     region = os.environ.get("AWS_REGION", "eu-central-1")
-    embeddings = BedrockEmbeddings(
-        model_id=os.environ.get("BEDROCK_EMBEDDING_MODEL_ID", "amazon.titan-embed-text-v2:0"),
-        region_name=region,
-    )
+    if provider == "ollama":
+        from langchain_ollama import OllamaEmbeddings
+
+        embeddings = OllamaEmbeddings(
+            model=os.environ.get("OLLAMA_EMBEDDING_MODEL", "bge-m3"),
+            base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
+        )
+    else:
+        embeddings = BedrockEmbeddings(
+            model_id=os.environ.get("BEDROCK_EMBEDDING_MODEL_ID", "amazon.titan-embed-text-v2:0"),
+            region_name=region,
+        )
 
     conn_string = get_db_connection_string()
     init_db(conn_string)
@@ -113,7 +125,7 @@ def main():
             logger.info(f"Purged {deleted} old chunks for {key}")
 
     # 5. Store in PostgreSQL
-    logger.info("Generating embeddings via Amazon Bedrock and storing in PostgreSQL (pgvector)...")
+    logger.info("Generating embeddings via %s and storing in PostgreSQL (pgvector)..." % ("Ollama" if provider == "ollama" else "Amazon Bedrock"))
 
     # Process in batches to avoid rate limits
     batch_size = 20
