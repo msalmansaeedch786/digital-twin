@@ -78,7 +78,19 @@ _SECRET_TTL_SECONDS = 900  # Refresh cache every 15 minutes
 
 # Use a boto3 client with a retry config — resilient to transient API blips
 _boto_config = Config(retries={"max_attempts": 3, "mode": "adaptive"})
-_secrets_client = boto3.client("secretsmanager", config=_boto_config)
+
+# Built on first use, not at import. Constructing it eagerly resolves the
+# credential chain, which fails outright on a machine with no usable AWS
+# profile — so `AI_PROVIDER=ollama` could not start even though it never
+# touches Secrets Manager.
+_secrets_client = None
+
+
+def _get_secrets_client():
+    global _secrets_client
+    if _secrets_client is None:
+        _secrets_client = boto3.client("secretsmanager", config=_boto_config)
+    return _secrets_client
 
 
 def get_db_connection_string() -> str:
@@ -105,7 +117,7 @@ def get_db_connection_string() -> str:
         secret = _secret_cache
     else:
         logger.info("Fetching DB credentials from Secrets Manager (cache miss or expired)")
-        response = _secrets_client.get_secret_value(SecretId=secret_arn)
+        response = _get_secrets_client().get_secret_value(SecretId=secret_arn)
         secret = json.loads(response["SecretString"])
         _secret_cache = secret
         _secret_cache_expiry = now + _SECRET_TTL_SECONDS
@@ -211,6 +223,71 @@ class StageTimer(BaseCallbackHandler):
         )
 
 
+# "bedrock" (default — what Lambda runs) or "ollama" (fully local, no AWS).
+# Selected here rather than by swapping imports so the deployed and local paths
+# are the same file; langchain-ollama is imported lazily below so it never has
+# to be in the Lambda zip.
+AI_PROVIDER = os.getenv("AI_PROVIDER", "bedrock").lower()
+
+def _build_embeddings(region: str):
+    """Embeddings for the configured provider, wrapped so embed_query is timed.
+
+    Both wrappers exist because embeddings emit no LangChain callbacks — the
+    call happens deep inside the retriever, so subclassing is the only place to
+    measure it (same reasoning as TimedBedrockEmbeddings).
+    """
+    if AI_PROVIDER == "ollama":
+        # Imported here, not at module scope: langchain-ollama is a local-only
+        # dependency and is deliberately absent from the Lambda zip.
+        from langchain_ollama import OllamaEmbeddings
+
+        class TimedOllamaEmbeddings(OllamaEmbeddings):
+            def embed_query(self, text: str) -> List[float]:
+                started = time.perf_counter()
+                try:
+                    return super().embed_query(text)
+                finally:
+                    _record("embed_ms", (time.perf_counter() - started) * 1000)
+
+        return TimedOllamaEmbeddings(
+            model=os.environ.get("OLLAMA_EMBEDDING_MODEL", "bge-m3"),
+            base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
+        )
+
+    return TimedBedrockEmbeddings(
+        model_id=os.environ.get("BEDROCK_EMBEDDING_MODEL_ID", "amazon.titan-embed-text-v2:0"),
+        region_name=region,
+        config=_boto_config,
+    )
+
+
+def _build_llm(region: str):
+    """Chat model for the configured provider."""
+    if AI_PROVIDER == "ollama":
+        from langchain_ollama import ChatOllama
+
+        return ChatOllama(
+            model=os.environ.get("OLLAMA_LLM_MODEL", "qwen3.6:27b"),
+            base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
+            temperature=0.1,
+            # Ollama's name for the Bedrock max_tokens below.
+            num_predict=1024,
+        )
+
+    # Bedrock LLM — Nova Lite. Nova routes through the Converse API; langchain-aws
+    # only forwards allowlisted model_kwargs ("max_tokens", "temperature", ...) —
+    # the previous "max_gen_len" (a Llama param) was silently dropped, leaving
+    # responses uncapped. 1024 gives headroom so long answers don't truncate
+    # mid-markdown (a cut-off "**item" renders as literal asterisks in the chat
+    # UI); the BREVITY prompt rule keeps typical answers well under this.
+    return ChatBedrock(
+        model_id=os.environ.get("BEDROCK_LLM_MODEL_ID", "eu.amazon.nova-lite-v1:0"),
+        region_name=region,
+        model_kwargs={"temperature": 0.1, "max_tokens": 1024},
+        config=_boto_config,
+    )
+
+
 class AIEngine:
     """Encapsulates all AI components. Initialized once per Lambda container."""
 
@@ -222,12 +299,8 @@ class AIEngine:
         try:
             region = os.environ.get("AWS_REGION", "eu-central-1")
 
-            # 1. Bedrock Embeddings (timed subclass, see StageTimer above)
-            embeddings = TimedBedrockEmbeddings(
-                model_id=os.environ.get("BEDROCK_EMBEDDING_MODEL_ID", "amazon.titan-embed-text-v2:0"),
-                region_name=region,
-                config=_boto_config,
-            )
+            # 1. Embeddings (timed subclass, see StageTimer above)
+            embeddings = _build_embeddings(region)
 
             # 2. PGVector — uses a persistent psycopg connection
             # Connection string is cached via get_db_connection_string()
@@ -240,20 +313,8 @@ class AIEngine:
             )
             retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
 
-            # 3. Bedrock LLM — Nova Lite.
-            # Nova routes through the Converse API; langchain-aws only forwards
-            # allowlisted model_kwargs ("max_tokens", "temperature", ...) — the
-            # previous "max_gen_len" (a Llama param) was silently dropped,
-            # leaving responses uncapped.
-            llm = ChatBedrock(
-                model_id=os.environ.get("BEDROCK_LLM_MODEL_ID", "eu.amazon.nova-lite-v1:0"),
-                region_name=region,
-                # 1024 gives headroom so long answers don't truncate mid-markdown
-                # (a cut-off "**item" renders as literal asterisks in the chat UI);
-                # the BREVITY prompt rule keeps typical answers well under this.
-                model_kwargs={"temperature": 0.1, "max_tokens": 1024},
-                config=_boto_config,
-            )
+            # 3. Chat model
+            llm = _build_llm(region)
 
             # 4. History-aware retriever for multi-turn conversation
             contextualize_q_prompt = ChatPromptTemplate.from_messages([

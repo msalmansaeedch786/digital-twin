@@ -281,6 +281,60 @@ To install the hooks locally:
    ```
 From now on, every time you run `git commit`, tools like `terraform fmt` and `terraform validate` will automatically execute to ensure your code is perfectly styled!
 
+### Fully Local Development (no AWS)
+
+The stack can run entirely offline — local Postgres instead of RDS, Ollama instead of Bedrock, no credentials of any kind. `AI_PROVIDER` selects between the two; `bedrock` stays the default, so nothing about the deployed Lambda changes.
+
+**1. Install the pieces**
+
+```bash
+brew install python@3.12 postgresql@17 pgvector
+ollama pull bge-m3          # embeddings, 1024-dim like Titan v2
+ollama pull qwen3.6:27b     # generation (llama3.1:8b also works, and is smaller)
+```
+
+> **Homebrew quirk worth knowing:** `postgresql@17` keeps its files under `share/postgresql`, but the server and `pgvector` both look in `share/postgresql@17`. If `initdb` fails with `postgres.bki does not exist` or the server complains it cannot open `.../timezone`, link them across:
+> ```bash
+> CELLAR=/opt/homebrew/Cellar/postgresql@17/17.11
+> for f in "$CELLAR"/share/postgresql/*; do
+>   [ "$(basename "$f")" = extension ] || ln -sfn "$f" /opt/homebrew/share/postgresql@17/
+> done
+> ln -sfn "$CELLAR"/lib/postgresql/* /opt/homebrew/lib/postgresql@17/
+> ```
+
+**2. Create the database**
+
+```bash
+export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
+initdb -D /opt/homebrew/var/postgresql@17 --encoding=UTF8 --locale=en_US.UTF-8
+brew services start postgresql@17
+createdb digitaltwin
+psql -d digitaltwin -c "CREATE EXTENSION IF NOT EXISTS vector;"
+```
+
+**3. Configure and install**
+
+```bash
+cd lambdas/api
+cp .env.example .env      # then set the local-mode block (AI_PROVIDER=ollama, DATABASE_URL, ...)
+python3.12 -m venv venv
+./venv/bin/pip install -r requirements.txt -r requirements-local.txt
+```
+
+`requirements-local.txt` holds `langchain-ollama` and is **not** installed by `build.sh`, so the Lambda zip is unaffected.
+
+**4. Ingest and run**
+
+```bash
+set -a; . ./.env; set +a
+./venv/bin/python ingest.py                       # embeds data/ into local pgvector
+./venv/bin/uvicorn main:app --port 8000 --reload
+```
+
+Point the frontend at it with `NEXT_PUBLIC_API_URL=http://localhost:8000` in `frontend/.env.local`.
+
+> **Ingest with the same provider you serve with.** Vectors written by one embedding model are not searchable by another, and dimensions differ (Titan v2 and bge-m3 are 1024, nomic-embed-text is 768). Switching `AI_PROVIDER` means re-running `ingest.py` against a clean collection.
+
 ### Frontend Tests
 
 The bilingual routing and the chat input behave correctly only in a real browser, so they are covered by Playwright rather than static checks. Run them against a production build:

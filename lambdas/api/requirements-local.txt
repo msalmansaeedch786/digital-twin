@@ -1,0 +1,11 @@
+# Local-only extras — NOT installed into the Lambda zip.
+#
+# build.sh installs requirements.txt alone, so adding langchain-ollama here
+# keeps the deployed artifact byte-identical while letting a local run swap
+# Bedrock for Ollama via AI_PROVIDER=ollama.
+#
+#   pip install -r requirements.txt -r requirements-local.txt
+
+# 0.2.1 is the newest release compatible with the langchain-core
+# 0.3.63 that langchain-aws 0.2.11 and langchain-community 0.3.14 pin.
+langchain-ollama==0.2.1
