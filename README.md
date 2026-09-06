@@ -42,7 +42,7 @@ The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline
 - **Event-Driven Data Ingestion**: Simply uploading a PDF or Text file to an S3 bucket automatically triggers an asynchronous Lambda pipeline that chunks, embeds, and stores the knowledge in the database.
 - **Automated CI/CD Pipeline**: Employs GitHub Actions to automatically build the Lambda packages and run `terraform plan` / `terraform apply` on every push to the deployment branch, using AWS OpenID Connect (OIDC) for passwordless, keyless deployments.
 - **History-Aware Conversations**: Employs an LLM-driven query rewriting step that maintains context across long conversational threads.
-- **Bilingual (English / German)**: The portfolio and the twin are served under locale-segmented routes (`/en`, `/de`), both statically prerendered and edge-cached, with canonical + `hreflang` metadata and a generated `sitemap.xml`. The knowledge base stays English: a request carries a `lang` field and only the final generation switches language, so German answers are still grounded in the same vectors.
+- **Bilingual (English / German)**: The portfolio and the twin are served under locale-segmented routes (`/en`, `/de`), both statically prerendered and edge-cached, with canonical + `hreflang` metadata and a generated `sitemap.xml`. The knowledge base stays English and a request carries a `lang` field. Language moves in both directions around retrieval: a non-English question is rewritten into English *before* embedding, so it matches the English vectors properly, and the answer is then generated back in the reader's language. An English question with no history skips that rewrite and pays no extra latency.
 - **Hardened Security**: Features rate limiting, payload sanitization, AWS Secrets Manager integration, and IAM Least Privilege policies.
 
 ---
@@ -58,7 +58,7 @@ Best practice dictates placing Lambda functions and Databases inside **Private S
 To achieve a **Production-Ready** baseline, this architecture implements the following enterprise patterns:
 1. **Isolated Subnets**: The PostgreSQL database and Compute Lambdas reside strictly in Private Subnets with no Internet Gateway route, rendering them inaccessible from the public internet.
 2. **AWS PrivateLink (VPC Endpoints)**: Secure, private tunnels are provisioned for Amazon Bedrock Runtime and AWS Secrets Manager (Interface endpoints), plus Amazon S3 (a Gateway endpoint, which carries no hourly charge). Traffic to these services never traverses the public internet. Interface endpoints are deliberately single-AZ, since they bill per-AZ per-hour and this workload does not need cross-AZ endpoint redundancy.
-3. **Least Privilege IAM**: Every Lambda function executes under a tightly scoped IAM role, granting exact permissions (e.g., the Ingestion Lambda can generate Bedrock embeddings, but is explicitly denied access to the Bedrock LLM).
+3. **Least Privilege IAM**: Every Lambda function executes under a tightly scoped IAM role, granting exact permissions (e.g., the Ingestion Lambda's `bedrock:InvokeModel` is scoped to the embedding model ARN alone, so it cannot reach the LLM at all).
 4. **Encrypted Secrets**: The database master password is auto-generated and managed by AWS Secrets Manager, keeping it out of Terraform state entirely. Lambda functions dynamically fetch this secret at runtime.
 5. **Automatic Circuit Breaker**: A CloudWatch alarm on the API Gateway request count (60-second periods) fires an EventBridge rule into a dedicated breaker Lambda, which sets the stage throttle to `0/0` — every request is then rejected at the front door for free, before Lambda or Bedrock can be billed. A second rule fires when the alarm returns to `OK` and restores the normal `5 req/s` limit, so the API self-heals once a flood stops. The breaker deliberately runs **outside** the VPC so it still works if VPC networking is what is failing. This has absorbed live floods of >300,000 requests for a few cents.
 6. **Cost Guardrails**: Daily and monthly AWS Budgets plus Cost Anomaly Detection publish to SNS, so unexpected spend is caught even if it never trips a technical alarm.
@@ -109,8 +109,10 @@ sequenceDiagram
 
     Note over LB: Validate input (Pydantic)<br/>Rate limit check (slowapi)<br/>CORS enforcement
 
+    Note over LB: Rewrite runs if there is history<br/>to resolve OR the question is not English<br/>(skipped for an English first question)
+
     LB->>LLM1: chat_history + question
-    LLM1-->>LB: Standalone query:<br/>"How long did Salman work at MBition?"
+    LLM1-->>LB: Standalone query, in English:<br/>"How long did Salman work at MBition?"
 
     LB->>EMB: Embed rewritten query
     EMB-->>LB: Query vector [1024 dims]
@@ -189,7 +191,7 @@ digital-twin/
 - An AWS Account. **Administrator access is only required for the initial bootstrap** (creating the OIDC provider and remote-state backend); ongoing deployments run through the scoped GitHub Actions OIDC role.
 - `Terraform` (>= 1.5.0)
 - `Python` (>= 3.12)
-- `Node.js` (>= 18)
+- `Node.js` (>= 20.9 — required by Next.js 16)
 - `AWS CLI` configured with appropriate credentials.
 
 > **Two ways to deploy — pick one:**
@@ -256,7 +258,7 @@ npm run dev
 
 The architecture integrates deeply with AWS native observability tools:
 - **Amazon CloudWatch**: Captures structured JSON logs from the Lambda functions for easy parsing and debugging, and drives a `digital-twin-ops` dashboard plus ten alarms covering API abuse, Lambda errors/throttles/p99 duration, RDS CPU/connections/storage, ingestion DLQ depth, root-account usage, and ungrounded answers (retrieval returning zero documents).
-- **Per-request latency breakdown**: Every chat request logs `embed_ms`, `search_ms`, `generate_ms`, `chain_ms` and `docs_retrieved`, so Logs Insights can answer where the time actually goes rather than only reporting a total. Measured on warm requests, generation is ~84% of the chain, embedding ~13%, and the pgvector search ~1.4%. `docs_retrieved` also doubles as a grounding check: a sustained 0 means retrieval is returning nothing and answers are no longer grounded.
+- **Per-request latency breakdown**: Every chat request logs `embed_ms`, `search_ms`, `generate_ms`, `rewrite_ms`, `chain_ms`, `docs_retrieved` and `lang` (`rewrite_ms` is 0 when the query rewrite was skipped), so Logs Insights can answer where the time actually goes rather than only reporting a total. Measured on warm requests, generation is ~84% of the chain, embedding ~13%, and the pgvector search ~1.4%. `docs_retrieved` also doubles as a grounding check: a sustained 0 means retrieval is returning nothing and answers are no longer grounded.
 - **Traffic attribution**: The API Gateway access log records `userAgent` and `path`, and the chat log records `user_agent` and `origin`, so real browser traffic can be separated from scripted calls and uptime pings.
 - **Amazon SNS**: Delivers every alarm, circuit-breaker action, budget threshold, and cost anomaly to email.
 - **Amazon SQS**: A dead-letter queue captures ingestion events that fail all retries, so a bad document is visible rather than silently dropped.
