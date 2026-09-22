@@ -62,6 +62,53 @@ resource "aws_sns_topic_policy" "alerts" {
 # throttling are the other layers).
 # ===========================================================================
 
+# ===========================================================================
+# Real-money tripwire.
+#
+# The two budgets below deliberately track GROSS usage so they stay live while
+# credits foot the bill. That makes them useless for the one question that
+# matters after the plan upgrade: "am I actually being charged yet?"
+#
+# This budget is the mirror image — include_credit = true, so it measures NET
+# cost, i.e. what actually lands on the card once credits stop absorbing it.
+# The limit is $1 with a 1% threshold, so it fires at the first ~$0.01 of real
+# spend. Until credits run out this sits silently at $0.
+# ===========================================================================
+
+resource "aws_budgets_budget" "real_spend" {
+  name         = "${var.project_name}-real-spend"
+  budget_type  = "COST"
+  limit_amount = "1"
+  limit_unit   = "USD"
+  time_unit    = "MONTHLY"
+
+  cost_types {
+    # The one difference that matters: credits count, so this reads $0 for as
+    # long as they cover usage, and starts climbing the moment they do not.
+    include_credit             = true
+    include_refund             = true
+    include_discount           = true
+    use_amortized              = false
+    include_tax                = true
+    include_subscription       = true
+    include_upfront            = true
+    include_recurring          = true
+    include_other_subscription = true
+    include_support            = true
+    use_blended                = false
+  }
+
+  # 1% of $1 = $0.01. The first real cent charged sends this.
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 1
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "ACTUAL"
+    subscriber_email_addresses = [var.alert_email]
+    subscriber_sns_topic_arns  = [aws_sns_topic.alerts.arn]
+  }
+}
+
 resource "aws_budgets_budget" "monthly" {
   name         = "${var.project_name}-monthly"
   budget_type  = "COST"

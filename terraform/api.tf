@@ -40,6 +40,20 @@ resource "aws_lambda_function" "api" {
   timeout       = 30 # 30 seconds for API requests
   memory_size   = 1024
 
+  # Hard ceiling on concurrent executions. The API Gateway throttle (5/s) and
+  # the circuit breaker are both *reactive* — the abuse alarm needs a 60-second
+  # period before the breaker slams the door. On the free plan a runaway had a
+  # backstop: credits ran out and the account closed. On pay-as-you-go there is
+  # no such stop, so this caps the worst case at the Lambda itself regardless of
+  # what the breaker does.
+  #
+  # Sized off real throughput, not a round number: at the 5/s sustained throttle
+  # and ~1.5s per chat, steady-state concurrency is ~8, and an API Gateway burst
+  # of 10 can briefly push it to ~22. A cap of 10 would therefore throttle
+  # legitimate bursts; 25 clears that while still bounding a runaway to 2.5% of
+  # the 1000 account default.
+  reserved_concurrent_executions = 25
+
   # X-Ray tracing disabled: its PrivateLink endpoint cost (~$9/mo) outweighs
   # tracing value for this workload. Logs + alarms remain the observability path.
   tracing_config {
