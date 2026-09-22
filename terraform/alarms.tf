@@ -60,6 +60,11 @@ resource "aws_sns_topic_policy" "alerts" {
 # request invokes Bedrock. A budget alert is the cheapest defense against
 # abuse-driven bill surprises (Lambda account concurrency of 10 and API GW
 # throttling are the other layers).
+#
+# That account-wide limit of 10 is the hard ceiling, and it is tighter than any
+# per-function reserve could be: AWS requires at least 10 unreserved, so
+# reserved_concurrent_executions cannot be set on any function in this account
+# at all. Do not try — it fails the apply with InvalidParameterValueException.
 # ===========================================================================
 
 # ===========================================================================
