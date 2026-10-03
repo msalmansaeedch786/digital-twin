@@ -8,11 +8,16 @@ import { FiGithub, FiLinkedin, FiYoutube } from "react-icons/fi";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { otherLocale } from "../dictionaries/locales";
+// Single source of truth: scripts/generate_certifications.py derives the list
+// in data/05_certifications.txt from this same file, so the twin and the badge
+// cards cannot disagree about which credentials are held.
+import certificationsData from "../certifications.json";
 
 export default function PortfolioClient({ lang, dict }) {
   const [theme, setTheme] = useState("light");
   const [typed, setTyped] = useState("");
   const pathname = usePathname();
+  const certifications = certificationsData.certifications;
 
   // Terminal wordmark: the prompt "~/muhammad-salman:" stays fixed while these
   // messages type out after it, cycling like a live shell.
@@ -110,21 +115,6 @@ export default function PortfolioClient({ lang, dict }) {
     { school: "The Educators", date: "Jan 2010 - Dec 2012" }
   ].map((e, i) => ({ ...e, ...dict.education[i] }));
 
-  const certifications = [
-    { title: "AWS Certified Cloud Practitioner", issuer: "Amazon Web Services", type: "Foundational", url: "https://www.credly.com/badges/9bb6cabf-544a-4b64-ae6d-822df476e675/public_url", image: "https://images.credly.com/size/600x600/images/00634f82-b07f-4bbd-a6bb-53de397fc3a6/image.png" },
-    { title: "AWS Certified AI Practitioner", issuer: "Amazon Web Services", type: "Foundational", url: "https://www.credly.com/badges/ea0f6e7f-9668-4dd6-a645-549ffd801eaa/public_url", image: "https://images.credly.com/size/600x600/images/4d4693bb-530e-4bca-9327-de07f3aa2348/image.png" },
-    { title: "AWS Certified Developer – Associate", issuer: "Amazon Web Services", type: "Associate", url: "https://www.credly.com/badges/0ac26dba-8408-43c4-9af5-75d67c511cf0/public_url", image: "https://images.credly.com/size/600x600/images/b9feab85-1a43-4f6c-99a5-631b88d5461b/image.png" },
-    { title: "AWS Certified Solutions Architect – Associate", issuer: "Amazon Web Services", type: "Associate", url: "https://www.credly.com/badges/3e1061d9-3dc4-4094-8333-5892b5a9e2b1/public_url", image: "https://images.credly.com/size/600x600/images/0e284c3f-5164-4b21-8660-0d84737941bc/image.png" },
-    { title: "AWS Certified DevOps Engineer – Professional", issuer: "Amazon Web Services", type: "Professional", url: "https://www.credly.com/badges/e68bf65e-ed5d-4a02-bdb5-5a76d6537b65/public_url", image: "https://images.credly.com/size/600x600/images/bd31ef42-d460-493e-8503-39592aaf0458/image.png" },
-    { title: "AWS Certified Solutions Architect – Professional", issuer: "Amazon Web Services", type: "Professional", url: "https://www.credly.com/badges/2cf52be8-6b84-47bb-9c27-314bd07aa26b/public_url", image: "https://images.credly.com/size/600x600/images/2d84e428-9078-49b6-a804-13c15383d0de/image.png" },
-    { title: "HashiCorp Certified: Terraform Associate (002)", issuer: "HashiCorp", type: "Associate", url: "https://www.credly.com/badges/a84d064f-d569-4211-b436-bab57aa7136c/public_url", image: "https://images.credly.com/size/600x600/images/cd038261-9d1c-4792-bc62-3a3b5bda175c/blob" },
-    { title: "HashiCorp Certified: Terraform Associate (003)", issuer: "HashiCorp", type: "Associate", url: "https://www.credly.com/badges/959c19da-8a16-44c4-8c1d-4a76d5802afc/public_url", image: "https://images.credly.com/size/600x600/images/0dc62494-dc94-469a-83af-e35309f27356/blob" },
-    // Verified through Mirantis, who administer the Docker certification, rather
-    // than Credly like the others. Badge art is the docker/CERTIFIED ASSOCIATE
-    // lockup lifted off the issued certificate — there is no Credly template
-    // for this one to link to.
-    { title: "Docker Certified Associate", issuer: "Docker", type: "Associate", url: "https://certification.mirantis.com/326247ca-6e5e-4749-9f3e-4fa8c958d3eb#acc.cq4PXmDO", image: "/docker-certified-associate.png" },
-  ];
 
   return (
     <>

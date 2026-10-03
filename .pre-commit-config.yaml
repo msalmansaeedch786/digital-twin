@@ -20,6 +20,13 @@ repos:
   # AWS certification that was never earned. Pure stdlib, no AWS, no network.
   - repo: local
     hooks:
+      - id: certifications-generated
+        name: data/05_certifications.txt is generated, not hand-edited
+        entry: python3 scripts/generate_certifications.py --check
+        language: system
+        pass_filenames: false
+        files: ^(data/05_certifications\.txt|frontend/src/app/certifications\.json)$
+
       - id: check-credentials
         name: Credentials consistent between data/ and the portfolio
         entry: python3 scripts/check_credentials.py

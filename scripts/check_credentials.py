@@ -27,7 +27,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CERTS_TXT = ROOT / "data" / "05_certifications.txt"
-PORTFOLIO = ROOT / "frontend" / "src" / "app" / "[lang]" / "portfolio-client.js"
+# The canonical list. The badge cards import this, and the data/ text is
+# generated from it, so this is the one place a certification is declared.
+CANONICAL = ROOT / "frontend" / "src" / "app" / "certifications.json"
 COUNT_FILES = [
     ROOT / "data" / "01_professional_summary.txt",
     ROOT / "data" / "04_skills_and_tools.txt",
@@ -57,9 +59,11 @@ def certs_from_data() -> set[str]:
     return out
 
 
-def certs_from_page() -> set[str]:
-    src = PORTFOLIO.read_text(encoding="utf-8")
-    return {normalise(t) for t in re.findall(r'title:\s*"([^"]+)",\s*issuer:', src)}
+def certs_from_canonical() -> set[str]:
+    import json
+
+    data = json.loads(CANONICAL.read_text(encoding="utf-8"))
+    return {normalise(c["title"]) for c in data["certifications"]}
 
 
 def aws_count_claims() -> list[tuple[Path, int, str]]:
@@ -73,21 +77,21 @@ def aws_count_claims() -> list[tuple[Path, int, str]]:
 
 
 def main() -> int:
-    data, page = certs_from_data(), certs_from_page()
+    data, page = certs_from_data(), certs_from_canonical()
     problems = []
 
     only_data = sorted(data - page)
     only_page = sorted(page - data)
     if only_data:
         problems.append(
-            "In data/ but NOT shown on the page — the twin will claim these to "
-            "visitors with nothing on the site to back them up:\n"
+            "In data/ but NOT in the canonical list — the twin will claim these "
+            "to visitors with no badge card to back them up:\n"
             + "\n".join(f"    - {c}" for c in only_data)
         )
     if only_page:
         problems.append(
-            "On the page but NOT in data/ — the twin does not know about these "
-            "and will deny holding them if asked:\n"
+            "In the canonical list but NOT in data/ — the twin does not know "
+            "about these and will deny holding them if asked:\n"
             + "\n".join(f"    - {c}" for c in only_page)
         )
 

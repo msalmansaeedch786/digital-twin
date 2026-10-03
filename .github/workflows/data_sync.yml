@@ -51,6 +51,9 @@ jobs:
       # Gate the sync: this workflow is the path by which a wrong certification
       # list reaches the twin. Checking before the upload means bad data never
       # gets embedded, rather than being corrected after visitors see it.
+      - name: data/05_certifications.txt is generated, not hand-edited
+        run: python3 scripts/generate_certifications.py --check
+
       - name: Credentials consistent between data/ and the portfolio
         run: python3 scripts/check_credentials.py
 

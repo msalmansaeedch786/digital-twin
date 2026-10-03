@@ -95,6 +95,9 @@ jobs:
 
       # Same guard as the pre-commit hook, enforced for anyone who commits with
       # --no-verify or without the hooks installed. No AWS, no network.
+      - name: data/05_certifications.txt is generated, not hand-edited
+        run: python scripts/generate_certifications.py --check
+
       - name: Credentials consistent between data/ and the portfolio
         run: python scripts/check_credentials.py
 
