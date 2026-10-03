@@ -50,10 +50,17 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # Single source of truth for the Terraform version: terraform/.terraform-version,
+      # which tfenv/asdf also read locally. Hardcoding it here is what let CI and
+      # the developer machine drift four minor versions apart unnoticed.
+      - name: Resolve Terraform version
+        id: tfver
+        run: echo "version=$(cat terraform/.terraform-version)" >> "$GITHUB_OUTPUT"
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.5.0"
+          terraform_version: ${{ steps.tfver.outputs.version }}
 
       # No `cache: pip` here on purpose. The build-directory caches below are
       # keyed on the same requirements.txt hash, so the two always hit or miss

@@ -1,5 +1,10 @@
 terraform {
-  required_version = ">= 1.5.0"
+  # Pinned to the minor, not a floor. ">= 1.5.0" let a brew upgrade put this
+  # laptop on 1.16.4 while CI stayed on 1.5.0 for months — and a local apply
+  # would have stamped the state with a version CI could no longer read.
+  # Patches are allowed; a minor bump is a deliberate change to
+  # .terraform-version, which CI reads too.
+  required_version = "~> 1.16.0"
 
   required_providers {
     aws = {
