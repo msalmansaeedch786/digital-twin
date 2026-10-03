@@ -14,3 +14,15 @@ repos:
       - id: terraform_validate
         args:
           - --hook-config=--retry-once-with-cleanup=true
+
+  # Repo-local: the twin and the portfolio state the same credentials in five
+  # files with nothing linking them. They drifted once and the twin claimed an
+  # AWS certification that was never earned. Pure stdlib, no AWS, no network.
+  - repo: local
+    hooks:
+      - id: check-credentials
+        name: Credentials consistent between data/ and the portfolio
+        entry: python3 scripts/check_credentials.py
+        language: system
+        pass_filenames: false
+        files: ^(data/0[145]_.*\.txt|frontend/src/app/(\[lang\]/portfolio-client\.js|dictionaries/.*\.json))$

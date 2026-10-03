@@ -93,6 +93,11 @@ jobs:
           path: lambdas/ingestion/build
           key: ingest-build-${{ hashFiles('lambdas/ingestion/requirements.txt') }}
 
+      # Same guard as the pre-commit hook, enforced for anyone who commits with
+      # --no-verify or without the hooks installed. No AWS, no network.
+      - name: Credentials consistent between data/ and the portfolio
+        run: python scripts/check_credentials.py
+
       - name: Python Syntax Check
         run: |
           # Cheap gate: a syntax error in Lambda source must never reach deploy.

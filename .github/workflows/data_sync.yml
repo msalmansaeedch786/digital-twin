@@ -35,10 +35,24 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # Reads terraform/.terraform-version, same as terraform.yml. This was
+      # hardcoded to 1.5.0 and missed when the versions were unified — which
+      # would have broken this workflow outright, since it runs `terraform
+      # output` against state now stamped 1.16.4 and 1.5.0 cannot read it.
+      - name: Resolve Terraform version
+        id: tfver
+        run: echo "version=$(cat terraform/.terraform-version)" >> "$GITHUB_OUTPUT"
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.5.0"
+          terraform_version: ${{ steps.tfver.outputs.version }}
+
+      # Gate the sync: this workflow is the path by which a wrong certification
+      # list reaches the twin. Checking before the upload means bad data never
+      # gets embedded, rather than being corrected after visitors see it.
+      - name: Credentials consistent between data/ and the portfolio
+        run: python3 scripts/check_credentials.py
 
       - name: Sync to S3
         working-directory: ./terraform
