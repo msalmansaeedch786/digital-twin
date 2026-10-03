@@ -1,5 +1,10 @@
 langchain-aws==0.2.11
 langchain-postgres==0.0.12
+# Same cross-build trap as the API Lambda: SQLAlchemy declares greenlet
+# behind a platform_machine marker, pip evaluates markers against the x86_64
+# host rather than the aarch64 target, and the wheel is silently omitted.
+# Without it this Lambda fails at import and S3 events are never ingested.
+greenlet==3.2.5
 langchain-text-splitters==0.3.5
 langchain-community==0.3.14
 # Keep in lockstep with lambdas/api/requirements.txt (shared DB codepath)
