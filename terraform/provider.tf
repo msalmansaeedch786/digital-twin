@@ -8,8 +8,14 @@ terraform {
 
   required_providers {
     aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
+      source = "hashicorp/aws"
+      # 5.100.0 was the final 5.x release — that line receives no further
+      # fixes, new services or security patches. Checked against the v6
+      # upgrade guide: none of its breaking changes touch this stack (no
+      # aws_s3_bucket.region references, no REST API Gateway v1 resources
+      # — this uses apigatewayv2 — no Elastic Inference, no RDS
+      # character_set_name).
+      version = "~> 6.0"
     }
     random = {
       source  = "hashicorp/random"
