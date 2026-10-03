@@ -5,6 +5,14 @@ on:
   push:
     branches:
       - main # Update GIT_BRANCH env var below when changing branch
+  # Plan-only on PRs. The "Post Plan to PR" step below and the
+  # ":pull_request" entry in the OIDC trust policy (oidc.tf) were both already
+  # here, but nothing triggered the workflow on pull_request — so the plan
+  # comment the README promises has never actually appeared. Apply stays gated
+  # on refs/heads/main + push/workflow_dispatch, so a PR run plans and stops.
+  pull_request:
+    branches:
+      - main
 
 # Terraform holds a DynamoDB state lock for the length of a plan/apply, so two
 # runs overlapping means the second dies on ConditionalCheckFailedException.
