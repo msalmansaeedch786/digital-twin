@@ -110,6 +110,10 @@ resource "aws_iam_policy" "github_actions_policy" {
           "lambda:GetAccountSettings",
           "s3:ListAllMyBuckets",
           "s3:GetBucketLocation",
+          # s3vectors:ListVectorBuckets is defined with NO resource type, so it
+          # cannot be ARN-scoped — it only works on "*". Everything else for
+          # S3 Vectors is scoped by ARN in S3VectorsManagement below.
+          "s3vectors:ListVectorBuckets",
           "iam:Get*",
           "iam:List*",
           "logs:Describe*",
@@ -189,6 +193,19 @@ resource "aws_iam_policy" "github_actions_policy" {
         Resource = [
           "arn:aws:s3:::${var.project_name}-*",
           "arn:aws:s3:::${var.project_name}-*/*"
+        ]
+      },
+
+      # --- S3 Vectors: the RAG vector store, project-scoped ---
+      {
+        Sid    = "S3VectorsManagement"
+        Effect = "Allow"
+        Action = ["s3vectors:*"]
+        Resource = [
+          # Vector bucket, and the indexes nested under it — the index ARN is
+          # bucket/<name>/index/<name>, so it needs its own entry.
+          "arn:aws:s3vectors:${var.aws_region}:${local.gha_account_id}:bucket/${var.project_name}-*",
+          "arn:aws:s3vectors:${var.aws_region}:${local.gha_account_id}:bucket/${var.project_name}-*/index/*"
         ]
       },
 
