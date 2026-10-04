@@ -90,3 +90,12 @@ variable "anomaly_monitor_arn" {
   type        = string
   default     = "arn:aws:ce::231740516864:anomalymonitor/9d0580f9-94ab-44f8-a5b7-72e23652d0db"
 }
+
+variable "vector_index_name" {
+  description = "Name of the S3 Vectors index holding the knowledge-base chunks"
+  type        = string
+  # Was the pgvector collection name; kept identical so logs and docs that refer
+  # to "digital_twin_docs" still mean the same thing. Dots and hyphens only —
+  # S3 Vectors index names reject underscores.
+  default = "digital-twin-docs"
+}

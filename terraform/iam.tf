@@ -70,6 +70,16 @@ resource "aws_iam_policy" "lambda_api_custom" {
           "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/${var.bedrock_llm_model_id}",
           "arn:aws:bedrock:*::foundation-model/${trimprefix(var.bedrock_llm_model_id, "eu.")}"
         ]
+      },
+      {
+        # Retrieval is the only thing this Lambda does to the vector store —
+        # similarity_search() calls QueryVectors and nothing else. It cannot
+        # write, delete or enumerate, so a compromised API Lambda cannot
+        # corrupt or exfiltrate the index wholesale.
+        Sid      = "S3VectorsQueryAccess"
+        Effect   = "Allow"
+        Action   = ["s3vectors:QueryVectors"]
+        Resource = [aws_s3vectors_index.documents.index_arn]
       }
     ]
   })
@@ -137,6 +147,21 @@ resource "aws_iam_policy" "lambda_ingestion_custom" {
         Resource = [
           "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_embedding_model_id}"
         ]
+      },
+      {
+        # Writes chunks, and removes a file's old chunks when it is re-uploaded
+        # or deleted. ListVectors is required because S3 Vectors can only delete
+        # by vector key — there is no delete-by-metadata-filter — so finding a
+        # source file's chunks means scanning the index and matching the
+        # "<source_key>#<n>" prefix. See lambdas/shared/s3_vector_store.py.
+        Sid    = "S3VectorsWriteAccess"
+        Effect = "Allow"
+        Action = [
+          "s3vectors:PutVectors",
+          "s3vectors:ListVectors",
+          "s3vectors:DeleteVectors"
+        ]
+        Resource = [aws_s3vectors_index.documents.index_arn]
       },
       {
         # Lambda delivers failed async events to the DLQ using THIS role
