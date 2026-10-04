@@ -1,9 +1,10 @@
 import os
 import re
+import sys
 import json
 import time
 import logging
-import urllib.parse
+from pathlib import Path
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from typing import List, Literal, Optional
@@ -19,7 +20,12 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from langchain_aws import ChatBedrock, BedrockEmbeddings
-from langchain_postgres import PGVector
+
+# build.sh copies lambdas/shared/s3_vector_store.py to the zip root, where this
+# import resolves directly. Running locally from lambdas/api/ it is one level up,
+# hence the path append — harmless in Lambda, where the directory does not exist.
+sys.path.append(str(Path(__file__).resolve().parent.parent / "shared"))
+from s3_vector_store import S3VectorStore  # noqa: E402
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.callbacks import BaseCallbackHandler
@@ -66,71 +72,54 @@ logging.basicConfig(level=logging.INFO, handlers=[log_handler], force=True)
 logger = logging.getLogger("digital-twin")
 
 # ===========================================================================
-# Secrets Manager with in-memory caching
-# AWS Best Practice: Cache secrets to avoid latency on every invocation
-# The secret is fetched ONCE per Lambda execution environment (warm container)
-# and reused for the lifetime of that container — typically 15–45 minutes.
+# AWS client config
+#
+# Secrets Manager is gone along with RDS. The vector store is S3 Vectors, which
+# is reached with the Lambda's own IAM role, so there are no database
+# credentials to fetch, cache or rotate — the whole secret-caching layer that
+# used to live here was deleted with the database.
 # ===========================================================================
 
-_secret_cache: Optional[dict] = None
-_secret_cache_expiry: float = 0
-_SECRET_TTL_SECONDS = 900  # Refresh cache every 15 minutes
-
-# Use a boto3 client with a retry config — resilient to transient API blips
+# Retry config shared by every AWS client built below — resilient to transient
+# API blips.
 _boto_config = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 
-# Built on first use, not at import. Constructing it eagerly resolves the
-# credential chain, which fails outright on a machine with no usable AWS
-# profile — so `AI_PROVIDER=ollama` could not start even though it never
-# touches Secrets Manager.
-_secrets_client = None
+_s3vectors_client = None
 
 
-def _get_secrets_client():
-    global _secrets_client
-    if _secrets_client is None:
-        _secrets_client = boto3.client("secretsmanager", config=_boto_config)
-    return _secrets_client
+def _get_s3vectors_client():
+    """Built on first use, not at import.
 
-
-def get_db_connection_string() -> str:
+    Constructing a boto3 client eagerly resolves the credential chain, which
+    hard-fails on a machine with no usable AWS profile. Local mode
+    (AI_PROVIDER=ollama with VECTOR_STORE=pgvector) never touches AWS, so it
+    must not pay for a client it will not use.
     """
-    Retrieves DB credentials from Secrets Manager with a 15-minute in-memory cache.
-    Falls back to DATABASE_URL env var for local development.
+    global _s3vectors_client
+    if _s3vectors_client is None:
+        _s3vectors_client = boto3.client("s3vectors", config=_boto_config)
+    return _s3vectors_client
+
+
+def get_local_database_url() -> str:
+    """Connection string for the local-only pgvector path.
+
+    Only reached when VECTOR_STORE=pgvector, which exists so the whole stack can
+    run with no AWS at all. There is no Secrets Manager branch any more: the
+    deployed Lambda uses S3 Vectors and never opens a database connection.
     """
-    global _secret_cache, _secret_cache_expiry
-
-    secret_arn = os.environ.get("DB_SECRET_ARN")
-    db_host = os.environ.get("DB_HOST")
-    db_name = os.environ.get("DB_NAME")
-
-    # Local development fallback
-    if not secret_arn:
-        local_url = os.environ.get("DATABASE_URL")
-        if not local_url:
-            raise ValueError("Neither DB_SECRET_ARN nor DATABASE_URL is set")
-        return local_url
-
-    # Return cached secret if still valid
-    now = time.monotonic()
-    if _secret_cache and now < _secret_cache_expiry:
-        secret = _secret_cache
-    else:
-        logger.info("Fetching DB credentials from Secrets Manager (cache miss or expired)")
-        response = _get_secrets_client().get_secret_value(SecretId=secret_arn)
-        secret = json.loads(response["SecretString"])
-        _secret_cache = secret
-        _secret_cache_expiry = now + _SECRET_TTL_SECONDS
-
-    username = secret["username"]
-    password = urllib.parse.quote_plus(secret["password"])
-    return f"postgresql+psycopg://{username}:{password}@{db_host}:5432/{db_name}"
+    url = os.environ.get("DATABASE_URL")
+    if not url:
+        raise ValueError("VECTOR_STORE=pgvector requires DATABASE_URL to be set")
+    return url
 
 
 # ===========================================================================
-# AI Engine Singleton with Connection Pooling
-# The engine is initialized ONCE per Lambda container (warm start pattern).
-# PGVector uses psycopg connection pool to reuse DB connections across requests.
+# AI Engine Singleton
+# The engine is initialized ONCE per Lambda container (warm start pattern), so
+# the model clients and the vector store are built once and reused while the
+# container stays warm. There is no connection pool to keep alive any more:
+# S3 Vectors is an HTTPS API call, not a database session.
 # ===========================================================================
 
 # ===========================================================================
@@ -138,7 +127,7 @@ def get_db_connection_string() -> str:
 #
 # The REPORT line only gives total invocation time, which cannot answer the
 # question that actually matters for tuning: is the ~950ms dominated by
-# Bedrock generation or by the pgvector round trip? These hooks split the
+# Bedrock generation or by the vector-store round trip? These hooks split the
 # chain into embed / search / generate and log the milliseconds alongside the
 # existing structured fields, so Logs Insights can aggregate them.
 #
@@ -229,6 +218,13 @@ class StageTimer(BaseCallbackHandler):
 # to be in the Lambda zip.
 AI_PROVIDER = os.getenv("AI_PROVIDER", "bedrock").lower()
 
+# Which vector store to serve from. "s3vectors" is what Lambda runs. "pgvector"
+# exists only so the whole stack can run locally with no AWS at all — S3 Vectors
+# has no local emulator, so the no-cloud path has to keep a database. Serving and
+# ingesting must agree: vectors written by one store are not readable by the
+# other, and neither is readable across embedding models.
+VECTOR_STORE = os.getenv("VECTOR_STORE", "s3vectors").lower()
+
 def _build_embeddings(region: str):
     """Embeddings for the configured provider, wrapped so embed_query is timed.
 
@@ -258,6 +254,41 @@ def _build_embeddings(region: str):
         model_id=os.environ.get("BEDROCK_EMBEDDING_MODEL_ID", "amazon.titan-embed-text-v2:0"),
         region_name=region,
         config=_boto_config,
+    )
+
+
+def _build_vector_store(embeddings):
+    """Vector store for the configured backend.
+
+    Returns something with .as_retriever(); the chain does not care which. The
+    StageTimer hooks measure retrieval through LangChain's retriever callbacks,
+    which both stores emit, so the timing breakdown survives the swap.
+    """
+    if VECTOR_STORE == "pgvector":
+        # Imported here, not at module scope, for the same reason as
+        # langchain-ollama: langchain-postgres and psycopg are local-only
+        # dependencies listed in requirements-local.txt, which build.sh never
+        # reads, so they are deliberately absent from the Lambda zip. Together
+        # with SQLAlchemy and greenlet they were ~35 MB of it.
+        from langchain_postgres import PGVector
+
+        return PGVector(
+            embeddings=embeddings,
+            collection_name=os.environ.get("PGVECTOR_COLLECTION", "digital_twin_docs"),
+            connection=get_local_database_url(),
+            use_jsonb=True,
+        )
+
+    bucket = os.environ.get("VECTOR_BUCKET_NAME")
+    index = os.environ.get("VECTOR_INDEX_NAME")
+    if not bucket or not index:
+        raise ValueError("VECTOR_BUCKET_NAME and VECTOR_INDEX_NAME must be set "
+                         "for VECTOR_STORE=s3vectors")
+    return S3VectorStore(
+        client=_get_s3vectors_client(),
+        vector_bucket_name=bucket,
+        index_name=index,
+        embedding=embeddings,
     )
 
 
@@ -302,15 +333,10 @@ class AIEngine:
             # 1. Embeddings (timed subclass, see StageTimer above)
             embeddings = _build_embeddings(region)
 
-            # 2. PGVector — uses a persistent psycopg connection
-            # Connection string is cached via get_db_connection_string()
-            conn_string = get_db_connection_string()
-            vectorstore = PGVector(
-                embeddings=embeddings,
-                collection_name="digital_twin_docs",
-                connection=conn_string,
-                use_jsonb=True,
-            )
+            # 2. Vector store — S3 Vectors in Lambda, pgvector only for the
+            # local no-AWS path. No connection pool and no credentials either
+            # way: S3 Vectors is reached with the Lambda's own IAM role.
+            vectorstore = _build_vector_store(embeddings)
             retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
 
             # 3. Chat model
@@ -568,7 +594,7 @@ async def chat_endpoint(request: Request, chat_request: ChatRequest):
             _stage_ms.reset(token)
 
         # retrieve_ms wraps the embedding call, so subtract it to get the time
-        # actually spent in the pgvector round trip. The rewrite runs before the
+        # actually spent in the vector-store round trip. The rewrite runs before the
         # retriever span opens, so it is not part of this and does not need
         # subtracting too.
         embed_ms = stages.get("embed_ms", 0.0)

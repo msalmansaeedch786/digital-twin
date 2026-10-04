@@ -24,6 +24,7 @@ DIM = 8
 EXPERIENCE = "02_experience.txt"
 CERTS = "05_certifications.txt"
 ABSENT = "99_does_not_exist.txt"
+EDUCATION = "06_education.txt"
 
 # Deterministic stand-in for Titan: every text gets a fixed unit-ish vector, so
 # nearest-neighbour order is something the test can assert exactly.
@@ -127,8 +128,24 @@ def run(store):
     except ValueError as e:
         check("raises ValueError", "source_key" in str(e), str(e)[:80])
 
-    print("\n10. shorter-than-k index returns what exists instead of erroring")
-    check("k larger than the index is fine", len(store.similarity_search("six aws certifications", k=50)) == 2)
+    print("\n10. add_documents (what the ingestion Lambda actually calls) derives keys too")
+    from langchain_core.documents import Document
+    store.add_documents([Document(page_content="punjab university cgpa",
+                                  metadata={"source_key": EDUCATION})])
+    check("Document without an id gets a derived key",
+          f"{EDUCATION}#0" in store.list_keys(), str(store.list_keys()))
+
+    print("\n11. a partial id list is ignored rather than writing a 'None' key")
+    # VectorStore.add_documents sends ids=[id, None] when only one Document has
+    # one. Taking that literally would create a vector keyed "None".
+    store.add_texts(["six aws certifications", "docker certified associate"],
+                    [{"source_key": CERTS}, {"source_key": CERTS}],
+                    ids=["explicit-key", None])
+    check("no 'None' key was created", "None" not in store.list_keys(), str(store.list_keys()))
+
+    print("\n12. shorter-than-k index returns what exists instead of erroring")
+    check("k larger than the index is fine",
+          0 < len(store.similarity_search("six aws certifications", k=50)) < 50)
 
 
 def main():

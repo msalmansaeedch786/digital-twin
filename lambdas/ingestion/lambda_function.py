@@ -1,15 +1,20 @@
 import os
 import json
 import boto3
+import sys
 import urllib.parse
 import re
 import logging
+from pathlib import Path
 
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_aws import BedrockEmbeddings
-from langchain_postgres import PGVector
-import psycopg
+
+# build.sh copies lambdas/shared/s3_vector_store.py to the zip root. Running the
+# file locally it is two levels up, hence the append.
+sys.path.append(str(Path(__file__).resolve().parent.parent / "shared"))
+from s3_vector_store import S3VectorStore  # noqa: E402
 
 # ===========================================================================
 # Structured JSON Logging (mirrors the API Lambda pattern)
@@ -50,7 +55,6 @@ logger = logging.getLogger("digital-twin-ingestion")
 # ===========================================================================
 
 s3_client = boto3.client("s3")
-secrets_client = boto3.client("secretsmanager")
 
 # Allowed file extensions for ingestion — explicit allowlist (not blocklist)
 ALLOWED_EXTENSIONS = {".pdf", ".txt", ".md"}
@@ -58,53 +62,21 @@ ALLOWED_EXTENSIONS = {".pdf", ".txt", ".md"}
 MAX_FILENAME_LENGTH = 200
 
 
-def get_db_connection_string():
-    secret_arn = os.environ["DB_SECRET_ARN"]
-    db_host = os.environ["DB_HOST"]
-    db_name = os.environ["DB_NAME"]
+def build_vector_store(embeddings) -> S3VectorStore:
+    """The S3 Vectors index this Lambda writes into.
 
-    response = secrets_client.get_secret_value(SecretId=secret_arn)
-    secret = json.loads(response["SecretString"])
-
-    username = secret["username"]
-    password = urllib.parse.quote_plus(secret["password"])
-    return f"postgresql+psycopg://{username}:{password}@{db_host}:5432/{db_name}"
-
-
-def init_db(connection_string: str):
-    """Ensure pgvector extension exists. Idempotent."""
-    raw_conn_string = connection_string.replace("postgresql+psycopg://", "postgresql://")
-    with psycopg.connect(raw_conn_string, autocommit=True) as conn:
-        with conn.cursor() as cur:
-            cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-    logger.info("pgvector extension verified")
-
-
-COLLECTION_NAME = "digital_twin_docs"
-
-
-def delete_chunks_for_key(connection_string: str, source_key: str) -> int:
+    No credentials and no connection setup: the index is reached with the
+    Lambda's own IAM role. The CREATE EXTENSION bootstrap and the Secrets
+    Manager lookup that used to live here went away with the database.
     """
-    Delete all previously ingested chunks for an S3 key. Idempotent.
-
-    Called before re-ingesting a file (so updates replace rather than duplicate
-    old chunks — this also makes Lambda retries converge to one clean copy) and
-    when a file is deleted from S3 (so stale facts stop being retrieved).
-    """
-    raw_conn_string = connection_string.replace("postgresql+psycopg://", "postgresql://")
-    with psycopg.connect(raw_conn_string, autocommit=True) as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                DELETE FROM langchain_pg_embedding
-                WHERE collection_id = (
-                    SELECT uuid FROM langchain_pg_collection WHERE name = %s
-                )
-                AND cmetadata->>'source_key' = %s
-                """,
-                (COLLECTION_NAME, source_key),
-            )
-            return cur.rowcount
+    bucket = os.environ["VECTOR_BUCKET_NAME"]
+    index = os.environ["VECTOR_INDEX_NAME"]
+    return S3VectorStore(
+        client=boto3.client("s3vectors"),
+        vector_bucket_name=bucket,
+        index_name=index,
+        embedding=embeddings,
+    )
 
 
 def safe_filename(key: str) -> str:
@@ -154,15 +126,7 @@ def lambda_handler(event, context):
     )
 
     # 2. Setup Vector Store
-    conn_string = get_db_connection_string()
-    init_db(conn_string)
-
-    vector_store = PGVector(
-        embeddings=embeddings,
-        collection_name=COLLECTION_NAME,
-        connection=conn_string,
-        use_jsonb=True,
-    )
+    vector_store = build_vector_store(embeddings)
 
     # 3. Process each S3 record
     for record in event["Records"]:
@@ -175,7 +139,7 @@ def lambda_handler(event, context):
         # versioned, so `aws s3 sync --delete` emits ObjectRemoved:DeleteMarkerCreated
         # (not ObjectRemoved:Delete) — match the whole ObjectRemoved family.
         if event_name.startswith("ObjectRemoved"):
-            deleted = delete_chunks_for_key(conn_string, raw_key)
+            deleted = vector_store.delete_by_source_key(raw_key)
             logger.info("Object removed from S3 — purged its vectors",
                         extra={"key": raw_key, "chunks_deleted": deleted})
             continue
@@ -214,14 +178,17 @@ def lambda_handler(event, context):
                 chunk.metadata["source_key"] = raw_key
                 chunk.metadata["bucket"] = bucket
 
-            # 6. Upsert into PGVector: purge any chunks from a previous version
-            # of this file first, so re-ingestion replaces instead of duplicating.
-            purged = delete_chunks_for_key(conn_string, raw_key)
+            # 6. Upsert: purge any chunks from a previous version of this file
+            # first, so re-ingestion replaces instead of duplicating. Vector keys
+            # are "<s3 key>#<chunk index>", so a file that keeps the same chunk
+            # count would overwrite in place anyway — but a file that shrinks
+            # would leave orphans behind without this.
+            purged = vector_store.delete_by_source_key(raw_key)
             if purged:
                 logger.info("Purged old chunks before re-ingest",
                             extra={"key": raw_key, "chunks_deleted": purged})
             vector_store.add_documents(chunks)
-            logger.info("Stored chunks in pgvector", extra={"chunk_count": len(chunks)})
+            logger.info("Stored chunks in S3 Vectors", extra={"chunk_count": len(chunks)})
 
         except ValueError as e:
             # Invalid/unsafe file — log and skip (don't crash the whole batch)

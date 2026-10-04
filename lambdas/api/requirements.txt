@@ -4,13 +4,14 @@
 
 # AWS + AI
 langchain-aws==0.2.11
-langchain-postgres==0.0.12
-langchain-community==0.3.14
 
-# Database
-psycopg==3.2.13
-psycopg-binary==3.2.13
-# SQLAlchemy (pulled in by langchain-postgres) needs greenlet for its asyncio
+# main.py imports langchain.chains.{retrieval,combine_documents}. This used to
+# arrive transitively via langchain-community, which is now local-only — so it
+# is pinned explicitly. Relying on a transitive for something we import directly
+# is exactly what caused the greenlet outage; do not unpin it.
+langchain==0.3.25
+
+# SQLAlchemy (pulled in by langchain, above) needs greenlet for its asyncio
 # support, but declares it behind an environment marker on platform_machine.
 # build.sh cross-builds with --platform manylinux2014_aarch64 from an x86_64
 # runner, and pip evaluates markers against the HOST, so the marker is false
@@ -19,17 +20,17 @@ psycopg-binary==3.2.13
 # explicitly so the cross-build cannot omit it.
 greenlet==3.2.5
 
+# Vector store is Amazon S3 Vectors, reached through the boto3 client that the
+# bundled botocore already provides — no database driver, no connection pool.
+# langchain-postgres/psycopg moved to requirements-local.txt: pgvector is now
+# only used by the local no-AWS path.
+
 # Web framework
 fastapi==0.111.0
 mangum==0.17.0
-uvicorn==0.30.1
 
 # Rate limiting (application-level defense-in-depth layer)
 slowapi==0.1.9
 
 # Input validation
 pydantic==2.7.4
-email-validator==2.2.0
-
-# Utilities
-python-dotenv==1.1.0

@@ -98,9 +98,12 @@ class S3VectorStore(VectorStore):
         if len(metadatas) != len(texts):
             raise ValueError("metadatas must be the same length as texts")
 
-        keys = ids if ids is not None else self._derive_keys(metadatas)
-        if len(keys) != len(texts):
+        # VectorStore.add_documents forwards ids whenever ANY document carries
+        # one, filling the rest with None. A None would become the literal vector
+        # key "None", so fall back to deriving unless every id is present.
+        if ids is not None and len(ids) != len(texts):
             raise ValueError("ids must be the same length as texts")
+        keys = list(ids) if ids and all(ids) else self._derive_keys(metadatas)
 
         vectors = self._embedding.embed_documents(texts)
         payload = [
