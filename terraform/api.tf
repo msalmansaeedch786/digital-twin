@@ -46,10 +46,17 @@ resource "aws_lambda_function" "api" {
     mode = "PassThrough"
   }
 
-  vpc_config {
-    subnet_ids         = [aws_subnet.private_1.id, aws_subnet.private_2.id]
-    security_group_ids = [aws_security_group.lambda.id]
-  }
+  # No vpc_config. These functions were in the VPC for one reason — reaching RDS
+  # on a private subnet — and the vector store is now S3 Vectors, an IAM-authorised
+  # HTTPS API. Outside the VPC they get ordinary egress via the Lambda service and
+  # can reach s3vectors, Bedrock and S3 directly.
+  #
+  # This is not a tidy-up, it is load-bearing. These subnets have no NAT gateway;
+  # the only egress is three VPC endpoints (s3, secretsmanager, bedrock-runtime).
+  # The S3 GATEWAY endpoint does not cover s3vectors — that is a separate service
+  # name — so a VPC-attached Lambda has no route to it at all, and every query
+  # hangs until the 30s function timeout rather than failing fast. Putting these
+  # back in the VPC without adding an s3vectors endpoint breaks chat completely.
 
 
 
