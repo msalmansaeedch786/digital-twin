@@ -1,4 +1,6 @@
 import os
+import sys
+import boto3
 import time
 import logging
 from pathlib import Path
@@ -7,8 +9,14 @@ from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_aws import BedrockEmbeddings
-from langchain_postgres import PGVector
-import psycopg
+
+# The shared store sits in lambdas/shared/; this script runs from lambdas/api/.
+sys.path.append(str(Path(__file__).resolve().parent.parent / "shared"))
+from s3_vector_store import S3VectorStore  # noqa: E402
+
+# langchain_postgres and psycopg are imported lazily in the pgvector branch
+# below: they are local-only dependencies (requirements-local.txt) and must not
+# be required just to ingest into S3 Vectors.
 
 # Load environment variables
 load_dotenv()
@@ -29,6 +37,8 @@ def get_db_connection_string() -> str:
 
 def init_db(connection_string: str):
     """Ensure pgvector extension exists."""
+    import psycopg  # local-only dependency; see requirements-local.txt
+
     raw_conn_string = connection_string.replace("postgresql+psycopg://", "postgresql://")
     with psycopg.connect(raw_conn_string, autocommit=True) as conn:
         with conn.cursor() as cur:
@@ -40,6 +50,8 @@ COLLECTION_NAME = "digital_twin_docs"
 def delete_chunks_for_key(connection_string: str, source_key: str) -> int:
     """Delete previously ingested chunks for a file (same upsert semantics as the
     deployed ingestion Lambda — keep the two in sync)."""
+    import psycopg  # local-only dependency; see requirements-local.txt
+
     raw_conn_string = connection_string.replace("postgresql+psycopg://", "postgresql://")
     with psycopg.connect(raw_conn_string, autocommit=True) as conn:
         with conn.cursor() as cur:
@@ -108,24 +120,61 @@ def main():
             region_name=region,
         )
 
-    conn_string = get_db_connection_string()
-    init_db(conn_string)
+    # Must match what the API serves from, for the same reason AI_PROVIDER must:
+    # vectors are only readable by the store that wrote them.
+    store_kind = os.environ.get("VECTOR_STORE", "s3vectors").lower()
+    conn_string = None
 
-    vector_store = PGVector(
-        embeddings=embeddings,
-        collection_name=COLLECTION_NAME,
-        connection=conn_string,
-        use_jsonb=True,
-    )
+    if store_kind == "pgvector":
+        from langchain_postgres import PGVector
+
+        conn_string = get_db_connection_string()
+        init_db(conn_string)
+        vector_store = PGVector(
+            embeddings=embeddings,
+            collection_name=COLLECTION_NAME,
+            connection=conn_string,
+            use_jsonb=True,
+        )
+        destination = "PostgreSQL (pgvector)"
+    else:
+        bucket = os.environ.get("VECTOR_BUCKET_NAME")
+        index = os.environ.get("VECTOR_INDEX_NAME")
+        if not bucket or not index:
+            raise ValueError("VECTOR_BUCKET_NAME and VECTOR_INDEX_NAME must be set "
+                             "for VECTOR_STORE=s3vectors (see terraform output)")
+        vector_store = S3VectorStore(
+            client=boto3.client("s3vectors", region_name=region),
+            vector_bucket_name=bucket,
+            index_name=index,
+            embedding=embeddings,
+        )
+        destination = f"S3 Vectors ({bucket}/{index})"
 
     # 4. Upsert: purge old chunks for each file so re-runs replace, not duplicate
     for key in sorted({c.metadata["source_key"] for c in chunks}):
-        deleted = delete_chunks_for_key(conn_string, key)
+        if store_kind == "pgvector":
+            deleted = delete_chunks_for_key(conn_string, key)
+        else:
+            deleted = vector_store.delete_by_source_key(key)
         if deleted:
             logger.info(f"Purged {deleted} old chunks for {key}")
 
-    # 5. Store in PostgreSQL
-    logger.info("Generating embeddings via %s and storing in PostgreSQL (pgvector)..." % ("Ollama" if provider == "ollama" else "Amazon Bedrock"))
+    # 5. Store
+    logger.info("Generating embeddings via %s and storing in %s..."
+                % ("Ollama" if provider == "ollama" else "Amazon Bedrock", destination))
+
+    # Vector keys must be numbered across ALL of a file's chunks, not per batch.
+    # S3VectorStore derives "<source>#<n>" counting within a single call, so a
+    # file whose chunks straddle two batches would restart at 0 and overwrite
+    # its own earlier vectors. Compute the ids up front and slice them alongside.
+    counters: dict = {}
+    ids = []
+    for chunk in chunks:
+        src = chunk.metadata["source_key"]
+        n = counters.get(src, 0)
+        counters[src] = n + 1
+        ids.append(f"{src}#{n}")
 
     # Process in batches to avoid rate limits
     batch_size = 20
@@ -133,10 +182,13 @@ def main():
         batch = chunks[i:i+batch_size]
         logger.info(f"Processing batch {i//batch_size + 1}/{(len(chunks)-1)//batch_size + 1}...")
 
-        vector_store.add_documents(batch)
+        if store_kind == "pgvector":
+            vector_store.add_documents(batch)
+        else:
+            vector_store.add_documents(batch, ids=ids[i:i+batch_size])
         time.sleep(1) # Small delay to respect API rate limits
 
-    logger.info(f"Successfully ingested all data into PostgreSQL Database.")
+    logger.info(f"Successfully ingested all data into {destination}.")
 
 if __name__ == "__main__":
     main()

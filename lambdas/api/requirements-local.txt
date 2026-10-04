@@ -9,3 +9,21 @@
 # 0.2.1 is the newest release compatible with the langchain-core
 # 0.3.63 that langchain-aws 0.2.11 and langchain-community 0.3.14 pin.
 langchain-ollama==0.2.1
+
+# --- Local-only, moved out of the Lambda zip ------------------------------
+# None of these are imported by main.py at runtime. They were ~55 MB of an
+# artifact that was sitting at 225 MB against Lambda's 250 MB unzipped limit.
+#
+# langchain-community + python-dotenv: used only by ingest.py, the local
+#   one-shot ingestion script.
+# langchain-postgres + psycopg: the pgvector path, which now exists only so the
+#   stack can run with no AWS (VECTOR_STORE=pgvector).
+# uvicorn: the local dev server. Lambda is served by Mangum.
+# email-validator: nothing references it; pydantic only needs it for EmailStr.
+langchain-community==0.3.14
+langchain-postgres==0.0.12
+psycopg==3.2.13
+psycopg-binary==3.2.13
+python-dotenv==1.1.0
+uvicorn==0.30.1
+email-validator==2.2.0

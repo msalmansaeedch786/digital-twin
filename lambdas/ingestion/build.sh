@@ -45,4 +45,12 @@ cd "$DIR"
 touch -t 202001010000.00 "$DIR/lambda_function.py"
 zip -X -g "$ZIP_FILE" lambda_function.py > /dev/null
 
+# The vector store is shared by both Lambdas, so it lives in lambdas/shared/
+# rather than being copied into each. It is injected at the ZIP ROOT, which is
+# what makes `import s3_vector_store` resolve at runtime. Only the module goes
+# in — the integration test beside it stays out of the artifact.
+cd "$DIR/../shared"
+touch -t 202001010000.00 s3_vector_store.py
+zip -X -g "$ZIP_FILE" s3_vector_store.py > /dev/null
+
 echo "Build complete: $ZIP_FILE"

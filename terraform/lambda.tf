@@ -95,9 +95,8 @@ resource "aws_lambda_function" "ingestion" {
 
   environment {
     variables = {
-      DB_HOST                    = aws_db_instance.postgres.address
-      DB_NAME                    = aws_db_instance.postgres.db_name
-      DB_SECRET_ARN              = aws_db_instance.postgres.master_user_secret[0].secret_arn
+      VECTOR_BUCKET_NAME         = aws_s3vectors_vector_bucket.knowledge_base.vector_bucket_name
+      VECTOR_INDEX_NAME          = aws_s3vectors_index.documents.index_name
       ENVIRONMENT                = "production"
       BEDROCK_EMBEDDING_MODEL_ID = var.bedrock_embedding_model_id
     }
