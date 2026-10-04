@@ -143,7 +143,12 @@ def run(store):
                     ids=["explicit-key", None])
     check("no 'None' key was created", "None" not in store.list_keys(), str(store.list_keys()))
 
-    print("\n12. shorter-than-k index returns what exists instead of erroring")
+    print("\n12. get_by_ids round-trips text and metadata, and tolerates absent keys")
+    got = store.get_by_ids([f"{CERTS}#0", "nope#0"])
+    check("returns only the key that exists", len(got) == 1, str([d.metadata.get("vector_key") for d in got]))
+    check("page_content came back", got and got[0].page_content != "", got[0].page_content if got else "")
+
+    print("\n13. shorter-than-k index returns what exists instead of erroring")
     check("k larger than the index is fine",
           0 < len(store.similarity_search("six aws certifications", k=50)) < 50)
 

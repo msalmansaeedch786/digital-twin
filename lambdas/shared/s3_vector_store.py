@@ -175,6 +175,21 @@ class S3VectorStore(VectorStore):
         hits = self.client.query_vectors(**request).get("vectors", [])
         return [(self._to_document(h), float(h.get("distance", 0.0))) for h in hits]
 
+    def get_by_ids(self, ids, /):
+        """Fetch documents by vector key.
+
+        Not used by the RAG chain, but it is part of the VectorStore contract and
+        it is what you reach for when checking what actually got stored. Keys that
+        do not exist are simply absent from the result rather than raising.
+        """
+        ids = list(ids)
+        found = []
+        for start in range(0, len(ids), 100):          # get_vectors caps the batch
+            response = self.client.get_vectors(
+                **self._target(), keys=ids[start:start + 100], returnMetadata=True)
+            found.extend(self._to_document(v) for v in response.get("vectors", []))
+        return found
+
     # ---- deletes ------------------------------------------------------------
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> bool:
