@@ -27,6 +27,12 @@ resource "aws_s3vectors_vector_bucket" "knowledge_base" {
   # s3vectors permissions, and Terraform saw no reason to update that policy
   # before trying to create the bucket. Forcing the order means one apply can do
   # both. Once the policy is in place this is a no-op.
+  #
+  # Ordering is necessary but not sufficient: observed on the first run, the
+  # policy update completed and this create started 20 ms later, which IAM had
+  # not propagated yet — so it still returned AccessDenied, and Terraform does
+  # not retry that. On a cold rebuild of this stack, expect to run apply twice.
+  # Not worth a time_sleep and a provider dependency for a path taken once.
   depends_on = [aws_iam_policy.github_actions_policy]
 }
 

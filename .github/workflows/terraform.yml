@@ -19,7 +19,16 @@ on:
 # Two pushes a minute apart is enough to trigger it. Queue runs instead, and
 # never cancel one mid-apply: that would drop the lock with state half-written.
 concurrency:
-  group: terraform-${{ github.ref }}
+  # Keyed on the WORKFLOW, not the ref. Terraform holds a single DynamoDB state
+  # lock for the whole backend, so two runs on different refs collide just as
+  # surely as two on the same one. That is not hypothetical: a push to main and a
+  # pull_request plan started two seconds apart, landed in different groups
+  # because this was once terraform-${{ github.ref }}, and the second died on
+  # ConditionalCheckFailedException mid-apply. Queue every run of this workflow
+  # against every other.
+  group: terraform-state
+  # Never cancel: a run killed mid-apply drops the state lock with state
+  # half-written, which is far worse than waiting for the queue.
   cancel-in-progress: false
 
 permissions:
