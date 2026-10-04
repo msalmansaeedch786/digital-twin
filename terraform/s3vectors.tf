@@ -21,6 +21,13 @@ resource "aws_s3vectors_vector_bucket" "knowledge_base" {
   force_destroy = true
 
   tags = { Name = "${var.project_name}-vectors" }
+
+  # Bootstrap ordering, not a logical dependency. The first apply of this stack
+  # failed with AccessDeniedException: the GitHub Actions deploy role had no
+  # s3vectors permissions, and Terraform saw no reason to update that policy
+  # before trying to create the bucket. Forcing the order means one apply can do
+  # both. Once the policy is in place this is a no-op.
+  depends_on = [aws_iam_policy.github_actions_policy]
 }
 
 resource "aws_s3vectors_index" "documents" {
