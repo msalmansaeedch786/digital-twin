@@ -26,3 +26,13 @@ output "custom_domain_sub_domains" {
   description = "Sub-domain CNAME record(s) mapping the custom domain to the Amplify app"
   value       = var.custom_domain == "" ? null : aws_amplify_domain_association.custom[0].sub_domain
 }
+
+output "vector_bucket_name" {
+  description = "S3 Vectors bucket holding the knowledge-base embeddings"
+  value       = aws_s3vectors_vector_bucket.knowledge_base.vector_bucket_name
+}
+
+output "vector_index_name" {
+  description = "S3 Vectors index queried by the API Lambda"
+  value       = aws_s3vectors_index.documents.index_name
+}
