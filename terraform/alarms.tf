@@ -347,6 +347,9 @@ resource "aws_cloudwatch_metric_alarm" "lambda_api_throttles" {
   }
 
   alarm_actions = [aws_sns_topic.alerts.arn]
+  # Both of these are transient conditions, so knowing they cleared is half
+  # the signal. Without an OK action you only ever see the bad half.
+  ok_actions = [aws_sns_topic.alerts.arn]
 }
 
 resource "aws_cloudwatch_metric_alarm" "lambda_api_duration_p99" {
@@ -366,4 +369,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_api_duration_p99" {
   }
 
   alarm_actions = [aws_sns_topic.alerts.arn]
+  # Both of these are transient conditions, so knowing they cleared is half
+  # the signal. Without an OK action you only ever see the bad half.
+  ok_actions = [aws_sns_topic.alerts.arn]
 }

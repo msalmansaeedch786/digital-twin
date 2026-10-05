@@ -157,6 +157,11 @@ resource "aws_cloudwatch_metric_alarm" "ingestion_dlq" {
   }
 
   alarm_actions = [aws_sns_topic.alerts.arn]
+  # Recovery matters here as much as the failure. Without this the alarm fires
+  # once and then sits red with no further word — ten messages from the greenlet
+  # outage on 2026-10-03 kept it firing for two days, and draining the queue
+  # produced no notification to confirm it was dealt with.
+  ok_actions = [aws_sns_topic.alerts.arn]
 }
 
 # ===========================================================================

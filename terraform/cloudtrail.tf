@@ -168,4 +168,8 @@ resource "aws_cloudwatch_metric_alarm" "root_usage" {
   treat_missing_data  = "notBreaching"
 
   alarm_actions = [aws_sns_topic.alerts.arn]
+  # Deliberately NO ok_actions, unlike every other alarm in this stack. Root usage
+  # is an event, not a state: "the root account has stopped being used" carries no
+  # information and would just train you to ignore the topic. The other alarms
+  # describe conditions that genuinely recover.
 }
