@@ -51,6 +51,33 @@ The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline
 
 ![Digital Twin AWS Architecture](frontend/public/architecture.png)
 
+<details>
+<summary><b>What this looked like before 5 October 2026 — and why it changed</b></summary>
+
+<br>
+
+![Architecture before the S3 Vectors migration](frontend/public/architecture-before-s3vectors.png)
+
+The earlier design put a PostgreSQL database inside a private VPC, with three PrivateLink endpoints so the Lambdas could reach Bedrock, Secrets Manager and S3 without touching the public internet. Textbook network isolation.
+
+What changed, and what it cost:
+
+| | Before | After |
+|---|---|---|
+| Vector store | RDS PostgreSQL 16 + `pgvector` | Amazon S3 Vectors |
+| Network | VPC, 2 private subnets, 3 endpoints | none — no VPC at all |
+| Credentials | DB password in Secrets Manager | none, IAM roles only |
+| Alarms | 10 (3 of them watching RDS) | 7 |
+| Daily cost | **$1.14** ($1.12 of it RDS + VPC) | the 98% removed |
+| Vector search | 12.6 ms | 64 ms |
+| End-to-end answer | 1057 ms | 1107 ms |
+
+The second-to-last row is why the change is interesting, and the last row is why it was safe. S3 Vectors is genuinely ~5× slower at the search step — but search was **1.2% of the time a visitor waits**, so the whole trade costs about **50 ms on a ~1.1 s answer** while removing 98% of the bill.
+
+It was verified rather than assumed: a 16-question suite in both locales was recorded *before* any change and re-run twice afterwards, scoring identically each time (46/46 facts retrieved, 6/6 invented-fact traps avoided). See [`scripts/eval/`](scripts/eval/) and the committed runs in [`scripts/eval/runs/`](scripts/eval/runs/).
+
+</details>
+
 ### Enterprise-Grade Security Architecture
 
 This stack previously ran a PostgreSQL database in private subnets reached over PrivateLink. That was textbook network isolation, and it was also **97.8% of the bill**: measured over a month, the VPC interface endpoints cost $19.37 and RDS $18.35, while Bedrock — the actual AI — cost **$0.00**. Those two line items were one decision, because the endpoints existed only so a VPC-attached Lambda could reach Bedrock and Secrets Manager, and the Lambda was in the VPC only to reach the database.
@@ -180,6 +207,7 @@ digital-twin/
 ├── scripts/                        # Dev helpers
 │   ├── start.sh / stop.sh          # Run backend + frontend locally
 │   └── generate_diagram.py         # -> frontend/public/architecture.png
+│                                   #    (architecture-before-s3vectors.png is kept for comparison)
 └── .github/workflows/              # CI/CD: terraform.yml (build + deploy), data_sync.yml (S3 sync)
 ```
 
