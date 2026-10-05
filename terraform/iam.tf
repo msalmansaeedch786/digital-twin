@@ -72,13 +72,24 @@ resource "aws_iam_policy" "lambda_api_custom" {
         ]
       },
       {
-        # Retrieval is the only thing this Lambda does to the vector store —
-        # similarity_search() calls QueryVectors and nothing else. It cannot
-        # write, delete or enumerate, so a compromised API Lambda cannot
-        # corrupt or exfiltrate the index wholesale.
-        Sid      = "S3VectorsQueryAccess"
-        Effect   = "Allow"
-        Action   = ["s3vectors:QueryVectors"]
+        # Retrieval only. The Lambda cannot write, delete or enumerate, so a
+        # compromised API Lambda still cannot corrupt the index or dump it
+        # wholesale.
+        #
+        # GetVectors is NOT redundant: a single QueryVectors call with
+        # returnMetadata=true authorises BOTH actions, because returning the
+        # chunk text is a read of the vector. Granting QueryVectors alone looks
+        # correct and fails at runtime with
+        #   "not authorized to perform: s3vectors:GetVectors"
+        # which is how it reached production. AWS's action reference lists the
+        # two separately and does not say one implies the other, and an
+        # admin-credentialed test cannot reveal it.
+        Sid    = "S3VectorsQueryAccess"
+        Effect = "Allow"
+        Action = [
+          "s3vectors:QueryVectors",
+          "s3vectors:GetVectors"
+        ]
         Resource = [aws_s3vectors_index.documents.index_arn]
       }
     ]
