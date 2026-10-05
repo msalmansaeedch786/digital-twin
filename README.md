@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js" />
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Python_3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
-  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/S3_Vectors-569A31?style=for-the-badge&logo=amazons3&logoColor=white" alt="Amazon S3 Vectors" />
 </p>
 
 <p align="center">
@@ -28,7 +28,7 @@
 
 **AI Digital Twin** is a fully serverless conversational AI system that acts as a personalized digital avatar. It is capable of answering detailed questions about a professional's background, experience, and skills in real-time.
 
-The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline backed by Amazon Bedrock, PostgreSQL with pgvector, and a hardened FastAPI backend. All infrastructure is deployed and managed deterministically via Terraform. The frontend is a highly responsive Next.js application hosted on AWS Amplify, featuring a ChatGPT-style chat interface with integrated voice capabilities.
+The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline backed by Amazon Bedrock, Amazon S3 Vectors, and a hardened FastAPI backend. All infrastructure is deployed and managed deterministically via Terraform. The frontend is a highly responsive Next.js application hosted on AWS Amplify, featuring a ChatGPT-style chat interface with integrated voice capabilities.
 
 **Live Demo**: [msalmansaeedch.de](https://msalmansaeedch.de)
 
@@ -36,14 +36,14 @@ The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline
 
 ## Key Features
 
-- **Serverless RAG Pipeline**: Combines Amazon Bedrock's Foundation Models (Titan Embeddings V2 & Nova Lite) with PostgreSQL (pgvector) for accurate responses grounded strictly in ingested documents, minimizing hallucination.
-- **Enterprise-Grade Security**: Implements a strict Zero-Trust network topology using AWS PrivateLink (VPC Endpoints) to ensure all database and AI API traffic never traverses the public internet.
+- **Serverless RAG Pipeline**: Combines Amazon Bedrock's Foundation Models (Titan Embeddings V2 & Nova Lite) with **Amazon S3 Vectors** for accurate responses grounded strictly in ingested documents, minimizing hallucination. No database and no VPC: every component is serverless and billed per request.
+- **IAM-Scoped Access, No Network Perimeter**: Every component authenticates with its own least-privilege IAM role rather than relying on network isolation. The API Lambda holds read-only access to the vector index and cannot write to it; ingestion can write but never serves traffic.
 - **Infrastructure as Code (IaC)**: 100% of the AWS infrastructure is codified in Terraform, allowing for reproducible and automated deployments.
 - **Event-Driven Data Ingestion**: Simply uploading a PDF or Text file to an S3 bucket automatically triggers an asynchronous Lambda pipeline that chunks, embeds, and stores the knowledge in the database.
 - **Automated CI/CD Pipeline**: Employs GitHub Actions to automatically build the Lambda packages and run `terraform plan` / `terraform apply` on every push to the deployment branch, using AWS OpenID Connect (OIDC) for passwordless, keyless deployments.
 - **History-Aware Conversations**: Employs an LLM-driven query rewriting step that maintains context across long conversational threads.
 - **Bilingual (English / German)**: The portfolio and the twin are served under locale-segmented routes (`/en`, `/de`), both statically prerendered and edge-cached, with canonical + `hreflang` metadata and a generated `sitemap.xml`. The knowledge base stays English and a request carries a `lang` field. Language moves in both directions around retrieval: a non-English question is rewritten into English *before* embedding, so it matches the English vectors properly, and the answer is then generated back in the reader's language. An English question with no history skips that rewrite and pays no extra latency.
-- **Hardened Security**: Features rate limiting, payload sanitization, AWS Secrets Manager integration, and IAM Least Privilege policies.
+- **Hardened Security**: Features rate limiting, payload sanitization, and IAM Least Privilege policies. There are no application credentials anywhere in the stack — no database password, no connection string, nothing to rotate or leak.
 
 ---
 
@@ -53,14 +53,16 @@ The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline
 
 ### Enterprise-Grade Security Architecture
 
-Best practice dictates placing Lambda functions and Databases inside **Private Subnets** with **VPC Endpoints** (PrivateLink) to securely connect to AWS services without internet exposure.
+This stack previously ran a PostgreSQL database in private subnets reached over PrivateLink. That was textbook network isolation, and it was also **97.8% of the bill**: measured over a month, the VPC interface endpoints cost $19.37 and RDS $18.35, while Bedrock — the actual AI — cost **$0.00**. Those two line items were one decision, because the endpoints existed only so a VPC-attached Lambda could reach Bedrock and Secrets Manager, and the Lambda was in the VPC only to reach the database.
 
-To achieve a **Production-Ready** baseline, this architecture implements the following enterprise patterns:
-1. **Isolated Subnets**: The PostgreSQL database and Compute Lambdas reside strictly in Private Subnets with no Internet Gateway route, rendering them inaccessible from the public internet.
-2. **AWS PrivateLink (VPC Endpoints)**: Secure, private tunnels are provisioned for Amazon Bedrock Runtime and AWS Secrets Manager (Interface endpoints), plus Amazon S3 (a Gateway endpoint, which carries no hourly charge). Traffic to these services never traverses the public internet. Interface endpoints are deliberately single-AZ, since they bill per-AZ per-hour and this workload does not need cross-AZ endpoint redundancy.
-3. **Least Privilege IAM**: Every Lambda function executes under a tightly scoped IAM role, granting exact permissions (e.g., the Ingestion Lambda's `bedrock:InvokeModel` is scoped to the embedding model ARN alone, so it cannot reach the LLM at all).
-4. **Encrypted Secrets**: The database master password is auto-generated and managed by AWS Secrets Manager, keeping it out of Terraform state entirely. Lambda functions dynamically fetch this secret at runtime.
-5. **Automatic Circuit Breaker**: A CloudWatch alarm on the API Gateway request count (60-second periods) fires an EventBridge rule into a dedicated breaker Lambda, which sets the stage throttle to `0/0` — every request is then rejected at the front door for free, before Lambda or Bedrock can be billed. A second rule fires when the alarm returns to `OK` and restores the normal `5 req/s` limit, so the API self-heals once a flood stops. The breaker deliberately runs **outside** the VPC so it still works if VPC networking is what is failing. This has absorbed live floods of >300,000 requests for a few cents.
+Moving the vector store to **Amazon S3 Vectors** removed the database, which removed the reason for the VPC, which removed the endpoints. The security model shifted from *network perimeter* to *identity*, and the measured cost of retrieval latency was **+50 ms on a ~1.1 s request**.
+
+The patterns this architecture implements now:
+1. **No Credentials Anywhere**: There is no database, so there is no connection string, no master password and no secret to rotate, cache or leak. Every call is signed with the function's own IAM role. The Secrets Manager integration was deleted along with the database it existed to serve.
+2. **Least Privilege IAM, Verified Not Assumed**: Each Lambda runs under a tightly scoped role — the ingestion Lambda's `bedrock:InvokeModel` is scoped to the embedding model ARN alone so it cannot reach the LLM, and the API Lambda holds read-only access to the vector index (`QueryVectors`/`GetVectors`) so a compromised request path cannot write to or enumerate the knowledge base. These grants are exercised as the role that holds them, because an admin-credentialed test cannot prove a least-privilege policy is sufficient.
+3. **Reproducible, Not Backed Up**: Every vector is derived data, regenerated from `data/` by a single ingestion run. There is no backup to restore and no snapshot to pay for, because the source of truth is version-controlled text.
+4. **Retrieval Regression Suite**: The failure that matters in a RAG system is silent — if retrieval returns nothing, the model answers from its own priors and sounds entirely confident. A committed suite captures answers to 16 questions in both locales and diffs two runs, including three questions with no answer in the knowledge base. A CloudWatch alarm on zero-document answers covers it in production.
+5. **Automatic Circuit Breaker**: A CloudWatch alarm on the API Gateway request count (60-second periods) fires an EventBridge rule into a dedicated breaker Lambda, which sets the stage throttle to `0/0` — every request is then rejected at the front door for free, before Lambda or Bedrock can be billed. A second rule fires when the alarm returns to `OK` and restores the normal `5 req/s` limit, so the API self-heals once a flood stops. This has absorbed live floods of >300,000 requests for a few cents.
 6. **Cost Guardrails**: Daily and monthly AWS Budgets plus Cost Anomaly Detection publish to SNS, so unexpected spend is caught even if it never trips a technical alarm.
 
 <details>
@@ -76,7 +78,7 @@ sequenceDiagram
     participant S3 as Amazon S3<br/>(Knowledge Base)
     participant Lambda as AWS Lambda<br/>(Ingestion)
     participant Bedrock as Amazon Bedrock<br/>(Titan Embeddings)
-    participant RDS as Amazon RDS<br/>(PostgreSQL + pgvector)
+    participant SV as Amazon S3 Vectors<br/>(digital-twin-docs)
 
     User->>S3: Upload document (.txt, .pdf)
     S3->>Lambda: S3 Event Notification (s3:ObjectCreated)
@@ -84,8 +86,8 @@ sequenceDiagram
     Note over Lambda: Chunk document<br/>(1000 chars, 200 overlap)
     Lambda->>Bedrock: Generate embeddings per chunk
     Bedrock-->>Lambda: Vector embeddings [1024 dims]
-    Lambda->>RDS: INSERT INTO digital_twin_docs<br/>(embedding, content, metadata)
-    Note over RDS: pgvector stores vectors<br/>for similarity search
+    Lambda->>SV: PutVectors<br/>(key "<s3 key>#<chunk>", embedding, text)
+    Note over SV: deterministic keys make<br/>re-ingestion idempotent
 ```
 
 #### Query Pipeline (RAG Flow)
@@ -100,7 +102,7 @@ sequenceDiagram
     participant LB as Lambda<br/>(FastAPI)
     participant LLM1 as Bedrock<br/>(Nova Lite — Query Rewriter)
     participant EMB as Bedrock<br/>(Titan Embeddings)
-    participant DB as RDS PostgreSQL<br/>(pgvector)
+    participant DB as Amazon S3 Vectors<br/>(cosine, 1024-dim)
     participant LLM2 as Bedrock<br/>(Nova Lite — Generator)
 
     User->>FE: "How long were you at MBition?"
@@ -163,8 +165,7 @@ digital-twin/
 ├── data/                           # Knowledge-base source documents (synced to S3)
 ├── terraform/                      # Infrastructure as Code (references ../lambdas)
 │   ├── provider.tf                 # Provider + S3/DynamoDB remote state backend
-│   ├── vpc.tf                      # VPC, subnets, security groups, VPC endpoints (PrivateLink)
-│   ├── rds.tf                      # PostgreSQL 16 + pgvector instance
+│   ├── s3vectors.tf                # S3 Vectors bucket + index (1024-dim, cosine)
 │   ├── api.tf                      # API Lambda, API Gateway (HTTP API), EventBridge warm-up
 │   ├── lambda.tf                   # Ingestion Lambda, deployment bucket, S3 trigger
 │   ├── amplify.tf                  # Amplify frontend hosting
@@ -232,7 +233,7 @@ The Lambdas run on **arm64 / manylinux2014**, so the dependencies must be built 
 
 ### 3. Provision Infrastructure
 
-Terraform packages the built zips and deploys everything — VPC, RDS, both Lambdas, API Gateway, and Amplify.
+Terraform packages the built zips and deploys everything — S3 Vectors, all three Lambdas, API Gateway, and Amplify. A cold rebuild may need **two** applies: the deploy role's `s3vectors` grant and the vector bucket are created in the same run, and IAM does not propagate in the milliseconds Terraform leaves between them.
 
 ```bash
 cd terraform
@@ -244,7 +245,7 @@ terraform apply
 
 Point the frontend at your deployed API Gateway endpoint and start the dev server.
 
-> **Why the deployed API and not a local one?** RDS is `publicly_accessible = false` and sits in private subnets, so a backend running on your laptop cannot reach the database — `/chat` will fail on connection even though the process starts. Running the frontend against the deployed API is the normal local loop. `./scripts/start.sh` does start both, but the local backend is only useful with a tunnel or a local Postgres.
+> **A local backend now works against the real vector store.** This used to be impossible: RDS sat in private subnets with `publicly_accessible = false`, so a backend on your laptop could not reach the database and `/chat` failed on connection even though the process started. S3 Vectors is an IAM-authorised HTTPS API, so with AWS credentials and `VECTOR_BUCKET_NAME`/`VECTOR_INDEX_NAME` set, `uvicorn main:app` serves real grounded answers with no tunnel and no local Postgres. For a fully offline loop with no AWS at all, see [Running it all locally](#running-it-all-locally).
 
 ```bash
 cd frontend
@@ -259,8 +260,8 @@ npm run dev
 ## Observability
 
 The architecture integrates deeply with AWS native observability tools:
-- **Amazon CloudWatch**: Captures structured JSON logs from the Lambda functions for easy parsing and debugging, and drives a `digital-twin-ops` dashboard plus ten alarms covering API abuse, Lambda errors/throttles/p99 duration, RDS CPU/connections/storage, ingestion DLQ depth, root-account usage, and ungrounded answers (retrieval returning zero documents).
-- **Per-request latency breakdown**: Every chat request logs `embed_ms`, `search_ms`, `generate_ms`, `rewrite_ms`, `chain_ms`, `docs_retrieved` and `lang` (`rewrite_ms` is 0 when the query rewrite was skipped), so Logs Insights can answer where the time actually goes rather than only reporting a total. Measured on warm requests, generation is ~84% of the chain, embedding ~13%, and the pgvector search ~1.4%. `docs_retrieved` also doubles as a grounding check: a sustained 0 means retrieval is returning nothing and answers are no longer grounded.
+- **Amazon CloudWatch**: Captures structured JSON logs from the Lambda functions for easy parsing and debugging, and drives a `digital-twin-ops` dashboard plus seven alarms covering API abuse, Lambda errors/throttles/p99 duration, ingestion DLQ depth, root-account usage, and ungrounded answers (retrieval returning zero documents). The three RDS alarms went with the database; the dashboard panel they occupied now charts ungrounded answers instead, which is the metric that actually distinguishes a healthy RAG system from one confidently inventing facts.
+- **Per-request latency breakdown**: Every chat request logs `embed_ms`, `search_ms`, `generate_ms`, `rewrite_ms`, `chain_ms`, `docs_retrieved` and `lang` (`rewrite_ms` is 0 when the query rewrite was skipped), so Logs Insights can answer where the time actually goes rather than only reporting a total. Measured on warm requests, generation is ~65% of the chain, embedding ~9%, and the S3 Vectors search ~6% (64 ms median). That search step was 12.6 ms on pgvector — roughly 5x faster in isolation, and worth 1.2% of a request, which is the whole argument for having moved it. `docs_retrieved` also doubles as a grounding check: a sustained 0 means retrieval is returning nothing and answers are no longer grounded.
 - **Traffic attribution**: The API Gateway access log records `userAgent` and `path`, and the chat log records `user_agent` and `origin`, so real browser traffic can be separated from scripted calls and uptime pings.
 - **Amazon SNS**: Delivers every alarm, circuit-breaker action, budget threshold, and cost anomaly to email.
 - **Amazon SQS**: A dead-letter queue captures ingestion events that fail all retries, so a bad document is visible rather than silently dropped.
@@ -283,7 +284,7 @@ From now on, every time you run `git commit`, tools like `terraform fmt` and `te
 
 ### Fully Local Development (no AWS)
 
-The stack can run entirely offline — local Postgres instead of RDS, Ollama instead of Bedrock, no credentials of any kind. `AI_PROVIDER` selects between the two; `bedrock` stays the default, so nothing about the deployed Lambda changes.
+The stack can run entirely offline — local Postgres with `pgvector` instead of S3 Vectors, Ollama instead of Bedrock, no credentials of any kind. Two switches select this: `AI_PROVIDER=ollama` and `VECTOR_STORE=pgvector`. Both default to the cloud path, so nothing about the deployed Lambda changes. S3 Vectors has no local emulator, which is the only reason `langchain-postgres` and `psycopg` still exist in the project at all — they live in `requirements-local.txt` and never enter the Lambda zip.
 
 **1. Install the pieces**
 
@@ -327,7 +328,7 @@ python3.12 -m venv venv
 
 ```bash
 set -a; . ./.env; set +a
-./venv/bin/python ingest.py                       # embeds data/ into local pgvector
+VECTOR_STORE=pgvector ./venv/bin/python ingest.py # embeds data/ into local pgvector
 ./venv/bin/uvicorn main:app --port 8000 --reload
 ```
 

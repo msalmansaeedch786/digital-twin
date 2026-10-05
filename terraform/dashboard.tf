@@ -91,37 +91,21 @@ resource "aws_cloudwatch_dashboard" "ops" {
         }
       },
 
-      # --- Row 3: Database ---
+      # --- Row 3: Grounding ---
+      # Replaced the RDS CPU / connections / free-storage panels, which died with
+      # the database. This is the metric that matters for a RAG system and the one
+      # the old panels could never have shown: whether answers are still grounded.
+      # Every technical metric can look healthy while the twin confidently invents
+      # a career, and that failure is only visible here.
       {
-        type = "metric", x = 0, y = 14, width = 8, height = 6
+        type = "metric", x = 0, y = 14, width = 24, height = 6
         properties = {
-          title  = "RDS CPU %"
+          title  = "Ungrounded answers (must stay 0)"
           region = var.aws_region, view = "timeSeries", stacked = false, period = 300
           metrics = [
-            ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", aws_db_instance.postgres.identifier, { stat = "Average", label = "cpu %" }]
-          ]
-          yAxis = { left = { min = 0, max = 100 } }
-        }
-      },
-      {
-        type = "metric", x = 8, y = 14, width = 8, height = 6
-        properties = {
-          title  = "RDS connections"
-          region = var.aws_region, view = "timeSeries", stacked = false, period = 300
-          metrics = [
-            ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", aws_db_instance.postgres.identifier, { stat = "Maximum", label = "connections" }]
+            ["DigitalTwin", "UngroundedAnswers", { stat = "Sum", label = "chat answers with 0 retrieved documents" }]
           ]
           yAxis = { left = { min = 0 } }
-        }
-      },
-      {
-        type = "metric", x = 16, y = 14, width = 8, height = 6
-        properties = {
-          title  = "RDS free storage (GB)"
-          region = var.aws_region, view = "timeSeries", stacked = false, period = 300
-          metrics = [
-            ["AWS/RDS", "FreeStorageSpace", "DBInstanceIdentifier", aws_db_instance.postgres.identifier, { stat = "Minimum", label = "free bytes" }]
-          ]
         }
       },
 
@@ -136,9 +120,11 @@ resource "aws_cloudwatch_dashboard" "ops" {
             aws_cloudwatch_metric_alarm.lambda_api_errors.arn,
             aws_cloudwatch_metric_alarm.lambda_api_throttles.arn,
             aws_cloudwatch_metric_alarm.lambda_api_duration_p99.arn,
-            aws_cloudwatch_metric_alarm.rds_cpu.arn,
-            aws_cloudwatch_metric_alarm.rds_connections.arn,
-            aws_cloudwatch_metric_alarm.rds_storage.arn
+            # The three RDS alarms went with the database. This one was missing
+            # from the panel and is the one that matters most: every other guard
+            # here can be green while the twin answers from the model's priors
+            # because retrieval returned nothing.
+            aws_cloudwatch_metric_alarm.ungrounded_answers.arn
           ]
         }
       }
