@@ -114,7 +114,11 @@ def main():
     # The binding limit is slowapi's @limiter.limit("20/minute") per IP in main.py,
     # NOT the API Gateway stage (5 rps / burst 10). At ~1.4s median latency, a 2.5s
     # gap lands around 15 req/min with headroom for a slow German answer.
-    ap.add_argument("--delay", type=float, default=2.5,
+    # 2.5s measured too close to the line: once a warmup ping and a manual test
+    # share the same minute and IP, the suite trips 429 and each retry costs 25s
+    # of backoff, which is far more than the pacing ever saves. 3.5s lands near
+    # 13 req/min against a 20/min limit.
+    ap.add_argument("--delay", type=float, default=3.5,
                     help="seconds between calls (app limit is 20/min per IP)")
     args = ap.parse_args()
 
