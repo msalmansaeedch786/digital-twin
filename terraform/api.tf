@@ -51,12 +51,13 @@ resource "aws_lambda_function" "api" {
   # HTTPS API. Outside the VPC they get ordinary egress via the Lambda service and
   # can reach s3vectors, Bedrock and S3 directly.
   #
-  # This is not a tidy-up, it is load-bearing. These subnets have no NAT gateway;
-  # the only egress is three VPC endpoints (s3, secretsmanager, bedrock-runtime).
-  # The S3 GATEWAY endpoint does not cover s3vectors — that is a separate service
-  # name — so a VPC-attached Lambda has no route to it at all, and every query
-  # hangs until the 30s function timeout rather than failing fast. Putting these
-  # back in the VPC without adding an s3vectors endpoint breaks chat completely.
+  # This is load-bearing, not a tidy-up. The VPC itself is gone now, but the
+  # lesson is worth keeping: when these functions WERE in it, the private subnets
+  # had no NAT gateway and the only egress was three VPC endpoints (s3,
+  # secretsmanager, bedrock-runtime). The S3 GATEWAY endpoint does not cover
+  # s3vectors — a separate service name — so a VPC-attached Lambda had no route to
+  # it at all, and every chat request hung until the 30s timeout instead of
+  # failing fast. Re-introducing a VPC here means adding an s3vectors endpoint too.
 
 
 

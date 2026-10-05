@@ -13,13 +13,11 @@ import os
 from diagrams import Cluster, Diagram, Edge
 from diagrams.aws.compute import Lambda
 from diagrams.aws.cost import Budgets, CostExplorer
-from diagrams.aws.database import RDS
 from diagrams.aws.integration import Eventbridge, SNS, SQS
 from diagrams.aws.management import Cloudtrail, Cloudwatch, CloudwatchAlarm
 from diagrams.aws.ml import Bedrock
 from diagrams.aws.mobile import Amplify
-from diagrams.aws.network import APIGateway, Endpoint
-from diagrams.aws.security import SecretsManager
+from diagrams.aws.network import APIGateway
 from diagrams.aws.storage import S3
 from diagrams.onprem.client import User
 from diagrams.onprem.vcs import Github
@@ -53,18 +51,11 @@ with Diagram(
         apigw = APIGateway("API Gateway (HTTP)\nthrottle 5 rps / burst 10\nCORS locked to origins")
         warmup = Eventbridge("EventBridge\nrate(5 min) /warmup")
 
-        # --- The network boundary ---
-        with Cluster("Amazon VPC 10.0.0.0/16 — no IGW, no public subnets"):
-            with Cluster("Private Subnets (2 AZs)"):
-                lambda_api = Lambda("API Backend\nFastAPI + Mangum\nLangChain RAG")
-                lambda_ingest = Lambda("Ingestion\nchunk + embed")
-                rds = RDS("PostgreSQL 16\ndb.t4g.micro\n+ pgvector")
-
-            # Interface endpoints are single-AZ to cut per-AZ hourly cost.
-            with Cluster("VPC Endpoints (PrivateLink)"):
-                vpce_bedrock = Endpoint("Bedrock Runtime\n(Interface, 1 AZ)")
-                vpce_secrets = Endpoint("Secrets Manager\n(Interface, 1 AZ)")
-                vpce_s3 = Endpoint("S3\n(Gateway — no hourly cost)")
+        # --- Compute. No VPC: every dependency is an IAM-authorised HTTPS API, so
+        # there is nothing to isolate at the network layer and no endpoints to bill.
+        with Cluster("Lambda (arm64, no VPC)"):
+            lambda_api = Lambda("API Backend\nFastAPI + Mangum\nLangChain RAG")
+            lambda_ingest = Lambda("Ingestion\nchunk + embed")
 
         # --- AWS-managed services reached via the endpoints ---
         with Cluster("Amazon Bedrock"):
@@ -72,6 +63,7 @@ with Diagram(
             bedrock_emb = Bedrock("Titan Embeddings V2\n(vectors)")
 
         with Cluster("Storage"):
+            s3_vectors = S3("S3 Vectors\ndigital-twin-docs\n1024-dim, cosine")
             s3_kb = S3("Knowledge Base\n(versioned)")
             s3_deploy = S3("Lambda\nDeployment Artifacts")
             dlq = SQS("Ingestion DLQ\n(failed events)")
@@ -80,11 +72,10 @@ with Diagram(
         with Cluster("Circuit Breaker (automatic abuse defence)"):
             abuse_alarm = CloudwatchAlarm("api-abuse alarm\n60s period")
             breaker_rules = Eventbridge("Alarm State Change\nALARM  |  OK")
-            breaker = Lambda("Breaker Lambda\noutside the VPC\nclose 0/0 / reopen 5/10")
+            breaker = Lambda("Breaker Lambda\nclose 0/0 / reopen 5/10")
 
         with Cluster("Security & Observability"):
-            secrets = SecretsManager("RDS Credentials\n(auto-rotated)")
-            cw = Cloudwatch("Logs, Metrics,\nDashboard, 10 Alarms")
+            cw = Cloudwatch("Logs, Metrics,\nDashboard, 7 Alarms")
             trail = Cloudtrail("CloudTrail\n(log-file validation)")
             sns = SNS("SNS — Email Alerts")
 
@@ -100,27 +91,17 @@ with Diagram(
     apigw >> Edge(label="AWS_PROXY") >> lambda_api
     warmup >> Edge(label="keeps container warm", style="dashed") >> lambda_api
 
-    lambda_api >> Edge(label="5432 (similarity search)") >> rds
-    lambda_api >> vpce_bedrock
-    lambda_api >> vpce_secrets
+    lambda_api >> Edge(label="QueryVectors (k=5)") >> s3_vectors
+    lambda_api >> bedrock_emb
+    lambda_api >> bedrock_llm
 
     # =====================================================================
     # Ingestion path (event-driven)
     # =====================================================================
     s3_kb >> Edge(label="ObjectCreated / ObjectRemoved", style="dashed") >> lambda_ingest
-    lambda_ingest >> Edge(label="upsert vectors") >> rds
-    lambda_ingest >> vpce_s3
-    lambda_ingest >> vpce_bedrock
-    lambda_ingest >> vpce_secrets
+    lambda_ingest >> Edge(label="PutVectors / DeleteVectors") >> s3_vectors
+    lambda_ingest >> bedrock_emb
     lambda_ingest >> Edge(label="on failure", style="dashed", color="firebrick") >> dlq
-
-    # =====================================================================
-    # Endpoints -> managed services (PrivateLink, never the public internet)
-    # =====================================================================
-    vpce_bedrock >> bedrock_llm
-    vpce_bedrock >> bedrock_emb
-    vpce_secrets >> secrets
-    vpce_s3 >> s3_kb
 
     # =====================================================================
     # Circuit breaker loop: detect -> act -> notify -> self-heal

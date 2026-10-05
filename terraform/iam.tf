@@ -35,26 +35,13 @@ resource "aws_iam_role_policy_attachment" "api_basic" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "aws_iam_role_policy_attachment" "api_vpc" {
-  role       = aws_iam_role.lambda_api.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
-}
-
 resource "aws_iam_policy" "lambda_api_custom" {
   name        = "${var.project_name}-lambda-api-policy"
-  description = "Least-privilege policy for the API Lambda: Bedrock + Secrets Manager (read only)"
+  description = "Least-privilege policy for the API Lambda: Bedrock + S3 Vectors (read only)"
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      {
-        Sid    = "SecretsManagerReadAccess"
-        Effect = "Allow"
-        Action = ["secretsmanager:GetSecretValue"]
-        Resource = [
-          aws_db_instance.postgres.master_user_secret[0].secret_arn
-        ]
-      },
       {
         Sid    = "BedrockInvokeAccess"
         Effect = "Allow"
@@ -117,11 +104,6 @@ resource "aws_iam_role_policy_attachment" "ingestion_basic" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "aws_iam_role_policy_attachment" "ingestion_vpc" {
-  role       = aws_iam_role.lambda_ingestion.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
-}
-
 resource "aws_iam_policy" "lambda_ingestion_custom" {
   name        = "${var.project_name}-lambda-ingestion-policy"
   description = "Least-privilege policy for the Ingestion Lambda: S3 read/delete + Bedrock embeddings + Secrets Manager"
@@ -140,14 +122,6 @@ resource "aws_iam_policy" "lambda_ingestion_custom" {
         Resource = [
           aws_s3_bucket.knowledge_base.arn,
           "${aws_s3_bucket.knowledge_base.arn}/*"
-        ]
-      },
-      {
-        Sid    = "SecretsManagerReadAccess"
-        Effect = "Allow"
-        Action = ["secretsmanager:GetSecretValue"]
-        Resource = [
-          aws_db_instance.postgres.master_user_secret[0].secret_arn
         ]
       },
       {
