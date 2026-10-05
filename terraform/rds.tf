@@ -41,12 +41,24 @@ resource "aws_db_instance" "postgres" {
   publicly_accessible = false
 
   # --- Data Protection ---
-  backup_window             = "02:00-03:00" # Low-traffic window (UTC)
-  maintenance_window        = "Mon:03:30-Mon:04:30"
-  deletion_protection       = true  # Prevents accidental deletion
-  skip_final_snapshot       = false # Create snapshot on deletion
-  final_snapshot_identifier = "${var.project_name}-final-snapshot"
-  copy_tags_to_snapshot     = true
+  backup_window      = "02:00-03:00" # Low-traffic window (UTC)
+  maintenance_window = "Mon:03:30-Mon:04:30"
+  # Both flags flipped to allow this instance to be destroyed in the next apply.
+  # The vector store is now S3 Vectors and nothing connects to this database any
+  # more, so it is ~$18/month for an idle instance.
+  #
+  # No final snapshot, deliberately: every row in here is DERIVED data. The
+  # vectors are produced from data/, which lives in git and in the knowledge-base
+  # S3 bucket, and are reproduced by one ingest run. A snapshot would protect
+  # nothing that is not already reproducible, and would leave a billed artifact to
+  # remember to delete later.
+  #
+  # Terraform cannot flip deletion_protection and delete in the same apply — AWS
+  # refuses the delete while the flag is still set on the live instance — which is
+  # why this is a separate change from the removal itself.
+  deletion_protection   = false
+  skip_final_snapshot   = true
+  copy_tags_to_snapshot = true
 
   # --- Observability ---
   # Export PostgreSQL logs to CloudWatch for slow query analysis and security auditing
