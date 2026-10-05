@@ -1,0 +1,508 @@
+{
+  "label": "after-teardown",
+  "base_url": "https://ke1cezzlq1.execute-api.eu-central-1.amazonaws.com",
+  "git_sha": "acb8b3f",
+  "started_utc": "2026-10-05T07:11:55.922290+00:00",
+  "ended_utc": "2026-10-05T07:14:30.803937+00:00",
+  "transport_failures": 0,
+  "grounded_score": 46,
+  "grounded_total": 46,
+  "negative_pass": 6,
+  "negative_total": 6,
+  "median_ms": 1211,
+  "results": [
+    {
+      "id": "role",
+      "kind": "grounded",
+      "lang": "en",
+      "question": "What is your current role and company?",
+      "ok": true,
+      "status": 200,
+      "reply": "I am currently a **Senior Infrastructure Consultant** at **Thoughtworks**, based in Munich, Germany. I've been with Thoughtworks since April 2022 and was promoted to Senior Consultant in January 2025. \n\n**Key areas of focus:**\n- Platform Engineering and CI/CD pipeline architecture\n- Cloud Native technologies and Kubernetes\n- Infrastructure for Generative AI capabilities\n- Multi-account AWS environment automation using Terraform\n\nIf you'd like to discuss any specific area, feel free to ask!",
+      "ms": 1318,
+      "score": {
+        "matched": 2,
+        "total": 2,
+        "missing": []
+      }
+    },
+    {
+      "id": "role",
+      "kind": "grounded",
+      "lang": "de",
+      "question": "Was ist deine aktuelle Rolle und bei welchem Unternehmen arbeitest du?",
+      "ok": true,
+      "status": 200,
+      "reply": "Ich bin Senior Infrastructure Consultant bei Thoughtworks und befinde mich derzeit in München, Bayern, Deutschland. Meine Rolle umfasst die Leitung von Infrastrukturinitiativen für große Kunden und die Betreuung von Teammitgliedern. Ich bin seit April 2022 bei Thoughtworks und wurde im Januar 2025 zum Senior Consultant befördert. \n\nMeine Hauptfokusbereiche sind:\n- Plattform-Engineering und CI/CD-Pipeline-Architektur\n- Cloud Native Technologien und Kubernetes\n- Infrastruktur für Generative AI-Fähigkeiten (einschließlich Model Context Protocol/MCP)\n- Automatisierung von Multi-Account AWS-Umgebungen mit Terraform\n- Erstellung wiederverwendbarer Infrastruktur-Tools und GitHub Actions-Workflows\n\nIch habe mit großen Unternehmen im Automobilsektor bei Thoughtworks zusammengearbeitet, darunter Porsche AG, MBition (Mercedes-Benz-Tochter) und Mercedes-Benz AG direkt. \n\nWenn du mehr über meine spezifischen Projekte oder Technologien erfahren möchtest, lass es mich gerne wissen!",
+      "ms": 2763,
+      "score": {
+        "matched": 2,
+        "total": 2,
+        "missing": []
+      }
+    },
+    {
+      "id": "aws_count",
+      "kind": "grounded",
+      "lang": "en",
+      "question": "How many AWS certifications do you hold, and which ones?",
+      "ok": true,
+      "status": 200,
+      "reply": "I hold six AWS certifications:\n\n- AWS Certified DevOps Engineer - Professional\n- AWS Certified Solutions Architect - Professional\n- AWS Certified Developer - Associate\n- AWS Certified Solutions Architect - Associate\n- AWS Certified Cloud Practitioner\n- AWS Certified AI Practitioner\n\nThese certifications reflect my deep expertise in AWS services and solutions. If you'd like to discuss any specific certification or project, feel free to ask!",
+      "ms": 1177,
+      "score": {
+        "matched": 4,
+        "total": 4,
+        "missing": []
+      }
+    },
+    {
+      "id": "aws_count",
+      "kind": "grounded",
+      "lang": "de",
+      "question": "Wie viele AWS-Zertifizierungen hast du und welche sind das?",
+      "ok": true,
+      "status": 200,
+      "reply": "Ich habe sechs AWS-Zertifizierungen:\n\n- **AWS Certified DevOps Engineer - Professional**\n- **AWS Certified Solutions Architect - Professional**\n- **AWS Certified Developer - Associate**\n- **AWS Certified Solutions Architect - Associate**\n- **AWS Certified Cloud Practitioner**\n- **AWS Certified AI Practitioner**\n\nIch bin spezialisiert auf die Automatisierung, Skalierung und Sicherheit von Infrastrukturen in der Cloud. Wenn du mehr über meine Projekte oder spezifischen Zertifizierungen erfahren möchtest, lass es mich gerne wissen!",
+      "ms": 1689,
+      "score": {
+        "matched": 4,
+        "total": 4,
+        "missing": []
+      }
+    },
+    {
+      "id": "docker_cert",
+      "kind": "grounded",
+      "lang": "en",
+      "question": "Do you hold any Docker certification?",
+      "ok": true,
+      "status": 200,
+      "reply": "Yes, I hold a **Docker Certified Associate** certification. I have extensive experience with Docker, including advanced skills in Kubernetes and Minikube & Kubectl for local Kubernetes development. If you have any questions about Docker or related technologies, feel free to ask!",
+      "ms": 1158,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "docker_cert",
+      "kind": "grounded",
+      "lang": "de",
+      "question": "Hast du eine Docker-Zertifizierung?",
+      "ok": true,
+      "status": 200,
+      "reply": "Ja, ich habe eine Docker Certified Associate-Zertifizierung.",
+      "ms": 1161,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "education",
+      "kind": "grounded",
+      "lang": "en",
+      "question": "Which university did you attend and what was your CGPA?",
+      "ok": true,
+      "status": 200,
+      "reply": "I attended the University of the Punjab (PUCIT) and graduated with a Bachelor's degree in Computer Software Engineering. My CGPA was 3.74.",
+      "ms": 865,
+      "score": {
+        "matched": 2,
+        "total": 2,
+        "missing": []
+      }
+    },
+    {
+      "id": "education",
+      "kind": "grounded",
+      "lang": "de",
+      "question": "Welche Universitaet hast du besucht und wie war dein CGPA?",
+      "ok": true,
+      "status": 200,
+      "reply": "Ich habe meinen Bachelor-Abschluss in Computer Software Engineering an der University of the Punjab (PUCIT) erworben. Mein CGPA war 3,74. Ich war auch in der Merit Scholarship für meinen CGPA, in der Principal's List für meinen GPA, Batch Topper und Class Representative (CR).",
+      "ms": 1424,
+      "score": {
+        "matched": 2,
+        "total": 2,
+        "missing": []
+      }
+    },
+    {
+      "id": "auto_clients",
+      "kind": "grounded",
+      "lang": "en",
+      "question": "Which automotive clients have you worked with?",
+      "ok": true,
+      "status": 200,
+      "reply": "I've worked with major enterprise automotive clients, including:\n\n- **Mercedes-Benz AG**\n- **MBition** (Mercedes-Benz subsidiary)\n- **Porsche AG**\n\nThese projects involved advanced infrastructure and CI/CD pipeline architecture. If you'd like to know more about any specific project, feel free to ask!",
+      "ms": 1075,
+      "score": {
+        "matched": 2,
+        "total": 2,
+        "missing": []
+      }
+    },
+    {
+      "id": "auto_clients",
+      "kind": "grounded",
+      "lang": "de",
+      "question": "Mit welchen Automobilkunden hast du gearbeitet?",
+      "ok": true,
+      "status": 200,
+      "reply": "Ich habe mit folgenden Automobilkunden zusammengearbeitet:\n\n- **Mercedes-Benz AG** (über Thoughtworks)\n- **MBition** (Mercedes-Benz Tochterunternehmen, über Thoughtworks)\n- **Porsche AG** (über Thoughtworks)\n\nIch habe mich auf die Automatisierung und Optimierung ihrer Cloud-Infrastrukturen und CI/CD-Pipelines konzentriert. Wenn du mehr über meine Projekte mit diesen Kunden erfahren möchtest, lass es mich gerne wissen!",
+      "ms": 1780,
+      "score": {
+        "matched": 2,
+        "total": 2,
+        "missing": []
+      }
+    },
+    {
+      "id": "location",
+      "kind": "grounded",
+      "lang": "en",
+      "question": "Where are you based?",
+      "ok": true,
+      "status": 200,
+      "reply": "I'm currently based in Munich, Germany. I'm open to discussing opportunities in Europe. If you have specific relocation questions, please reach out to me directly.",
+      "ms": 782,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "location",
+      "kind": "grounded",
+      "lang": "de",
+      "question": "Wo wohnst du?",
+      "ok": true,
+      "status": 200,
+      "reply": "Ich wohne derzeit in München, Deutschland. Ich bin offen für Möglichkeiten in Europa. Für spezifische Fragen zur Umsiedlung kontaktiere mich bitte direkt.",
+      "ms": 1522,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "receeve",
+      "kind": "grounded",
+      "lang": "en",
+      "question": "What was your role at receeve GmbH?",
+      "ok": true,
+      "status": 200,
+      "reply": "At receeve GmbH, I was a **DevOps Engineer**. My key responsibilities included:\n\n- Provisioning infrastructure as code with **AWS CloudFormation**\n- Managing CI/CD pipelines using **AWS CodePipeline**\n- Setting up and securing AWS cloud environments\n- Creating Dockerized containers in **AWS ECS Fargate**\n- Running security patches and vulnerability tests\n\nTechnologies I used: **AWS CloudFormation, AWS CodePipeline, AWS ECS Fargate, Docker, IAM, CloudWatch**",
+      "ms": 1095,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "receeve",
+      "kind": "grounded",
+      "lang": "de",
+      "question": "Was war deine Rolle bei receeve GmbH?",
+      "ok": true,
+      "status": 200,
+      "reply": "Bei receeve GmbH habe ich als DevOps Engineer gearbeitet. Meine Aufgaben umfassten:\n\n- **Provisioning von Infrastruktur als Code** mit AWS CloudFormation\n- **Management von Continuous Deployment CI/CD CodePipelines**\n- **Sicherung von AWS Cloud-Umgebungen** durch IAM-Benutzerberechtigungen\n- **Erstellung monatlicher Berichte für ISMS**\n- **Audit und Logging von AWS-Ressourcen** für Kostenoptimierung\n- **Erstellung und Wartung von Dockerisierten Containern in AWS ECS Fargate**\n- **Durchführung von Sicherheitspatches und Schwachstellentests auf Docker-Containern**\n\nTechnologien, die ich verwendet habe: AWS CloudFormation, AWS CodePipeline, AWS ECS Fargate, Docker, IAM, CloudWatch\n\nIch würde gerne mehr über spezifische Projekte oder Technologien erzählen, die dich interessieren.",
+      "ms": 2426,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "focus",
+      "kind": "grounded",
+      "lang": "en",
+      "question": "What are your current focus areas?",
+      "ok": true,
+      "status": 200,
+      "reply": "I currently focus on:\n\n- **Platform Engineering and CI/CD pipeline architecture**\n- **Cloud Native technologies and Kubernetes**\n- **Infrastructure for Generative AI capabilities (including Model Context Protocol/MCP)**\n- **Multi-account AWS environment automation using Terraform**\n- **Building reusable infrastructure tooling and GitHub Actions workflows**\n\nIf you'd like to dive deeper into any of these areas, feel free to ask!",
+      "ms": 1120,
+      "score": {
+        "matched": 2,
+        "total": 2,
+        "missing": []
+      }
+    },
+    {
+      "id": "focus",
+      "kind": "grounded",
+      "lang": "de",
+      "question": "Was sind deine aktuellen Schwerpunkte?",
+      "ok": true,
+      "status": 200,
+      "reply": "Meine aktuellen Schwerpunkte sind:\n\n- **Plattform-Engineering und CI/CD-Pipeline-Architektur**\n- **Cloud Native Technologien und Kubernetes**\n- **Infrastruktur für Generative AI-Fähigkeiten (einschließlich Model Context Protocol/MCP)**\n- **Automatisierung einer Multi-Account AWS-Umgebung mit Terraform**\n- **Erstellen von wiederverwendbaren Infrastruktur-Tools und GitHub Actions-Workflows**\n\nIch habe mit großen Automobilunternehmen wie Porsche AG, MBition (Mercedes-Benz-Tochter) und Mercedes-Benz AG bei Thoughtworks zusammengearbeitet. Ich würde gerne tiefer in einen dieser Bereiche eintauchen und erläutern, wie ich an Projekten dieser Art arbeite.",
+      "ms": 1852,
+      "score": {
+        "matched": 2,
+        "total": 2,
+        "missing": []
+      }
+    },
+    {
+      "id": "promotion",
+      "kind": "grounded",
+      "lang": "en",
+      "question": "When were you promoted to Senior?",
+      "ok": true,
+      "status": 200,
+      "reply": "I was promoted to Senior Consultant at Thoughtworks in January 2025.",
+      "ms": 1374,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "promotion",
+      "kind": "grounded",
+      "lang": "de",
+      "question": "Wann wurdest du zum Senior befoerdert?",
+      "ok": true,
+      "status": 200,
+      "reply": "Ich wurde im Januar 2025 zum Senior Consultant bei Thoughtworks befördert.",
+      "ms": 1211,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "languages",
+      "kind": "grounded",
+      "lang": "en",
+      "question": "What languages do you speak?",
+      "ok": true,
+      "status": 200,
+      "reply": "I speak **English** at a full professional level and **Urdu** as my native language. If you have any questions about my professional experience or skills, feel free to ask!",
+      "ms": 840,
+      "score": {
+        "matched": 2,
+        "total": 2,
+        "missing": []
+      }
+    },
+    {
+      "id": "languages",
+      "kind": "grounded",
+      "lang": "de",
+      "question": "Welche Sprachen sprichst du?",
+      "ok": true,
+      "status": 200,
+      "reply": "Ich spreche Englisch auf professionellem Niveau und Urdu als meine Muttersprache. Zusätzlich lerne ich aktiv Deutsch, um meine beruflichen Möglichkeiten in Deutschland zu erweitern und meine persönliche Entwicklung zu fördern.",
+      "ms": 1231,
+      "score": {
+        "matched": 2,
+        "total": 2,
+        "missing": []
+      }
+    },
+    {
+      "id": "contact",
+      "kind": "grounded",
+      "lang": "en",
+      "question": "How can someone get in touch with you?",
+      "ok": true,
+      "status": 200,
+      "reply": "I'm based in Munich, Bavaria, Germany. To get in touch, please reach out via email at msalmansaeedch786@gmail.com or connect with me on LinkedIn at [www.linkedin.com/in/msalmansaeedch](https://www.linkedin.com/in/msalmansaeedch). I'll share my phone number directly once we've connected. Feel free to check out my portfolio at [https://msalmansaeedch.de](https://msalmansaeedch.de) as well.",
+      "ms": 1076,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "contact",
+      "kind": "grounded",
+      "lang": "de",
+      "question": "Wie kann man dich kontaktieren?",
+      "ok": true,
+      "status": 200,
+      "reply": "Um mich zu kontaktieren, kannst du mir gerne eine E-Mail an msalmansaeedch786@gmail.com schicken oder mich über LinkedIn kontaktieren: [www.linkedin.com/in/msalmansaeedch](https://www.linkedin.com/in/msalmansaeedch). Ich teile dann direkt meine Telefonnummer mit dir. Ich freue mich auf deine Nachricht!",
+      "ms": 1502,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "hashicorp",
+      "kind": "grounded",
+      "lang": "en",
+      "question": "Do you have any HashiCorp certifications?",
+      "ok": true,
+      "status": 200,
+      "reply": "Yes, I hold two HashiCorp certifications:\n\n- **HashiCorp Certified: Terraform Associate (002)**\n- **HashiCorp Certified: Terraform Associate (003)**",
+      "ms": 1015,
+      "score": {
+        "matched": 2,
+        "total": 2,
+        "missing": []
+      }
+    },
+    {
+      "id": "hashicorp",
+      "kind": "grounded",
+      "lang": "de",
+      "question": "Hast du HashiCorp-Zertifizierungen?",
+      "ok": true,
+      "status": 200,
+      "reply": "Ja, ich habe zwei HashiCorp-Zertifizierungen:\n\n- **HashiCorp Certified: Terraform Associate (002)**\n- **HashiCorp Certified: Terraform Associate (003)**\n\nIch verwende Terraform täglich in meinen Projekten. Wenn du mehr über meine Erfahrung mit Terraform wissen möchtest, kann ich gerne näher darauf eingehen.",
+      "ms": 1483,
+      "score": {
+        "matched": 2,
+        "total": 2,
+        "missing": []
+      }
+    },
+    {
+      "id": "before_infra",
+      "kind": "grounded",
+      "lang": "en",
+      "question": "What did you do before moving into infrastructure?",
+      "ok": true,
+      "status": 200,
+      "reply": "Before moving into infrastructure, I worked as a Full Stack Developer and a Blockchain Developer during university. I also transitioned from traditional development (C#,.NET, JavaScript) to DevOps after joining NorthBay Solutions, where I gained experience in Big Data training and eventually moved to DevOps. This shift led me to discover the power of automating infrastructure, microservices, and containerization using AWS, which I fell in love with and dedicated my career to.",
+      "ms": 1205,
+      "score": {
+        "matched": 2,
+        "total": 2,
+        "missing": []
+      }
+    },
+    {
+      "id": "before_infra",
+      "kind": "grounded",
+      "lang": "de",
+      "question": "Was hast du gemacht, bevor du in die Infrastruktur gewechselt bist?",
+      "ok": true,
+      "status": 200,
+      "reply": "Bevor ich in die Infrastruktur gewechselt bin, habe ich als Full Stack Developer und Blockchain Developer während meines Studiums gearbeitet. Später habe ich als DevOps Engineer bei verschiedenen Unternehmen wie receeve GmbH, Orbem GmbH, Zameen.com und NorthBay Solutions gearbeitet. Mein Wechsel zur Infrastruktur erfolgte durch meine Tätigkeit bei NorthBay Solutions, wo ich von Big Data Training zu DevOps wechselte und die Automatisierung von Infrastruktur, Microservices und Containerisierung mit AWS kennenlernte.",
+      "ms": 1560,
+      "score": {
+        "matched": 2,
+        "total": 2,
+        "missing": []
+      }
+    },
+    {
+      "id": "neg_sysops",
+      "kind": "negative",
+      "lang": "en",
+      "question": "Do you hold the AWS Certified SysOps Administrator - Associate certification?",
+      "ok": true,
+      "status": 200,
+      "reply": "I do not hold the AWS Certified SysOps Administrator - Associate certification. However, I am a 6x AWS Certified professional, including both Professional-level certifications (Solutions Architect Professional and DevOps Engineer Professional). If you need more information about my certifications or experience, feel free to ask!",
+      "ms": 894,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "asserted_falsehood": []
+      }
+    },
+    {
+      "id": "neg_sysops",
+      "kind": "negative",
+      "lang": "de",
+      "question": "Hast du die Zertifizierung AWS Certified SysOps Administrator - Associate?",
+      "ok": true,
+      "status": 200,
+      "reply": "Ich habe die Zertifizierung **AWS Certified SysOps Administrator - Associate** nicht. Ich bin ein 6x AWS Certified professional, aber meine Zertifizierungen sind: **AWS Certified DevOps Engineer - Professional**, **AWS Certified Solutions Architect - Professional**, **AWS Certified Developer - Associate**, **AWS Certified Solutions Architect - Associate**, **AWS Certified Cloud Practitioner**, und **AWS Certified AI Practitioner**. Wenn du mehr über meine anderen Zertifizierungen erfahren möchtest, stehe ich dir gerne zur Verfügung.",
+      "ms": 1513,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "asserted_falsehood": []
+      }
+    },
+    {
+      "id": "neg_google",
+      "kind": "negative",
+      "lang": "en",
+      "question": "Have you ever worked at Google?",
+      "ok": true,
+      "status": 200,
+      "reply": "I haven't had the opportunity to work with Google yet. However, I have extensive experience with cloud technologies and DevOps practices. If you're interested in my work with Google Cloud Platform, I can share details about my GKE cluster configuration experience. Otherwise, I'd be happy to discuss my other projects and skills.",
+      "ms": 1095,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "asserted_falsehood": []
+      }
+    },
+    {
+      "id": "neg_google",
+      "kind": "negative",
+      "lang": "de",
+      "question": "Hast du jemals bei Google gearbeitet?",
+      "ok": true,
+      "status": 200,
+      "reply": "Ich habe noch nicht bei Google gearbeitet. Meine Erfahrung mit Google Cloud Platform (GCP) ist begrenzt und beschränkt sich auf die Konfiguration von GKE-Clustern (Google Kubernetes Engine) für Staging-Umgebungen bei meinem dreimonatigen Engagement bei Orbem GmbH.",
+      "ms": 1497,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "asserted_falsehood": []
+      }
+    },
+    {
+      "id": "neg_salary",
+      "kind": "negative",
+      "lang": "en",
+      "question": "What is your current annual salary in euros?",
+      "ok": true,
+      "status": 200,
+      "reply": "I can't share specific salary details, but I can tell you that my role as a Senior Infrastructure Consultant involves competitive compensation. If you're interested in discussing compensation, I'd be happy to chat further.",
+      "ms": 812,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "asserted_falsehood": []
+      }
+    },
+    {
+      "id": "neg_salary",
+      "kind": "negative",
+      "lang": "de",
+      "question": "Wie hoch ist dein aktuelles Jahresgehalt in Euro?",
+      "ok": true,
+      "status": 200,
+      "reply": "Es tut mir leid, aber ich kann persönliche Gehaltsinformationen nicht offenlegen. Wenn du mehr über meine beruflichen Erfahrungen und Projekte erfahren möchtest, stehe ich dir gerne zur Verfügung.",
+      "ms": 1189,
+      "score": {
+        "matched": 1,
+        "total": 1,
+        "asserted_falsehood": []
+      }
+    }
+  ],
+  "log_metrics": {
+    "rows": 34,
+    "docs_retrieved_min": 5.0,
+    "docs_retrieved_mean": 5.0,
+    "docs_retrieved_zero": 0,
+    "stage_medians_ms": {
+      "embed_ms": 98.8,
+      "search_ms": 63.2,
+      "rewrite_ms": 171.7,
+      "generate_ms": 808.0,
+      "chain_ms": 1097.7
+    }
+  }
+}
