@@ -155,7 +155,11 @@ def run(store):
 
 def main():
     client = boto3.client("s3vectors", region_name=REGION)
-    bucket = f"dt-s3v-test-{int(time.time())}"
+    # Must start with the project name: the GitHub Actions deploy role grants
+    # s3vectors:* only on arn:...:bucket/digital-twin-*, so a differently-named
+    # throwaway bucket is createable from a developer machine with admin rights
+    # and AccessDenied in CI — the exact gap that broke the first S3 Vectors apply.
+    bucket = f"digital-twin-test-{int(time.time())}"
     index = "test-index"
     print(f"creating {bucket}/{index} (dimension {DIM}, cosine)")
     client.create_vector_bucket(vectorBucketName=bucket)
