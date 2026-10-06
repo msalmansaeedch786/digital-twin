@@ -45,79 +45,79 @@
     "projects": "Projekte",
     "certifications": "Zertifizierungen & Badges"
   },
-  "experiences": [
-    {
+  "experiences": {
+    "thoughtworks": {
       "role": "Senior Infrastructure Consultant",
       "details": "Leitender Infrastructure Consultant für Cloud-Transformationen auf Enterprise-Niveau bei großen Automotive-Kunden wie Porsche AG, MBition und Mercedes-Benz. Konzeption robuster CI/CD-Pipelines, Automatisierung der AWS-Provisionierung mit Terraform sowie Entwicklung skalierbarer 'Fleeting Runner' und containerisierter Umgebungen. Federführend beim Rollout von Generative-AI-Chat-Funktionen und internen Developer-Plattformen, mit deutlichen Verbesserungen bei Effizienz und Sicherheit."
     },
-    {
+    "receeve": {
       "role": "DevOps Engineer",
       "details": "Verantwortlich für Infrastructure as Code mit AWS CloudFormation und für Continuous-Deployment-Pipelines über die Dev-, QA- und Prod-Umgebungen hinweg. Sicherstellung der Cloud-Sicherheit durch Pflege der IAM-Berechtigungen und regelmäßige Audits der AWS-Ressourcen zur Kostenoptimierung. Leitung der Containerisierungsstrategie mit Docker auf AWS ECS Fargate, inklusive laufender Security-Patches und Schwachstellentests."
     },
-    {
+    "orbem": {
       "role": "DevOps Engineer",
       "details": "Aufbau modularer Infrastructure-as-Code-Provisionierung mit Terraform in Verbindung mit GitLab-CI/CD-Pipelines. Konfiguration sicherer GKE-Cluster auf GCP für Staging-Umgebungen und Verwaltung von Kubernetes-Deployments mit Helmfile. Betreuung und Behebung von Problemen der On-Premises-IT-Infrastruktur und komplexer Deployments."
     },
-    {
+    "zameen": {
       "role": "DevOps Engineer",
       "details": "Konzeption umfassender Logging- und Monitoring-Dashboards mit AWS CloudWatch für Server- und Anwendungsmetriken. Deployment hochverfügbarer ECS-Services über On-Demand-CloudFormation-Stacks und Fargate. Betrieb großer verteilter Systeme in Produktion mit Fokus auf Debugging, Fehlerbehandlung und Performance-Tuning."
     },
-    {
+    "northbay-solutions": {
       "role": "Software Engineer",
       "details": "Bereitstellung sicherer Infrastructure as Code über Terraform Cloud und verschachtelte CloudFormation-Stacks sowie Optimierung von CI/CD-Pipelines mit GitLab, Octopus Deploy und AWS CodePipeline. Leitung komplexer 'Lift and Shift'-Cloud-Migrationen zu AWS und Entwicklung serverloser Microservices mit AWS SAM. Aufbau von Containerisierungs-Workflows mit Docker und ECR sowie Sicherstellung der Hochverfügbarkeit über AWS AutoScaling und Route53."
     },
-    {
+    "ai-research-lab": {
       "role": "Full Stack Developer",
       "details": "Entwicklung von 'CodeFreak', einer interaktiven Plattform für Programmierwettbewerbe. Aufbau eines sicheren Servers zur Codekompilierung mit isolierten Docker-Containern, eines RESTful-Backends in ASP.NET Core und einer Angular-6-Oberfläche mit Echtzeit-Chat über SignalR."
     },
-    {
+    "automata": {
       "role": "Blockchain and Application Developer",
       "details": "Entwicklung von 'Keyless', einem permissionless dezentralen Peer-to-Peer-Netzwerk zur biometrischen Authentifizierung. Umsetzung einer Ethereum-Wallet und von Smart Contracts (ERC-20) für ein selbstbestimmtes Key-Management ohne klassische Private Keys."
     }
-  ],
-  "projects": [
-    {
+  },
+  "projects": {
+    "mercedes-otr": {
       "desc": "Aufbau der Infrastruktur für KI- und Chatbot-Funktionen mit Model Context Protocol (MCP) Skills und Platypus. Konfiguration von Kubernetes-CSI-Treibern für persistenten Speicher und Absicherung des DocumentDB-Zugriffs über In-Database-Gateways."
     },
-    {
+    "mbition-runners": {
       "desc": "Entwurf einer 'Fleeting Runner'-Architektur für GitLab CI/CD zur Verkürzung der Build-Zeiten. Automatisierung der Base-AMI-Erstellung mit Packer und Terraform, um selbst gehostete Runner dynamisch nach Pipeline-Bedarf zu skalieren."
     },
-    {
+    "porsche-infra": {
       "desc": "Standardisierung der Cloud-Infrastruktur durch wiederverwendbare Automatisierung und Entwicklung von AWS-Basis-Infrastrukturtools. Einführung von automatisiertem IAM-Rollenmanagement, Observability und geteiltem Secrets-Management über Entwicklungsteams hinweg."
     },
-    {
+    "dealermeter": {
       "desc": "Aufbau eines personalisierten Marktdaten-Terminals, das Anbieterdaten über S3, Lambda und Glue in das Parquet-Format überführt. Visualisierung von Performance- und Bestandsdaten mit Apache Superset direkt auf Athena."
     },
-    {
+    "vector-solutions": {
       "desc": "AWS-DevOps-Architektur für die Migration einer RackSpace-Produktionsumgebung zu AWS. Lift and Shift von Datei- und SFTP-Servern mit AWS FSx und AWS Transfer for SFTP. Erstellung eigener Windows-AMIs mit Sysprep und Umsetzung von CI/CD über Octopus Deploy."
     },
-    {
+    "amway": {
       "desc": "Betreuung von Datenpipelines mit Anbindung an On-Premises-Oracle-Datenbanken. Konfiguration von AWS Elastic Beanstalk als Multi-Container-Docker-Umgebung und Verwaltung von Microservices über ECS Fargate und Minikube. Umsetzung von CI/CD mit Jenkins und CircleCI."
     },
-    {
+    "northbay-labs": {
       "desc": "Entwicklung einer Sammlung von CloudFormation Custom Resources. Aufbau der ELK-Stack-Architektur zur Log-Visualisierung über Kibana. Installation von Grafana per Terraform und Einführung von Linux-Shell-Skripten für automatisiertes Log-Management."
     },
-    {
+    "codefreak": {
       "desc": "Entwicklung einer Plattform für Programmierwettbewerbe mit eingebettetem Code-Editor und isolierten Docker-Containern für die Codekompilierung."
     },
-    {
+    "keyless": {
       "desc": "Entwicklung einer Ethereum-DApp und -Wallet mit biometrischer Authentifizierung als dezentrales Peer-to-Peer-Netzwerk ohne Private Keys."
     }
-  ],
-  "education": [
-    {
+  },
+  "education": {
+    "pucit": {
       "degree": "Bachelor, Computer Software Engineering",
       "grade": "Note: 3,74"
     },
-    {
+    "punjab-colleges": {
       "degree": "Intermediate, Pre-Engineering",
       "grade": "Note: A+"
     },
-    {
+    "educators": {
       "degree": "Matriculation, Computer Science",
       "grade": "Note: A+"
     }
-  ],
+  },
   "certLevels": {
     "Foundational": "Foundational",
     "Associate": "Associate",

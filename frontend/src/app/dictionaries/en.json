@@ -45,79 +45,79 @@
     "projects": "Projects",
     "certifications": "Certifications & Badges"
   },
-  "experiences": [
-    {
+  "experiences": {
+    "thoughtworks": {
       "role": "Senior Infrastructure Consultant",
       "details": "Lead infrastructure consultant orchestrating enterprise-scale cloud transformations for major automotive clients including Porsche AG, MBition, and Mercedes-Benz. Architected robust CI/CD pipelines, automated AWS provisioning using Terraform, and engineered scalable 'Fleeting Runners' and containerized environments. Spearheaded the deployment of generative AI chat capabilities and internal developer platforms, significantly improving operational efficiency and security posture."
     },
-    {
+    "receeve": {
       "role": "DevOps Engineer",
       "details": "Led the provisioning of Infrastructure as Code using AWS CloudFormation and managed continuous deployment pipelines across Dev, QA, and Prod environments. Enforced robust cloud security by maintaining IAM permissions and auditing AWS resources for cost optimization. Directed the containerization strategy using Docker on AWS ECS Fargate, ensuring continuous security patching and vulnerability testing."
     },
-    {
+    "orbem": {
       "role": "DevOps Engineer",
       "details": "Spearheaded modular Infrastructure as Code provisioning using Terraform alongside GitLab CI/CD pipelines. Configured secure GKE clusters on GCP for staging environments and managed Kubernetes deployments using Helmfile. Oversaw the resolution of on-premises IT infrastructure and complex deployment challenges."
     },
-    {
+    "zameen": {
       "role": "DevOps Engineer",
       "details": "Architected comprehensive logging and monitoring dashboards utilizing AWS CloudWatch for server and application metrics. Deployed highly-available ECS services using on-demand CloudFormation stacks and Fargate. Managed large-scale distributed systems in production, focusing on debugging, failure handling, and advanced performance tuning."
     },
-    {
+    "northbay-solutions": {
       "role": "Software Engineer",
       "details": "Provisioned secure Infrastructure as Code via Terraform Cloud and CloudFormation nested stacks while optimizing CI/CD pipelines with GitLab, Octopus Deploy, and AWS CodePipeline. Led complex 'lift and shift' cloud migrations to AWS and developed serverless microservices using AWS SAM. Championed containerization workflows with Docker and ECR, and ensured high availability through AWS AutoScaling and Route53."
     },
-    {
+    "ai-research-lab": {
       "role": "Full Stack Developer",
       "details": "Developed 'CodeFreak', an interactive programming competition platform. Engineered a secure code compilation server with isolated Docker containers, a robust ASP.NET Core RESTful backend, and an Angular 6 user interface with real-time Chat via SignalR."
     },
-    {
+    "automata": {
       "role": "Blockchain and Application Developer",
       "details": "Built 'Keyless', a permissionless decentralized peer-to-peer biometric authentication network. Developed an Ethereum Wallet and smart contracts (ERC-20), enabling a self-sovereign key management ecosystem without traditional private keys."
     }
-  ],
-  "projects": [
-    {
+  },
+  "projects": {
+    "mercedes-otr": {
       "desc": "Engineered infrastructure for AI/Chatbot capabilities using Model Context Protocol (MCP) skills and Platypus. Configured Kubernetes CSI drivers for persistent storage and secured DocumentDB access via in-database gateways."
     },
-    {
+    "mbition-runners": {
       "desc": "Designed a 'Fleeting Runner' architecture for GitLab CI/CD to optimize build times. Automated Base AMI processes using Packer and Terraform to dynamically scale self-hosted runners based on pipeline demand."
     },
-    {
+    "porsche-infra": {
       "desc": "Standardized cloud infrastructure through reusable automation and developed AWS base infrastructure tools. Implemented automated IAM role management, observability, and shared secrets management across development teams."
     },
-    {
+    "dealermeter": {
       "desc": "Built a personalized market data terminal processing vendor data via S3, Lambda, and Glue into Parquet format. Visualized performance and inventory data using Apache Superset querying Athena directly."
     },
-    {
+    "vector-solutions": {
       "desc": "Provided AWS DevOps Architecture to migrate a RackSpace Production Environment to AWS. Lifted and shifted file and SFTP servers using AWS FSx and AWS Transfer for SFTP. Baked custom Windows AMIs using Sysprep and implemented CI/CD via Octopus Deploy."
     },
-    {
+    "amway": {
       "desc": "Maintained data pipelines integrating with on-premises Oracle databases. Configured AWS Elastic Beanstalk multi-container Docker environments and managed microservices via ECS Fargate and Minikube. Implemented CI/CD using Jenkins and CircleCI."
     },
-    {
+    "northbay-labs": {
       "desc": "Developed a collection of CloudFormation Custom Resources. Engineered the ELK Stack architecture for log visualization via Kibana. Installed Grafana via Terraform and instituted Linux shell scripting for automated log management."
     },
-    {
+    "codefreak": {
       "desc": "Developed a programming competition platform with embedded code editor and isolated Docker containers for code compilation."
     },
-    {
+    "keyless": {
       "desc": "Built an Ethereum DApp and wallet with biometric authentication, creating a decentralized peer-to-peer network without private keys."
     }
-  ],
-  "education": [
-    {
+  },
+  "education": {
+    "pucit": {
       "degree": "Bachelor's degree, Computer Software Engineering",
       "grade": "Grade: 3.74"
     },
-    {
+    "punjab-colleges": {
       "degree": "Intermediate, Pre-Engineering",
       "grade": "Grade: A+"
     },
-    {
+    "educators": {
       "degree": "Matriculation, Computer Science",
       "grade": "Grade: A+"
     }
-  ],
+  },
   "certLevels": {
     "Foundational": "Foundational",
     "Associate": "Associate",

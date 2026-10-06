@@ -87,33 +87,52 @@ export default function PortfolioClient({ lang, dict }) {
 
   // Company names and dates are the same in every language, so they stay here
   // and only the translated fields are merged in from the dictionary.
-  const experiences = [
-    { company: "Thoughtworks", date: "April 2022 - Present" },
-    { company: "receeve GmbH", date: "Jun 2021 - Nov 2022" },
-    { company: "Orbem", date: "Oct 2021 - Dec 2021" },
-    { company: "Zameen.com", date: "Jan 2021 - Jun 2021" },
-    { company: "NorthBay Solutions", date: "Jul 2019 - Dec 2020" },
-    { company: "AI & Multidisciplinary Research Lab", date: "Jan 2019 - Jun 2019" },
-    { company: "AUTOMATA THE PLATFORM", date: "Aug 2018 - Jan 2019" }
-  ].map((e, i) => ({ ...e, ...dict.experiences[i] }));
+  //
+  // Merged by SLUG, not by array position. These lists used to be zipped with
+  // dict.experiences[i], which silently coupled three files to each other by
+  // order: inserting one job at the top shifted every German role label by one,
+  // with no error and no failing test — the page simply attributed the wrong role
+  // to the wrong employer. mergeBySlug throws instead, so a mismatch is a build
+  // failure rather than a wrong CV in two languages.
+  const mergeBySlug = (rows, translations, label) =>
+    rows.map(({ slug, ...rest }) => {
+      const t = translations[slug];
+      if (!t) {
+        throw new Error(
+          `${label}: no "${slug}" in the ${lang} dictionary. ` +
+          `Add it to BOTH en.json and de.json — they must stay key-parallel.`
+        );
+      }
+      return { slug, ...rest, ...t };
+    });
 
-  const projects = [
-    { title: "Mercedes-Benz AG - OTR", date: "Apr 2025 - Present", tech: ["Kubernetes", "AWS", "AI Integration"] },
-    { title: "MBition - SWF Gitlab CI Runners", date: "Jul 2023 - Jan 2025", tech: ["Terraform", "Packer", "AWS EC2"] },
-    { title: "Porsche AG - Cloud Infrastructure", date: "Jan 2023 - Jun 2023", tech: ["AWS", "Terraform", "GitHub Actions"] },
-    { title: "DealerMeter", date: "Mar 2021 - Apr 2021", tech: ["AWS Lambda", "AWS Glue", "Athena"] },
-    { title: "Vector Solutions", date: "Dec 2019 - Dec 2020", tech: ["AWS FSx", "AWS Transfer for SFTP", "Sysprep AMIs", "Octopus Deploy"] },
-    { title: "Amway", date: "Sep 2019 - Dec 2019", tech: ["Elastic Beanstalk", "ECS Fargate", "Jenkins", "Oracle"] },
-    { title: "NorthBay Labs", date: "Jul 2019 - Sep 2019", tech: ["ELK Stack", "Grafana", "AWS SAM", "Linux Shell Scripting"] },
-    { title: "CodeFreak Programming Platform", date: "Jan 2019 - Jun 2019", tech: ["Angular 6", "ASP.NET Core", "Docker"] },
-    { title: "Keyless Decentralized Network", date: "Aug 2018 - Jan 2019", tech: ["Ethereum", "Smart Contracts", "Biometrics"] }
-  ].map((p, i) => ({ ...p, ...dict.projects[i] }));
+  const experiences = mergeBySlug([
+    { slug: "thoughtworks", company: "Thoughtworks", date: "April 2022 - Present" },
+    { slug: "receeve", company: "receeve GmbH", date: "Jun 2021 - Nov 2022" },
+    { slug: "orbem", company: "Orbem", date: "Oct 2021 - Dec 2021" },
+    { slug: "zameen", company: "Zameen.com", date: "Jan 2021 - Jun 2021" },
+    { slug: "northbay-solutions", company: "NorthBay Solutions", date: "Jul 2019 - Dec 2020" },
+    { slug: "ai-research-lab", company: "AI & Multidisciplinary Research Lab", date: "Jan 2019 - Jun 2019" },
+    { slug: "automata", company: "AUTOMATA THE PLATFORM", date: "Aug 2018 - Jan 2019" }
+  ], dict.experiences, "experiences");
 
-  const education = [
-    { school: "University of the Punjab (PUCIT)", date: "Oct 2015 - Jun 2019" },
-    { school: "Punjab Group of Colleges", date: "Sep 2012 - Sep 2014" },
-    { school: "The Educators", date: "Jan 2010 - Dec 2012" }
-  ].map((e, i) => ({ ...e, ...dict.education[i] }));
+  const projects = mergeBySlug([
+    { slug: "mercedes-otr", title: "Mercedes-Benz AG - OTR", date: "Apr 2025 - Present", tech: ["Kubernetes", "AWS", "AI Integration"] },
+    { slug: "mbition-runners", title: "MBition - SWF Gitlab CI Runners", date: "Jul 2023 - Jan 2025", tech: ["Terraform", "Packer", "AWS EC2"] },
+    { slug: "porsche-infra", title: "Porsche AG - Cloud Infrastructure", date: "Jan 2023 - Jun 2023", tech: ["AWS", "Terraform", "GitHub Actions"] },
+    { slug: "dealermeter", title: "DealerMeter", date: "Mar 2021 - Apr 2021", tech: ["AWS Lambda", "AWS Glue", "Athena"] },
+    { slug: "vector-solutions", title: "Vector Solutions", date: "Dec 2019 - Dec 2020", tech: ["AWS FSx", "AWS Transfer for SFTP", "Sysprep AMIs", "Octopus Deploy"] },
+    { slug: "amway", title: "Amway", date: "Sep 2019 - Dec 2019", tech: ["Elastic Beanstalk", "ECS Fargate", "Jenkins", "Oracle"] },
+    { slug: "northbay-labs", title: "NorthBay Labs", date: "Jul 2019 - Sep 2019", tech: ["ELK Stack", "Grafana", "AWS SAM", "Linux Shell Scripting"] },
+    { slug: "codefreak", title: "CodeFreak Programming Platform", date: "Jan 2019 - Jun 2019", tech: ["Angular 6", "ASP.NET Core", "Docker"] },
+    { slug: "keyless", title: "Keyless Decentralized Network", date: "Aug 2018 - Jan 2019", tech: ["Ethereum", "Smart Contracts", "Biometrics"] }
+  ], dict.projects, "projects");
+
+  const education = mergeBySlug([
+    { slug: "pucit", school: "University of the Punjab (PUCIT)", date: "Oct 2015 - Jun 2019" },
+    { slug: "punjab-colleges", school: "Punjab Group of Colleges", date: "Sep 2012 - Sep 2014" },
+    { slug: "educators", school: "The Educators", date: "Jan 2010 - Dec 2012" }
+  ], dict.education, "education");
 
 
   return (
