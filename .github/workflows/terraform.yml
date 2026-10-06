@@ -52,17 +52,17 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0 # Full history so gitleaks can scan all commits
 
       - name: Scan for leaked secrets (gitleaks)
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
@@ -75,7 +75,7 @@ jobs:
         run: echo "version=$(cat terraform/.terraform-version)" >> "$GITHUB_OUTPUT"
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: ${{ steps.tfver.outputs.version }}
 
@@ -86,18 +86,18 @@ jobs:
       # missing folder. On a miss the pip cache is empty anyway. It can never
       # save work here, and it can fail the run.
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
       - name: Cache API Build Directory
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: lambdas/api/build
           key: api-build-${{ hashFiles('lambdas/api/requirements.txt') }}
 
       - name: Cache Ingestion Build Directory
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: lambdas/ingestion/build
           key: ingest-build-${{ hashFiles('lambdas/ingestion/requirements.txt') }}
@@ -163,7 +163,7 @@ jobs:
           TF_VAR_alert_email: ${{ secrets.TF_VAR_ALERT_EMAIL }}
 
       - name: Post Plan to PR
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         if: github.event_name == 'pull_request'
         env:
           PLAN: "${{ steps.plan.outputs.stdout }}"
@@ -219,7 +219,7 @@ jobs:
       # WHAT the twin said, which is the whole point of the suite.
       - name: Upload retrieval run on failure
         if: failure() && github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: retrieval-run-${{ github.sha }}
           path: scripts/eval/runs/ci-*.json
