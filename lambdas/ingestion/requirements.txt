@@ -4,7 +4,7 @@ langchain-aws==0.2.11
 # the API Lambda — so langchain-community stays in this one.
 langchain-community==0.3.14
 langchain-text-splitters==0.3.5
-pypdf==5.2.0
+pypdf==6.19.0
 
 # Same cross-build trap as the API Lambda: SQLAlchemy (via langchain, pulled in
 # by langchain-community) declares greenlet behind a platform_machine marker,
