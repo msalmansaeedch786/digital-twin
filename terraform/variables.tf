@@ -64,7 +64,13 @@ variable "bedrock_embedding_model_id" {
 variable "monthly_budget_usd" {
   description = "Monthly cost budget in USD — email alerts fire at 80% actual and 100% forecasted. Tracks GROSS usage (credits excluded) so it is live even while free credits apply."
   type        = number
-  default     = 45
+  # Was 45, sized for a stack burning ~$1.14/day on RDS + VPC endpoints. After
+  # those were deleted (5 Oct 2026) the idle rate is $0.0006/day and the heaviest
+  # realistic month — 5,000 chats plus 50 deploys — is about $2. A $45 ceiling
+  # would need spending to rise 2,000-fold before saying anything, which is
+  # decoration rather than a guard: it feels like protection while being incapable
+  # of firing. $5 keeps roughly 2.5x headroom over the heavy case.
+  default = 5
 }
 
 variable "abuse_request_threshold_1m" {
@@ -80,9 +86,14 @@ variable "anomaly_alert_threshold_usd" {
 }
 
 variable "daily_budget_usd" {
-  description = "Daily cost tripwire in USD (gross usage, credits excluded). Expected steady-state is ~1.50/day after the single-AZ endpoint + no-X-Ray trim; 2.00 leaves headroom so normal lumpy days do not false-alarm."
+  description = "Daily cost tripwire in USD (gross usage, credits excluded). Idle is ~$0.0006/day; 0.50 catches an accidentally recreated database on its first day without false-alarming on a heavy build day."
   type        = number
-  default     = 2
+  # Chosen against the failure mode that actually matters. The expensive mistake
+  # here is re-creating something that bills by the hour: a db.t4g.micro is
+  # $0.54/day and a single interface VPC endpoint is $0.29/day. At 0.50 the
+  # database trips this on day one. A busy development day is about $0.15, almost
+  # all of it Amplify build minutes, so it stays comfortably clear.
+  default = 0.50
 }
 
 variable "anomaly_monitor_arn" {

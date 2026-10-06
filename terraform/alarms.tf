@@ -156,11 +156,16 @@ resource "aws_budgets_budget" "monthly" {
   }
 }
 
-# Daily cost tripwire: emails the moment a single day's GROSS usage exceeds
-# the expected run-rate (~$1.50/day) + headroom. Daily budgets only support
-# ACTUAL notifications (AWS restriction); billing data refreshes ~3x/day, so
-# expect the email within hours of a breach, not minutes — the request-count
-# abuse alarm below remains the fast tripwire.
+# Daily cost tripwire: emails the moment a single day's GROSS usage exceeds the
+# expected run-rate + headroom. Since the database and VPC endpoints were deleted
+# (5 Oct 2026) that run-rate is ~$0.0006/day idle, so the threshold is set against
+# the failure mode rather than the baseline: anything that bills by the hour
+# coming back. A db.t4g.micro is $0.54/day and an interface endpoint $0.29/day,
+# both of which breach $0.50 immediately.
+#
+# Daily budgets only support ACTUAL notifications (AWS restriction); billing data
+# refreshes ~3x/day, so expect the email within hours of a breach, not minutes —
+# the request-count abuse alarm below remains the fast tripwire.
 resource "aws_budgets_budget" "daily" {
   name         = "${var.project_name}-daily"
   budget_type  = "COST"
