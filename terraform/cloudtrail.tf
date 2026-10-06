@@ -34,6 +34,41 @@ resource "aws_s3_bucket_public_access_block" "cloudtrail" {
 }
 
 # S3 bucket policy required by CloudTrail to write logs
+# CloudTrail writes a file per delivery and never cleans up after itself. This
+# bucket reached 42,486 objects and 61 MB in three months with no expiry, and the
+# deployments bucket had a rule from the start while this one was simply missed.
+#
+# Trail logs are an investigate-after-the-fact record, not an archive: if an
+# incident is a year old the logs are not what you will reach for. 90 days covers
+# any realistic "what changed and who did it" question, and the versioning on this
+# bucket means a delete is a delete marker, so the noncurrent rule is what actually
+# reclaims the space.
+resource "aws_s3_bucket_lifecycle_configuration" "cloudtrail" {
+  bucket = aws_s3_bucket.cloudtrail.id
+
+  rule {
+    id     = "expire-old-trail-logs"
+    status = "Enabled"
+
+    filter {}
+
+    expiration {
+      days = 90
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 7
+    }
+
+    # A multipart upload that never completes is invisible in the console and
+    # still billed. CloudTrail does not normally create them, but the rule costs
+    # nothing and removes a whole class of silent waste.
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
+
 resource "aws_s3_bucket_policy" "cloudtrail" {
   bucket = aws_s3_bucket.cloudtrail.id
 
