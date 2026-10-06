@@ -65,7 +65,22 @@ resource "aws_amplify_app" "frontend" {
   # Environment variables injected directly into the frontend build
   environment_variables = {
     AMPLIFY_MONOREPO_APP_ROOT = "frontend"
-    AMPLIFY_DIFF_DEPLOY       = "false"
+
+    # Skip the build when a push changed nothing under frontend/. Amplify builds
+    # on every push to the branch otherwise, so editing terraform, a Lambda, a
+    # script or a README rebuilt and redeployed the whole site for no reason.
+    # Build minutes are now the largest variable cost in this account — the idle
+    # infrastructure is $0.0006/day and a build is about $0.01 — and roughly 15 of
+    # them during the S3 Vectors migration were pure waste.
+    #
+    # The trade, which is worth knowing before turning this off again:
+    # NEXT_PUBLIC_API_URL is inlined at BUILD time. If the API Gateway were ever
+    # recreated and its invoke URL changed, a push touching no frontend file would
+    # skip the build and leave the live site pointing at the old URL. Amplify does
+    # not rebuild on an env-var change by itself. That needs an API Gateway
+    # replacement, which is a conspicuous event — but if the site ever talks to a
+    # dead API after an infrastructure change, start a build by hand.
+    AMPLIFY_DIFF_DEPLOY = "true"
   }
 
   # Locale redirects. Every page now lives under /en or /de, so the pre-i18n

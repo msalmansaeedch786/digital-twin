@@ -28,11 +28,17 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "digital-twin-terraform-state-231740"
-    key            = "infrastructure/terraform.tfstate"
-    region         = "eu-central-1"
-    dynamodb_table = "digital-twin-terraform-locks"
-    encrypt        = true
+    bucket = "digital-twin-terraform-state-231740"
+    key    = "infrastructure/terraform.tfstate"
+    region = "eu-central-1"
+    # S3-native locking via a conditional write on a .tflock object, which needs
+    # Terraform >= 1.10 (pinned to ~> 1.16 above). dynamodb_table is deprecated and
+    # emits a warning on every plan. Both are set during the transition: Terraform
+    # honours use_lockfile and the table can be removed once no older binary is in
+    # play. Changing backend config means `init -reconfigure`, which is safe here
+    # because the bucket and key are unchanged — nothing is migrating.
+    use_lockfile = true
+    encrypt      = true
   }
 }
 
