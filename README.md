@@ -40,7 +40,7 @@ The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline
 - **IAM-Scoped Access, No Network Perimeter**: Every component authenticates with its own least-privilege IAM role rather than relying on network isolation. The API Lambda holds read-only access to the vector index and cannot write to it; ingestion can write but never serves traffic.
 - **Infrastructure as Code (IaC)**: 100% of the AWS infrastructure is codified in Terraform, allowing for reproducible and automated deployments.
 - **Event-Driven Data Ingestion**: Simply uploading a PDF or Text file to an S3 bucket automatically triggers an asynchronous Lambda pipeline that chunks, embeds, and stores the knowledge in the database.
-- **Automated CI/CD Pipeline**: Employs GitHub Actions to automatically build the Lambda packages and run `terraform plan` / `terraform apply` on every push to the deployment branch, using AWS OpenID Connect (OIDC) for passwordless, keyless deployments.
+- **Automated CI/CD Pipeline**: GitHub Actions builds the Lambda packages and runs `terraform plan` / `terraform apply` on every push to the deployment branch, using AWS OpenID Connect (OIDC) for passwordless, keyless deployments. Every change is gated on a bundle-contents check, an integration test against real S3 Vectors, and — after deploy — a 16-question retrieval comparison against a recorded baseline. A scheduled daily plan reports infrastructure drift.
 - **History-Aware Conversations**: Employs an LLM-driven query rewriting step that maintains context across long conversational threads.
 - **Bilingual (English / German)**: The portfolio and the twin are served under locale-segmented routes (`/en`, `/de`), both statically prerendered and edge-cached, with canonical + `hreflang` metadata and a generated `sitemap.xml`. The knowledge base stays English and a request carries a `lang` field. Language moves in both directions around retrieval: a non-English question is rewritten into English *before* embedding, so it matches the English vectors properly, and the answer is then generated back in the reader's language. An English question with no history skips that rewrite and pays no extra latency.
 - **Hardened Security**: Features rate limiting, payload sanitization, and IAM Least Privilege policies. There are no application credentials anywhere in the stack — no database password, no connection string, nothing to rotate or leak.
@@ -208,7 +208,13 @@ digital-twin/
 │   ├── start.sh / stop.sh          # Run backend + frontend locally
 │   └── generate_diagram.py         # -> frontend/public/architecture.png
 │                                   #    (architecture-before-s3vectors.png is kept for comparison)
-└── .github/workflows/              # CI/CD: terraform.yml (build + deploy), data_sync.yml (S3 sync)
+└── .github/
+    ├── dependabot.yml              # Actions/Terraform versions; pip + npm security-only
+    └── workflows/
+        ├── terraform.yml           # build, test, plan/apply, post-deploy retrieval check
+        ├── frontend_tests.yml      # i18n + chat suites on frontend changes
+        ├── drift.yml               # daily plan, alerts to SNS if reality diverges
+        └── data_sync.yml           # data/ -> S3 knowledge base
 ```
 
 ---
@@ -300,7 +306,7 @@ The architecture integrates deeply with AWS native observability tools:
 ## Developer Guide
 
 ### Pre-Commit Hooks
-This repository enforces formatting and syntax checks locally before code is committed using `pre-commit`.
+This repository enforces formatting and syntax checks locally before code is committed using `pre-commit`, and runs the full test suite in CI on every change — see [What CI enforces](CLAUDE.md#what-ci-enforces).
 
 To install the hooks locally:
 1. Install pre-commit: `brew install pre-commit` (macOS) or `pip install pre-commit`
@@ -319,7 +325,7 @@ The stack can run entirely offline — local Postgres with `pgvector` instead of
 ```bash
 brew install python@3.12 postgresql@17 pgvector
 ollama pull bge-m3          # embeddings, 1024-dim like Titan v2
-ollama pull qwen3.6:27b     # generation (llama3.1:8b also works, and is smaller)
+ollama pull llama3.1        # generation (4.9 GB) — see the note below on model choice
 ```
 
 > **Homebrew quirk worth knowing:** `postgresql@17` keeps its files under `share/postgresql`, but the server and `pgvector` both look in `share/postgresql@17`. If `initdb` fails with `postgres.bki does not exist` or the server complains it cannot open `.../timezone`, link them across:
@@ -364,7 +370,19 @@ VECTOR_STORE=pgvector ./venv/bin/python ingest.py # embeds data/ into local pgve
 
 Point the frontend at it with `NEXT_PUBLIC_API_URL=http://localhost:8000` in `frontend/.env.local`.
 
-> **Ingest with the same provider you serve with.** Vectors written by one embedding model are not searchable by another, and dimensions differ (Titan v2 and bge-m3 are 1024, nomic-embed-text is 768). Switching `AI_PROVIDER` means re-running `ingest.py` against a clean collection.
+> **Ingest with the same provider you serve with.** Vectors written by one embedding model are not searchable by another. Switching `AI_PROVIDER` means re-running `ingest.py` against a clean collection.
+>
+> ⚠️ **Titan v2 and bge-m3 are both 1024-dimensional**, which makes the mistake silent rather than loud: S3 Vectors accepts either, writes succeed, and retrieval compares questions embedded by one model against documents embedded by the other. Scores become meaningless and the twin answers from near-random chunks while sounding entirely normal. `AI_PROVIDER=ollama` with the default `VECTOR_STORE=s3vectors` is therefore **refused at startup** and before any ingest write. Local mode needs *both* switches: `AI_PROVIDER=ollama` **and** `VECTOR_STORE=pgvector`.
+
+> **Why llama3.1 and not a bigger model.** qwen3.6:27b (17 GB) was pulled and benchmarked on an M5 Pro / 48 GB against the same two questions, both warm: **English 18.9s vs 5.2s, German 58.2s vs 2.5s** — 3.6x and 23x slower. German is the worst case because it runs the query rewrite *and* generation through a 27B model. Both answered correctly and both retrieved 5 documents; the larger model formats more neatly and its German reads better, but the RAG grounding supplies the facts and the model mostly chooses the phrasing. A minute per German question is not a usable loop, so llama3.1 is the default. Pull the larger model only to demo offline quality where speed does not matter.
+
+### Checking it still works
+
+```bash
+./scripts/verify_local.sh
+```
+
+Ten prerequisite checks, then a real question with AWS credentials stripped from the environment. This path cannot be covered by CI — it needs Ollama and a local Postgres, neither of which belongs on a GitHub runner — so this script is the only thing between the capability and silent rot. It had been broken for a month before anyone noticed, because `main.py` never actually read `.env`.
 
 ### Frontend Tests
 
