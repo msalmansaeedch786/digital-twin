@@ -8,13 +8,13 @@ import logging
 from pathlib import Path
 
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_aws import BedrockEmbeddings
 
 # build.sh copies lambdas/shared/s3_vector_store.py to the zip root. Running the
 # file locally it is two levels up, hence the append.
 sys.path.append(str(Path(__file__).resolve().parent.parent / "shared"))
 from s3_vector_store import S3VectorStore  # noqa: E402
+from chunking import build_splitter  # noqa: E402
 
 # ===========================================================================
 # Structured JSON Logging (mirrors the API Lambda pattern)
@@ -164,13 +164,9 @@ def lambda_handler(event, context):
             docs = loader.load()
             logger.info("Loaded document", extra={"doc_count": len(docs)})
 
-            # 5. Split into chunks
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1000,
-                chunk_overlap=200,
-                length_function=len,
-            )
-            chunks = text_splitter.split_documents(docs)
+            # 5. Split into chunks. Parameters come from lambdas/shared/chunking.py
+            # so the local ingester cannot drift to a different chunk shape.
+            chunks = build_splitter().split_documents(docs)
             logger.info("Split into chunks", extra={"chunk_count": len(chunks)})
 
             # Enrich metadata

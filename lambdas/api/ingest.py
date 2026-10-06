@@ -7,12 +7,12 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, DirectoryLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_aws import BedrockEmbeddings
 
 # The shared store sits in lambdas/shared/; this script runs from lambdas/api/.
 sys.path.append(str(Path(__file__).resolve().parent.parent / "shared"))
 from s3_vector_store import S3VectorStore  # noqa: E402
+from chunking import build_splitter  # noqa: E402
 
 # langchain_postgres and psycopg are imported lazily in the pgvector branch
 # below: they are local-only dependencies (requirements-local.txt) and must not
@@ -88,11 +88,8 @@ def main():
 
     # 2. Chunk the documents
     logger.info("Chunking documents...")
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200,
-        length_function=len
-    )
+    # Shared with the deployed Lambda — see lambdas/shared/chunking.py for why.
+    text_splitter = build_splitter()
     chunks = text_splitter.split_documents(all_docs)
     logger.info(f"Created {len(chunks)} text chunks.")
 
