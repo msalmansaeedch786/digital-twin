@@ -1,0 +1,126 @@
+name: "Infrastructure Drift Detection"
+
+# Terraform only notices console changes on the next push. Between pushes this
+# stack can silently diverge from its code — someone clicks something in the
+# console, an AWS-managed resource mutates, a resource is deleted — and the first
+# sign is a confusing diff in an unrelated PR days later.
+#
+# This runs a plan on a schedule and alerts if it is not empty.
+on:
+  schedule:
+    # 06:15 UTC daily. Deliberately not on the hour: GitHub's scheduler is
+    # heavily contended at :00 and delays runs by many minutes.
+    - cron: '15 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+# The SAME group as the deploy workflow, not a new one. Terraform holds a single
+# DynamoDB-free S3 lock for the whole backend, so a scheduled plan racing a deploy
+# would fail on the lock exactly as a push racing a PR plan once did. Queue behind
+# deploys; never cancel, because cancelling mid-apply drops the lock.
+concurrency:
+  group: terraform-state
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: "eu-central-1"
+  AWS_ROLE_ARN: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/digital-twin-github-actions-role"
+  GIT_BRANCH: "main"
+  TF_VAR_git_branch: "main"
+
+jobs:
+  drift:
+    name: "Does reality still match the code?"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolve Terraform version
+        id: tfver
+        run: echo "version=$(cat terraform/.terraform-version)" >> "$GITHUB_OUTPUT"
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ steps.tfver.outputs.version }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache API Build Directory
+        uses: actions/cache@v4
+        with:
+          path: lambdas/api/build
+          key: api-build-${{ hashFiles('lambdas/api/requirements.txt') }}
+
+      - name: Cache Ingestion Build Directory
+        uses: actions/cache@v4
+        with:
+          path: lambdas/ingestion/build
+          key: ingest-build-${{ hashFiles('lambdas/ingestion/requirements.txt') }}
+
+      # The zips MUST be built before planning. Their content hash is part of the
+      # plan, so skipping this reports a Lambda change on every single run and the
+      # alert becomes noise that gets ignored — which is worse than no alert.
+      - name: Build Python Lambda Packages
+        run: |
+          cd lambdas/api && ./build.sh && cd ../..
+          cd lambdas/ingestion && ./build.sh
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init -no-color
+
+      # -detailed-exitcode: 0 = no changes, 2 = changes pending, 1 = error.
+      # continue-on-error so exit 2 is handled below rather than ending the job.
+      - name: Terraform Plan
+        id: plan
+        working-directory: ./terraform
+        continue-on-error: true
+        run: terraform plan -detailed-exitcode -no-color -out=drift.tfplan
+        env:
+          TF_VAR_alert_email: ${{ secrets.TF_VAR_ALERT_EMAIL }}
+
+      - name: Summarise the drift
+        if: steps.plan.outcome == 'failure' || steps.plan.conclusion == 'failure'
+        working-directory: ./terraform
+        run: |
+          echo "## Infrastructure drift detected" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          terraform show -no-color drift.tfplan | grep -E '^  # |^Plan:' >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      # Publish to the same SNS topic every other alarm uses, so drift arrives in
+      # the same inbox as a cost or error alert rather than only as a GitHub
+      # notification that is easy to miss.
+      - name: Alert on drift
+        if: steps.plan.outcome == 'failure' || steps.plan.conclusion == 'failure'
+        working-directory: ./terraform
+        run: |
+          SUMMARY="$(terraform show -no-color drift.tfplan | grep -E '^  # |^Plan:' | head -40)"
+          TOPIC="arn:aws:sns:${AWS_REGION}:${{ vars.AWS_ACCOUNT_ID }}:digital-twin-alerts"
+          aws sns publish --topic-arn "$TOPIC" \
+            --subject "digital-twin: infrastructure drift detected" \
+            --message "Live infrastructure no longer matches the Terraform code.
+
+          This usually means something was changed in the AWS console, or an
+          AWS-managed resource mutated on its own.
+
+          $SUMMARY
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          To resolve: either apply the code to restore it, or update the code to
+          match the intended change."
+          echo "::error::Infrastructure drift detected — see the job summary."
+          exit 1
