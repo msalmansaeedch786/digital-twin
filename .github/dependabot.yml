@@ -1,0 +1,68 @@
+# Scoped deliberately narrowly.
+#
+# The risk in this repo is not missing updates, it is noise. langchain is pinned
+# at 0.3.25 and langchain-aws at 0.2.11 on purpose: moving langchain-aws to 1.x
+# forces langchain-core 0.3 -> 1.6 and pydantic 2.7 -> 2.10, which is a framework
+# upgrade through the whole RAG chain, not a version bump. A bot proposing that
+# every week is a bot that gets muted — and a muted bot is worse than none,
+# because it still feels like coverage.
+#
+# So: version-update PRs only where upgrades are routine (Actions, Terraform
+# providers), and security-only everywhere else. Security advisories still reach
+# the pip and npm ecosystems below; `open-pull-requests-limit: 0` disables
+# scheduled VERSION updates while leaving SECURITY updates enabled, which is the
+# documented way to get exactly that split.
+version: 2
+
+updates:
+  # --- GitHub Actions: routine, low risk, and they genuinely go stale ---
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "ci"
+    labels: ["dependencies", "github-actions"]
+    groups:
+      # One PR a month rather than nine. These are almost always major-version
+      # tags (actions/checkout@v4) that move together and are reviewed together.
+      actions:
+        patterns: ["*"]
+
+  # --- Terraform providers: aws ~> 6.0 picks up minors automatically, but the
+  # lock file pins exact versions and is committed, so it needs refreshing ---
+  - package-ecosystem: "terraform"
+    directory: "/terraform"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "chore(terraform)"
+    labels: ["dependencies", "terraform"]
+
+  # --- Python: SECURITY UPDATES ONLY ---
+  # Both Lambdas carry a deliberately pinned LangChain stack. Routine version PRs
+  # here would be closed unread; CVEs would not.
+  - package-ecosystem: "pip"
+    directory: "/lambdas/api"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    labels: ["dependencies", "security"]
+
+  - package-ecosystem: "pip"
+    directory: "/lambdas/ingestion"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    labels: ["dependencies", "security"]
+
+  # --- npm: SECURITY UPDATES ONLY ---
+  # Next.js here is explicitly non-standard (see frontend/AGENTS.md) and an
+  # unattended major bump would break the build in ways the i18n suite is only
+  # partly able to catch.
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    labels: ["dependencies", "security"]
