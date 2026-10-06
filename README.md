@@ -345,7 +345,9 @@ psql -d digitaltwin -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
 ```bash
 cd lambdas/api
-cp .env.example .env      # then set the local-mode block (AI_PROVIDER=ollama, DATABASE_URL, ...)
+cp .env.example .env      # then uncomment the local-mode block. BOTH switches are
+                          # required: AI_PROVIDER=ollama AND VECTOR_STORE=pgvector.
+                          # Setting only the first is refused at startup — see below.
 python3.12 -m venv venv
 ./venv/bin/pip install -r requirements.txt -r requirements-local.txt
 ```
