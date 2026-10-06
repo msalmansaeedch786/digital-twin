@@ -135,6 +135,24 @@ def main():
         )
         destination = "PostgreSQL (pgvector)"
     else:
+        # The write path is where this does real damage: it would fill the cloud
+        # index with vectors from the wrong embedding model, and nothing would
+        # error because bge-m3 and Titan v2 are both 1024-dimensional. Retrieval
+        # afterwards is meaningless and the only symptom is subtly wrong answers.
+        if provider != "bedrock":
+            raise SystemExit(
+                f"Refusing to ingest: AI_PROVIDER={provider!r} with VECTOR_STORE='s3vectors'.\n"
+                f"\n"
+                f"  This would write {provider} embeddings into the cloud index, which holds\n"
+                f"  Bedrock Titan v2 vectors. Both are 1024 dimensional, so the write would\n"
+                f"  succeed and corrupt retrieval silently.\n"
+                f"\n"
+                f"  Local ingest:  AI_PROVIDER=ollama VECTOR_STORE=pgvector python ingest.py\n"
+                f"  Cloud ingest:  AI_PROVIDER=bedrock python ingest.py\n"
+                f"\n"
+                f"  NOTE: lambdas/api/.env may be setting AI_PROVIDER for you."
+            )
+
         bucket = os.environ.get("VECTOR_BUCKET_NAME")
         index = os.environ.get("VECTOR_INDEX_NAME")
         if not bucket or not index:

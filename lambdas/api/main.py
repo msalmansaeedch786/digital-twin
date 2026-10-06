@@ -19,6 +19,26 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
+# Local development only: load lambdas/api/.env so AI_PROVIDER, VECTOR_STORE and
+# DATABASE_URL work the way the README says they do. Without this the file is
+# written, ignored, and the backend silently starts in cloud mode — which is
+# exactly what made the no-AWS path appear broken.
+#
+# Guarded two ways. AWS_LAMBDA_FUNCTION_NAME is always set by the Lambda runtime,
+# so the deployed function never touches this. And the import is optional because
+# python-dotenv lives in requirements-local.txt and is deliberately not a
+# dependency of the Lambda zip.
+#
+# load_dotenv() does not override variables already in the environment, so an
+# explicit `AI_PROVIDER=bedrock python ...` still wins over the file.
+if not os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv(Path(__file__).resolve().parent / ".env")
+    except ImportError:
+        pass
+
 from langchain_aws import ChatBedrock, BedrockEmbeddings
 
 # build.sh copies lambdas/shared/s3_vector_store.py to the zip root, where this
@@ -257,6 +277,38 @@ def _build_embeddings(region: str):
     )
 
 
+def _assert_provider_matches_store() -> None:
+    """Refuse the one combination that fails silently.
+
+    Ollama embeddings (bge-m3) and Bedrock Titan v2 are BOTH 1024-dimensional, so
+    S3 Vectors accepts vectors from either without complaint. Mixing them produces
+    no error anywhere: the index fills up, writes succeed, and retrieval compares
+    questions embedded by one model against documents embedded by another. The
+    scores are meaningless, so the twin answers from effectively random chunks
+    while sounding exactly as confident as usual.
+
+    The only symptom is subtly wrong answers, which is the hardest kind of failure
+    to notice and the slowest to attribute. Dimensions matching is what makes it
+    dangerous rather than merely broken — a mismatch would at least raise.
+
+    Local mode therefore has to set BOTH switches, not just AI_PROVIDER.
+    """
+    if AI_PROVIDER != "bedrock" and VECTOR_STORE == "s3vectors":
+        raise RuntimeError(
+            f"Refusing to run: AI_PROVIDER={AI_PROVIDER!r} with VECTOR_STORE='s3vectors'.\n"
+            f"\n"
+            f"  {AI_PROVIDER} embeddings would be written to, or compared against, the\n"
+            f"  cloud index, which holds Bedrock Titan v2 vectors. Both are 1024\n"
+            f"  dimensional, so nothing would error — retrieval would just return\n"
+            f"  near-random chunks and the answers would be quietly wrong.\n"
+            f"\n"
+            f"  For a fully local run:   AI_PROVIDER=ollama VECTOR_STORE=pgvector\n"
+            f"  For the cloud index:     AI_PROVIDER=bedrock (the default)\n"
+            f"\n"
+            f"  See lambdas/api/.env.example."
+        )
+
+
 def _build_vector_store(embeddings):
     """Vector store for the configured backend.
 
@@ -278,6 +330,8 @@ def _build_vector_store(embeddings):
             connection=get_local_database_url(),
             use_jsonb=True,
         )
+
+    _assert_provider_matches_store()
 
     bucket = os.environ.get("VECTOR_BUCKET_NAME")
     index = os.environ.get("VECTOR_INDEX_NAME")
