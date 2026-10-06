@@ -1,0 +1,81 @@
+name: "Frontend Tests"
+
+# These tests existed for weeks and nothing ran them. They cover the one part of
+# the i18n and chat behaviour that static checks cannot see — scroll position on a
+# locale switch, Enter vs Shift+Enter, metadata per route — so they are only worth
+# having if they run on their own.
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend_tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend_tests.yml'
+
+permissions:
+  contents: read
+
+# Independent of the Terraform workflow's state lock: this touches no AWS state,
+# so it can run alongside a deploy. Keyed per ref so two pushes to the same branch
+# still queue rather than racing the same build directory.
+concurrency:
+  group: frontend-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser:
+    name: "i18n + chat (headless Chromium)"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Only Chromium — the suites launch chromium explicitly, and pulling all
+      # three browsers triples the download for no extra coverage.
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+
+      # The i18n suite greps the built chunks for a German dictionary string to
+      # prove the client bundle is still split. That only works against a real
+      # production build, which is why these run against `next start` rather than
+      # `next dev`.
+      - name: Start production server
+        run: |
+          npx next start -p 3100 &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:3100/en >/dev/null && echo "up after ${i}s" && exit 0
+            sleep 1
+          done
+          echo "server did not come up within 60s" >&2
+          exit 1
+
+      - name: i18n suite
+        run: npm run test:i18n
+
+      - name: Chat suite
+        run: npm run test:chat
+
+      # Diff-only: prints strings identical between /en and /de. Proper nouns are
+      # expected in its output, so it reports rather than gates.
+      - name: Translation sweep (informational)
+        run: npm run test:i18n:sweep || true

@@ -126,6 +126,22 @@ jobs:
           cd lambdas/ingestion
           ./build.sh
 
+      # Everything below this point existed and was never enforced. The bundle
+      # guard in particular would have caught the API zip creeping to 225 MB
+      # against Lambda's 250 MB hard limit, which nothing was watching.
+      - name: Lambda bundle contents and size
+        run: python scripts/check_lambda_bundles.py
+
+      # Real S3 Vectors, not a mock: it creates and destroys its own bucket. This
+      # is also the only place the deploy role's s3vectors grant gets exercised as
+      # the role that holds it — an admin-credentialed test cannot prove a
+      # least-privilege policy is sufficient, which is how QueryVectors shipped
+      # without GetVectors and 500'd in production.
+      - name: Vector store integration test
+        run: |
+          python -m pip install --quiet 'langchain-core<0.4' boto3
+          python lambdas/shared/test_s3_vector_store.py
+
       - name: Terraform Init
         working-directory: ./terraform
         run: terraform init
@@ -183,3 +199,28 @@ jobs:
         run: terraform apply -auto-approve
         env:
           TF_VAR_alert_email: ${{ secrets.TF_VAR_ALERT_EMAIL }}
+
+      # The deploy can succeed while the twin quietly stops being grounded: if
+      # retrieval returns nothing, Nova Lite answers from its own priors and every
+      # technical signal stays green. This is the only check that notices.
+      #
+      # Compared against the committed baseline rather than a threshold, so it
+      # fails on a LOST FACT rather than on reworded output.
+      - name: Retrieval check against the committed baseline
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        run: |
+          API_URL="$(cd terraform && terraform output -raw api_gateway_url)"
+          echo "warming the container so a cold start is not mistaken for a failure"
+          curl -sf -m 60 "${API_URL%/}/warmup" >/dev/null || true
+          python scripts/eval/capture.py --label "ci-${GITHUB_SHA::7}" --base-url "$API_URL"
+          python scripts/eval/compare.py after-teardown "ci-${GITHUB_SHA::7}"
+
+      # Keep the run file when it fails: the saved answers are the only way to see
+      # WHAT the twin said, which is the whole point of the suite.
+      - name: Upload retrieval run on failure
+        if: failure() && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: retrieval-run-${{ github.sha }}
+          path: scripts/eval/runs/ci-*.json
+          retention-days: 14
