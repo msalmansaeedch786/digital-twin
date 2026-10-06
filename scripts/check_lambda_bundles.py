@@ -29,7 +29,7 @@ BUNDLES = {
     "lambdas/api/api_lambda.zip": {
         "required": [
             # imported directly by main.py
-            "main.py", "s3_vector_store.py",
+            "main.py", "s3_vector_store.py", "chunking.py",
             "langchain_aws", "langchain_core", "langchain", "fastapi", "mangum",
             "slowapi", "pydantic", "pydantic_core", "boto3", "botocore",
             # langchain pulls SQLAlchemy, which needs greenlet at runtime. Neither
@@ -51,7 +51,7 @@ BUNDLES = {
     },
     "lambdas/ingestion/lambda_function.zip": {
         "required": [
-            "lambda_function.py", "s3_vector_store.py",
+            "lambda_function.py", "s3_vector_store.py", "chunking.py",
             "langchain_aws", "langchain_core", "langchain_text_splitters",
             "langchain_community", "pypdf", "boto3", "botocore",
             "sqlalchemy", "greenlet",

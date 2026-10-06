@@ -50,7 +50,9 @@ zip -X -g "$ZIP_FILE" main.py > /dev/null
 # what makes `import s3_vector_store` resolve at runtime. Only the module goes
 # in — the integration test beside it stays out of the artifact.
 cd "$DIR/../shared"
-touch -t 202001010000.00 s3_vector_store.py
-zip -X -g "$ZIP_FILE" s3_vector_store.py > /dev/null
+for mod in s3_vector_store.py chunking.py; do
+  touch -t 202001010000.00 "$mod"
+  zip -X -g "$ZIP_FILE" "$mod" > /dev/null
+done
 
 echo "Build complete: $ZIP_FILE"
