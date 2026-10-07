@@ -110,9 +110,3 @@ variable "vector_index_name" {
   # S3 Vectors index names reject underscores.
   default = "digital-twin-docs"
 }
-
-variable "cost_metrics_schedule" {
-  description = "How often to pull Cost Explorer into CloudWatch. Each run costs $0.01, so daily is ~$0.30/month — more than this stack costs to operate. Each run republishes 14 days, so a weekly schedule still draws a daily chart."
-  type        = string
-  default     = "rate(1 day)"
-}
