@@ -11,6 +11,32 @@ import remarkGfm from "remark-gfm";
 const NAME_STORAGE_KEY = "chat-user-name";
 const MAX_TEXTAREA_PX = 160; // ~6 lines, then the textarea scrolls internally
 
+// Mirror ChatRequest in lambdas/api/main.py. The API rejects a request whose
+// history holds more than 20 items or any item longer than 2000 characters
+// with a 422, which this page can only report as a lost connection. Sending the
+// whole transcript used to trip that on the 11th question, and every question
+// after it failed the same way, so a long conversation simply stopped working.
+const MAX_HISTORY_MESSAGES = 20;
+const MAX_HISTORY_CHARS = 2000;
+// ChatRequest.message is capped at 1000 too. Enforced on the textarea so an
+// over-long message cannot be typed or pasted, rather than being sent and
+// coming back as "lost my connection".
+const MAX_MESSAGE_CHARS = 1000;
+
+/**
+ * The conversation as the API should see it: the most recent turns only, each
+ * clipped to the API's per-message limit. Messages marked `uiOnly` (the
+ * greeting and the error notices) are left out — they are this page talking,
+ * not the twin, and feeding "I lost my connection" back as something the twin
+ * said would only confuse the next answer.
+ */
+function historyForApi(messages) {
+  return messages
+    .filter(m => !m.uiOnly)
+    .slice(-MAX_HISTORY_MESSAGES)
+    .map(m => ({ role: m.role, content: m.content.slice(0, MAX_HISTORY_CHARS) }));
+}
+
 /**
  * Up to two letters for the little chip beside a reader's own messages:
  * "Muhammad Salman" -> MS, "Salman" -> SA. Falls back to the localised "You"
@@ -29,7 +55,7 @@ export default function AvatarClient({ lang, dict }) {
   const [isMuted, setIsMuted] = useState(true); // Default to muted so it doesn't auto-play
   const [inputText, setInputText] = useState("");
   const [messages, setMessages] = useState([
-    { role: "bot", content: dict.avatar.greeting }
+    { role: "bot", content: dict.avatar.greeting, uiOnly: true }
   ]);
   const [voices, setVoices] = useState([]);
   // Empty until the effect below reads localStorage: reading it during render
@@ -138,7 +164,7 @@ export default function AvatarClient({ lang, dict }) {
         for (let i = event.resultIndex; i < event.results.length; i++) {
           currentTranscript += event.results[i][0].transcript;
         }
-        setInputText(currentTranscript);
+        setInputText(currentTranscript.slice(0, MAX_MESSAGE_CHARS));
       };
 
       recognition.onend = () => {
@@ -228,7 +254,7 @@ export default function AvatarClient({ lang, dict }) {
         // Send previous messages as history so AI remembers the context
         body: JSON.stringify({
           message: userMsg,
-          history: messages.map(m => ({ role: m.role, content: m.content })),
+          history: historyForApi(messages),
           // Drives the twin's reply language; the API defaults to "en".
           lang,
         }),
@@ -251,7 +277,7 @@ export default function AvatarClient({ lang, dict }) {
       const errorMsg = error.message === "RATE_LIMIT"
         ? dict.avatar.rateLimited
         : dict.avatar.connectionError;
-      setMessages(prev => [...prev, { role: "bot", content: errorMsg }]);
+      setMessages(prev => [...prev, { role: "bot", content: errorMsg, uiOnly: true }]);
       if (!isMuted) {
         speak(errorMsg);
       } else {
@@ -494,6 +520,7 @@ export default function AvatarClient({ lang, dict }) {
           <textarea
             ref={textareaRef}
             rows={1}
+            maxLength={MAX_MESSAGE_CHARS}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleInputKeyDown}

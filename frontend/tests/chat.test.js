@@ -49,6 +49,11 @@ const ok=(n,c,x='')=>{c?(pass++,console.log(`  PASS  ${n}`)):(fail++,console.log
   ok('both lines preserved', bubble.text.includes('line one') && bubble.text.includes('line two'));
   ok('rendered as two lines (pre-wrap)', bubble.ws === 'pre-wrap', bubble.ws);
   ok('textarea reset to one row', (await p.$eval(ta, e=>e.clientHeight)) <= h1 + 2);
+  // The API rejects messages over 1000 chars; the box must not accept more.
+  await p.click(ta);
+  await p.keyboard.insertText('y'.repeat(1500));
+  ok('message capped at 1000 chars (API limit)', (await p.$eval(ta, e=>e.value.length)) === 1000);
+  await p.fill(ta, '');
   await ctx.close();
 
   console.log('\n=== 3. Name: defaults to "You", switches to initials ===');
@@ -96,6 +101,36 @@ const ok=(n,c,x='')=>{c?(pass++,console.log(`  PASS  ${n}`)):(fail++,console.log
     ok(`${vp.n}: hint ${vp.w<=768?'hidden':'shown'}`, vp.w<=768 ? !hint : hint);
     if (vp.n!=='desktop') await pg.screenshot({ path: path.join(os.tmpdir(), `shot-chat-${vp.w}.png`) });
     else await pg.screenshot({ path: path.join(os.tmpdir(), 'shot-chat-desktop.png') });
+    await c.close();
+  }
+
+  console.log('\n=== 7. A long conversation keeps working (history stays within the API limits) ===');
+  // Regression: the page sent the whole transcript — greeting and error notices
+  // included — and the API 422s on more than 20 history items or any item over
+  // 2000 chars. Question 11 failed, and so did every one after it. This stub
+  // enforces the same limits as ChatRequest in lambdas/api/main.py, and answers
+  // with 2500 chars so the per-message clip is exercised too.
+  {
+    const c = await b.newContext({ viewport:{width:1280,height:900} });
+    const sent = [];
+    await c.route('**/chat', r => {
+      const { history } = JSON.parse(r.request().postData());
+      sent.push(history);
+      const bad = history.length > 20 || history.some(m => m.content.length > 2000);
+      r.fulfill(bad ? { status:422, body:'{}' }
+                    : { status:200, contentType:'application/json', body: JSON.stringify({ reply: 'x'.repeat(2500) }) });
+    });
+    const pg = await c.newPage();
+    await pg.goto(`${B}/en/avatar`, { waitUntil:'networkidle' });
+    for (let i = 1; i <= 15; i++) {
+      await pg.fill('textarea', `question ${i}`);
+      await pg.keyboard.press('Enter');
+      await pg.waitForFunction(n => document.querySelectorAll('.avatar-msg-row').length >= n, 1 + i * 2);
+    }
+    const lost = await pg.$$eval('.avatar-message-bubble', els => els.filter(e => e.innerText.includes('lost my connection')).length);
+    ok('15 questions in a row, no connection error', lost === 0, `${lost} errors`);
+    ok('greeting is not sent as history', sent[0].length === 0, JSON.stringify(sent[0]));
+    ok('history capped at 20 items', Math.max(...sent.map(h => h.length)) === 20, sent.map(h => h.length).join(','));
     await c.close();
   }
 
