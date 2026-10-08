@@ -352,7 +352,10 @@ def _build_llm(region: str):
         from langchain_ollama import ChatOllama
 
         return ChatOllama(
-            model=os.environ.get("OLLAMA_LLM_MODEL", "qwen3.6:27b"),
+            # llama3.1, not qwen3.6:27b: the larger model was benchmarked and
+            # rejected (23x slower in German) and is no longer pulled, so
+            # defaulting to it made an unset OLLAMA_LLM_MODEL fail outright.
+            model=os.environ.get("OLLAMA_LLM_MODEL", "llama3.1"),
             base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
             temperature=0.1,
             # Ollama's name for the Bedrock max_tokens below.
