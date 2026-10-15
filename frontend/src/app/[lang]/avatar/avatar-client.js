@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Home, Volume2, VolumeX } from "lucide-react";
+import { Mic, MicOff, Home, Volume2, VolumeX, Briefcase } from "lucide-react";
 import Link from "next/link";
 import { otherLocale } from "../../dictionaries/locales";
 import ReactMarkdown from "react-markdown";
@@ -22,6 +22,228 @@ const MAX_HISTORY_CHARS = 2000;
 // over-long message cannot be typed or pasted, rather than being sent and
 // coming back as "lost my connection".
 const MAX_MESSAGE_CHARS = 1000;
+
+const TRACE_STEP_COLORS = {
+  rewrite: "#a78bfa",
+  embed: "#4facfe",
+  search: "#22c55e",
+  generate: "#00f2fe",
+};
+
+/**
+ * "How this answer was made": the steps the backend timed, what it searched
+ * for, how many knowledge-base facts the answer drew on, and what it cost.
+ * Everything here comes from the API's `trace`; nothing is computed in the
+ * browser except formatting. The facts themselves are deliberately not shown —
+ * only how many were used.
+ */
+function TracePanel({ trace, lang, dict }) {
+  const [open, setOpen] = useState(false);
+  const t = dict.avatar;
+  const num = new Intl.NumberFormat(lang);
+  const seconds = (ms) => `${new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(ms / 1000)} s`;
+  const stepLabel = {
+    rewrite: t.traceStepRewrite,
+    embed: t.traceStepEmbed,
+    search: t.traceStepSearch,
+    generate: t.traceStepGenerate,
+  };
+  const stepTotal = trace.steps.reduce((sum, s) => sum + s.ms, 0) || 1;
+
+  return (
+    <div className="trace">
+      <button type="button" className="trace-toggle" onClick={() => setOpen(o => !o)} aria-expanded={open}>
+        {open ? t.traceHide : t.traceToggle}
+      </button>
+      {open && (
+        <div className="trace-panel">
+          <div className="trace-section">
+            <div className="trace-heading">{t.traceSearched}</div>
+            <div className="trace-query">“{trace.search_query}”</div>
+          </div>
+
+          <div className="trace-section">
+            <div className="trace-heading">{t.traceSteps} · {seconds(trace.total_ms)}</div>
+            <div className="trace-bar" aria-hidden="true">
+              {trace.steps.map(s => (
+                <span key={s.name} style={{ flexGrow: Math.max(s.ms, 1), background: TRACE_STEP_COLORS[s.name] }} />
+              ))}
+            </div>
+            <ul className="trace-steps">
+              {trace.steps.map(s => (
+                <li key={s.name}>
+                  <span className="trace-dot" style={{ background: TRACE_STEP_COLORS[s.name] }} />
+                  <span className="trace-step-name">{stepLabel[s.name]}</span>
+                  <span className="trace-step-ms">{num.format(Math.round(s.ms))} ms · {Math.round((s.ms / stepTotal) * 100)}%</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="trace-section trace-facts">
+            {t.traceSources}: <strong>{trace.facts_used}</strong>
+          </div>
+
+          <div className="trace-section trace-cost">
+            {trace.cost_usd != null && (
+              <span>{t.traceCost} <strong>${trace.cost_usd.toFixed(5)}</strong> · </span>
+            )}
+            <span>
+              {t.traceTokens
+                .replace("{in}", num.format(trace.input_tokens))
+                .replace("{out}", num.format(trace.output_tokens))}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Mirrors FitRequest.job_description in lambdas/api/main.py.
+const FIT_MIN_CHARS = 80;
+const FIT_MAX_CHARS = 6000;
+const FIT_GROUPS = [
+  { verdict: "met", mark: "✅", label: "fitMetGroup" },
+  { verdict: "partial", mark: "🟡", label: "fitPartialGroup" },
+  { verdict: "missing", mark: "❌", label: "fitMissingGroup" },
+];
+
+// Strip any trailing slash so we don't build a "//chat" URL when the configured
+// base already ends in "/". NEXT_PUBLIC_API_URL is inlined at build time.
+function apiBase() {
+  return (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
+}
+
+function fill(template, values) {
+  return Object.entries(values).reduce((s, [k, v]) => s.replaceAll(`{${k}}`, v), template);
+}
+
+function fitScoreLine(fit, t) {
+  const count = v => fit.items.filter(i => i.verdict === v).length;
+  return fill(t.fitScore, {
+    met: count("met"), partial: count("partial"), missing: count("missing"), total: fit.items.length,
+  });
+}
+
+/**
+ * The job-fit result. The summary line is computed here from the final
+ * verdicts rather than written by the model: the API's code checks can turn a
+ * model's "met" into "missing", and a model-written summary could still praise
+ * what was rejected. "Missing" items carry no model text by design, so they
+ * show a fixed sentence.
+ */
+function FitGroups({ fit, t }) {
+  return FIT_GROUPS.map(g => {
+    const items = fit.items.filter(i => i.verdict === g.verdict);
+    if (!items.length) return null;
+    return (
+      <div key={g.verdict} className={`fit-group fit-${g.verdict}`}>
+        <div className="fit-group-title">{g.mark} {t[g.label]} ({items.length})</div>
+        <ul>
+          {items.map((it, i) => (
+            <li key={i}>
+              <strong>{it.requirement}</strong>
+              <span>{it.verdict === "missing" ? t.fitMissingText : it.evidence}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  });
+}
+
+function FitCard({ fit, lang, dict, onDownload }) {
+  const t = dict.avatar;
+  const seconds = `${new Intl.NumberFormat(lang, { maximumFractionDigits: 1 }).format(fit.trace.total_ms / 1000)} s`;
+  return (
+    <div className="fit-card">
+      <div className="fit-card-title">{t.fitResultTitle}</div>
+      <div className="fit-score">{fitScoreLine(fit, t)}</div>
+      <FitGroups fit={fit} t={t} />
+      <div className="fit-card-footer">
+        <button type="button" className="fit-download" onClick={() => onDownload(fit)}>{t.fitDownload}</button>
+        <span className="fit-meta">
+          {fill(t.fitMeta, {
+            s: seconds,
+            cost: fit.trace.cost_usd != null ? `$${fit.trace.cost_usd.toFixed(4)}` : "–",
+          })}
+        </span>
+      </div>
+      <div className="fit-note">{t.fitNote}</div>
+    </div>
+  );
+}
+
+// jsPDF's built-in Helvetica only encodes WinAnsi (Latin-1 plus a few extras
+// such as curly quotes and dashes). German umlauts are fine; anything else —
+// an emoji, an arrow — would print as garbage, so it is mapped or dropped.
+const PDF_EXTRAS = "‘’‚“”„–—…•€™ŠšŽžŒœŸ";
+function pdfSafe(text) {
+  return String(text)
+    .replace(/[→⇒]/g, "->").replace(/[≥]/g, ">=").replace(/[≤]/g, "<=")
+    .replace(/[^\u0000-ÿ]/g, ch => (PDF_EXTRAS.includes(ch) ? ch : ""));
+}
+
+/**
+ * "Download as PDF": builds the file in the browser and saves it straight to
+ * Downloads — no print dialog. jsPDF is imported on click, so the ~350 KB
+ * library never weighs on the chat page itself. Text stays real text in the
+ * PDF (selectable, searchable), not a screenshot.
+ */
+async function downloadFitPdf(fit, lang, t) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const M = 18, W = 210 - 2 * M, BOTTOM = 297 - 18;
+  let y = M;
+  const ensure = (h) => { if (y + h > BOTTOM) { doc.addPage(); y = M; } };
+  const write = (text, { size = 10, bold = false, color = [40, 40, 40], gap = 1.5 } = {}) => {
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setFontSize(size);
+    doc.setTextColor(...color);
+    const lines = doc.splitTextToSize(pdfSafe(text), W);
+    const lh = size * 0.42;
+    ensure(lines.length * lh);
+    doc.text(lines, M, y + lh * 0.8);
+    y += lines.length * lh + gap;
+  };
+
+  write(t.fitPrintTitle, { size: 18, bold: true, color: [17, 17, 17], gap: 1 });
+  write(new Date().toLocaleDateString(lang, { dateStyle: "long" }), { size: 9.5, color: [110, 110, 110], gap: 5 });
+  write(fitScoreLine(fit, t), { size: 11, color: [34, 34, 34], gap: 6 });
+
+  const groupColor = { met: [21, 128, 61], partial: [161, 98, 7], missing: [185, 28, 28] };
+  for (const g of FIT_GROUPS) {
+    const items = fit.items.filter(i => i.verdict === g.verdict);
+    if (!items.length) continue;
+    ensure(14);
+    doc.setFillColor(...groupColor[g.verdict]);
+    doc.circle(M + 1.5, y + 2.6, 1.5, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...groupColor[g.verdict]);
+    doc.text(pdfSafe(`${t[g.label]} (${items.length})`.toUpperCase()), M + 5, y + 3.6);
+    y += 8;
+    for (const it of items) {
+      ensure(12);
+      write(it.requirement, { size: 11, bold: true, color: [17, 17, 17], gap: 0.8 });
+      write(it.verdict === "missing" ? t.fitMissingText : it.evidence, { size: 10, color: [60, 60, 60], gap: 3.5 });
+    }
+    y += 2;
+  }
+
+  ensure(14);
+  doc.setDrawColor(200, 200, 200);
+  doc.line(M, y, M + W, y);
+  y += 3;
+  write(t.fitPrintFooter, { size: 8.5, color: [110, 110, 110] });
+
+  // Local date, not toISOString(): that is UTC, and just after midnight in
+  // Germany it named the file after yesterday.
+  const now = new Date();
+  const date = [now.getFullYear(), now.getMonth() + 1, now.getDate()].map(n => String(n).padStart(2, "0")).join("-");
+  doc.save(`Muhammad-Salman-job-fit-${date}.pdf`);
+}
 
 /**
  * The conversation as the API should see it: the most recent turns only, each
@@ -66,6 +288,10 @@ export default function AvatarClient({ lang, dict }) {
   const chatScrollRef = useRef(null);
   const rootRef = useRef(null);
   const textareaRef = useRef(null);
+
+  // Job fit: the paste dialog and its text.
+  const [fitOpen, setFitOpen] = useState(false);
+  const [fitText, setFitText] = useState("");
 
   // Remember who is typing across visits, so a returning reader is not asked
   // for their name again.
@@ -245,10 +471,7 @@ export default function AvatarClient({ lang, dict }) {
     setIsSpeaking(true); // Simulate thinking animation
 
     try {
-      // Strip any trailing slash so we don't build a "//chat" URL when the
-      // configured base already ends in "/".
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
-      const response = await fetch(`${apiUrl}/chat`, {
+      const response = await fetch(`${apiBase()}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // Send previous messages as history so AI remembers the context
@@ -266,7 +489,8 @@ export default function AvatarClient({ lang, dict }) {
       }
 
       const data = await response.json();
-      setMessages(prev => [...prev, { role: "bot", content: data.reply }]);
+      // trace is optional: an older API (or a local run) may not send it.
+      setMessages(prev => [...prev, { role: "bot", content: data.reply, trace: data.trace }]);
       if (!isMuted) {
         speak(data.reply);
       } else {
@@ -311,6 +535,41 @@ export default function AvatarClient({ lang, dict }) {
       recognitionRef.current?.stop();
     }
     handleSendText(inputText);
+  };
+
+  // The job description and the result are both uiOnly, so neither is ever sent
+  // back as chat history: a pasted job ad would blow the API's 2000-character
+  // per-message limit, and it is not part of the conversation with the twin.
+  const handleFitSubmit = async () => {
+    const jd = fitText.trim();
+    if (jd.length < FIT_MIN_CHARS) return;
+    setFitOpen(false);
+    setFitText("");
+    setMessages(prev => [...prev, {
+      role: "user",
+      content: fill(dict.avatar.fitUserMessage, { n: new Intl.NumberFormat(lang).format(jd.length) }),
+      uiOnly: true,
+    }]);
+    setIsSpeaking(true);
+    try {
+      const response = await fetch(`${apiBase()}/fit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job_description: jd, lang }),
+      });
+      if (!response.ok) throw new Error(response.status === 429 ? "RATE_LIMIT" : "FIT_ERROR");
+      const data = await response.json();
+      setMessages(prev => [...prev, { role: "bot", content: fitScoreLine(data, dict.avatar), fit: data, uiOnly: true }]);
+    } catch (error) {
+      console.error(error);
+      setMessages(prev => [...prev, {
+        role: "bot",
+        content: error.message === "RATE_LIMIT" ? dict.avatar.rateLimited : dict.avatar.fitError,
+        uiOnly: true,
+      }]);
+    } finally {
+      setIsSpeaking(false);
+    }
   };
 
   // Start with greeting audio when loaded (requires user interaction first usually, but we'll try)
@@ -450,6 +709,9 @@ export default function AvatarClient({ lang, dict }) {
               </span>
             )}
 
+            {/* Column wrapper so the trace toggle can sit under the bubble without
+                joining the row's flex layout beside the avatar icon. */}
+            <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
             <div className={`avatar-message-bubble ${msg.role === "bot" ? "markdown-body" : ""}`} style={{
               padding: "1rem 1.5rem",
               borderRadius: "16px",
@@ -465,7 +727,9 @@ export default function AvatarClient({ lang, dict }) {
               // Shift+Enter produces would otherwise collapse into spaces.
               whiteSpace: msg.role === "user" ? "pre-wrap" : undefined
             }}>
-              {msg.role === "bot" ? (
+              {msg.fit ? (
+                <FitCard fit={msg.fit} lang={lang} dict={dict} onDownload={fit => downloadFitPdf(fit, lang, dict.avatar)} />
+              ) : msg.role === "bot" ? (
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
@@ -482,6 +746,8 @@ export default function AvatarClient({ lang, dict }) {
               ) : (
                 msg.content
               )}
+            </div>
+            {msg.trace && <TracePanel trace={msg.trace} lang={lang} dict={dict} />}
             </div>
           </motion.div>
         ))}
@@ -543,6 +809,20 @@ export default function AvatarClient({ lang, dict }) {
             }}
           />
 
+          {/* Job fit lives in the input bar, beside the mic, like an attach
+              button: always reachable, never floating over the conversation,
+              and deliberately not mixed in with the sample questions. */}
+          <button
+            type="button"
+            className="fit-icon-btn"
+            onClick={() => setFitOpen(true)}
+            disabled={isSpeaking}
+            aria-label={dict.avatar.fitButton}
+            title={dict.avatar.fitButton}
+          >
+            <Briefcase size={20} />
+          </button>
+
           <button
             type="button"
             onClick={toggleListening}
@@ -595,6 +875,46 @@ export default function AvatarClient({ lang, dict }) {
       <div style={{ textAlign: "center", paddingBottom: "1rem", color: "rgba(255,255,255,0.3)", fontSize: "0.75rem", zIndex: 10 }}>
         {dict.avatar.disclaimer}
       </div>
+
+      {fitOpen && (
+        <div
+          className="fit-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="fit-title"
+          onClick={(e) => { if (e.target === e.currentTarget) setFitOpen(false); }}
+          onKeyDown={(e) => { if (e.key === "Escape") setFitOpen(false); }}
+        >
+          <div className="fit-modal">
+            <h3 id="fit-title">{dict.avatar.fitTitle}</h3>
+            <p>{dict.avatar.fitIntro}</p>
+            <textarea
+              className="fit-input"
+              autoFocus
+              value={fitText}
+              maxLength={FIT_MAX_CHARS}
+              onChange={(e) => setFitText(e.target.value)}
+              placeholder={dict.avatar.fitPlaceholder}
+            />
+            <div className="fit-modal-row">
+              <span className="fit-count">
+                {fitText.trim().length < FIT_MIN_CHARS
+                  ? fill(dict.avatar.fitMinChars, { n: FIT_MIN_CHARS })
+                  : `${new Intl.NumberFormat(lang).format(fitText.length)} / ${new Intl.NumberFormat(lang).format(FIT_MAX_CHARS)}`}
+              </span>
+              <button type="button" className="fit-cancel" onClick={() => setFitOpen(false)}>{dict.avatar.fitCancel}</button>
+              <button
+                type="button"
+                className="fit-submit"
+                disabled={fitText.trim().length < FIT_MIN_CHARS}
+                onClick={handleFitSubmit}
+              >
+                {dict.avatar.fitAnalyze}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

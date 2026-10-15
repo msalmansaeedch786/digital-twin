@@ -1120,3 +1120,166 @@ p {
   /* Last thing to go: the home icon still carries the link on its own. */
   .avatar-back-label { display: none; }
 }
+
+/* "How this answer was made" — the per-answer trace under each twin reply.
+   The chat page is always dark, so these use fixed colours rather than the
+   portfolio's theme tokens, matching the rest of the avatar styles. */
+.trace { margin-top: 0.35rem; }
+
+.trace-toggle {
+  background: none;
+  border: none;
+  padding: 0.2rem 0;
+  color: rgba(0, 242, 254, 0.75);
+  font-family: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+.trace-toggle:hover { color: #00f2fe; text-decoration: underline; }
+
+.trace-panel {
+  margin-top: 0.35rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.75);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.trace-heading {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 0.35rem;
+}
+
+.trace-query { font-style: italic; color: rgba(255, 255, 255, 0.85); }
+
+.trace-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  gap: 2px;
+  margin-bottom: 0.5rem;
+}
+.trace-bar span { flex-basis: 0; min-width: 3px; }
+
+.trace-steps { list-style: none; display: flex; flex-direction: column; gap: 0.25rem; }
+.trace-steps li { display: flex; align-items: center; gap: 0.5rem; }
+.trace-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.trace-step-name { flex: 1; }
+.trace-step-ms {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+}
+
+.trace-facts strong { color: #fff; font-weight: 600; }
+
+.trace-cost { color: rgba(255, 255, 255, 0.55); font-size: 0.78rem; }
+.trace-cost strong { color: #22c55e; font-weight: 600; }
+
+/* Job fit: input-bar icon, paste dialog and result card. Dark like the rest of
+   the chat; the downloadable PDF is built separately with jsPDF. */
+.fit-icon-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+.fit-icon-btn:hover:not(:disabled) { color: #00f2fe; }
+.fit-icon-btn:disabled { opacity: 0.35; cursor: default; }
+
+
+.fit-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: rgba(3, 6, 12, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.fit-modal {
+  width: 100%;
+  max-width: 640px;
+  max-height: 100%;
+  overflow-y: auto;
+  background: #0D1322;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1.4rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+.fit-modal h3 { font-size: 1.15rem; margin-bottom: 0.4rem; color: #fff; }
+.fit-modal p { font-size: 0.9rem; color: rgba(255, 255, 255, 0.6); margin-bottom: 0.9rem; line-height: 1.5; }
+.fit-input {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: #fff;
+  padding: 0.8rem;
+  font-family: inherit;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  outline: none;
+}
+.fit-input:focus { border-color: rgba(0, 242, 254, 0.5); }
+.fit-modal-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.8rem; flex-wrap: wrap; }
+.fit-count { flex: 1; font-size: 0.78rem; color: rgba(255, 255, 255, 0.45); font-family: 'JetBrains Mono', monospace; }
+.fit-cancel, .fit-submit {
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fit-cancel { background: transparent; border: 1px solid rgba(255, 255, 255, 0.15); color: rgba(255, 255, 255, 0.75); }
+.fit-submit { background: linear-gradient(135deg, #00f2fe, #4facfe); border: none; color: #000; }
+.fit-submit:disabled { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.3); cursor: not-allowed; }
+
+.fit-card { display: flex; flex-direction: column; gap: 0.8rem; }
+.fit-card-title { font-weight: 700; font-size: 1.05rem; color: #fff; }
+.fit-score { font-size: 0.88rem; color: rgba(255, 255, 255, 0.7); }
+.fit-group-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; }
+.fit-met .fit-group-title { color: #22c55e; }
+.fit-partial .fit-group-title { color: #facc15; }
+.fit-missing .fit-group-title { color: #f87171; }
+.fit-group ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+.fit-group li { display: flex; flex-direction: column; gap: 0.1rem; font-size: 0.9rem; line-height: 1.45; }
+.fit-group li strong { color: #fff; font-weight: 600; }
+.fit-group li span { color: rgba(255, 255, 255, 0.65); }
+.fit-card-footer { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.2rem; }
+.fit-download {
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  background: rgba(0, 242, 254, 0.1);
+  border: 1px solid rgba(0, 242, 254, 0.35);
+  color: #00f2fe;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fit-download:hover { background: rgba(0, 242, 254, 0.18); }
+.fit-meta { font-size: 0.75rem; color: rgba(255, 255, 255, 0.4); }
+.fit-note { font-size: 0.72rem; color: rgba(255, 255, 255, 0.4); font-style: italic; }

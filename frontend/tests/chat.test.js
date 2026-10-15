@@ -134,6 +134,85 @@ const ok=(n,c,x='')=>{c?(pass++,console.log(`  PASS  ${n}`)):(fail++,console.log
     await c.close();
   }
 
+  console.log('\n=== 8. "How this answer was made" panel ===');
+  // The API's trace carries timings, the searched query, a facts count and the
+  // cost — never the facts themselves. The panel must render all of it, stay
+  // closed until asked, and the trace must not be echoed back as history.
+  {
+    const trace = {
+      steps: [{ name:'rewrite', ms:400 }, { name:'embed', ms:120 }, { name:'search', ms:80 }, { name:'generate', ms:800 }],
+      total_ms: 1400, search_query: 'Where do you live?', facts_used: 5,
+      input_tokens: 1383, output_tokens: 39, cost_usd: 0.0001209,
+    };
+    const c = await b.newContext({ viewport:{width:1280,height:900} });
+    const sent = [];
+    await c.route('**/chat', r => {
+      sent.push(JSON.parse(r.request().postData()).history);
+      r.fulfill({ status:200, contentType:'application/json', body: JSON.stringify({ reply:'Munich.', trace }) });
+    });
+    const pg = await c.newPage();
+    await pg.goto(`${B}/de/avatar`, { waitUntil:'networkidle' });
+    await pg.fill('textarea', 'Wo wohnst du?'); await pg.keyboard.press('Enter');
+    await pg.waitForSelector('.trace-toggle');
+    ok('panel closed until asked', !(await pg.isVisible('.trace-panel')));
+    ok('toggle is translated', (await pg.textContent('.trace-toggle')).trim() === 'So entstand diese Antwort');
+    await pg.click('.trace-toggle');
+    const txt = (await pg.textContent('.trace-panel')).replace(/\s+/g, ' ');
+    ok('shows the English query that was searched', txt.includes('Where do you live?'), txt);
+    ok('one row per timed step', (await pg.$$eval('.trace-steps li', l => l.length)) === 4);
+    ok('shows the facts count only', txt.includes('Verwendete Fakten: 5'), txt);
+    ok('shows the cost', txt.includes('$0.00012'), txt);
+    await pg.fill('textarea', 'Und davor?'); await pg.keyboard.press('Enter');
+    await pg.waitForFunction(() => document.querySelectorAll('.trace-toggle').length === 2);
+    ok('trace is not sent back as history', !JSON.stringify(sent[1]).includes('total_ms'), JSON.stringify(sent[1]));
+    await c.close();
+  }
+
+  console.log('\n=== 9. Job fit: dialog, result card, PDF download ===');
+  {
+    const fit = {
+      items: [
+        { requirement: 'AWS', verdict: 'met', evidence: 'I have 6+ years of AWS experience.' },
+        { requirement: 'Terraform', verdict: 'met', evidence: 'I use Terraform daily.' },
+        { requirement: 'German C1', verdict: 'partial', evidence: 'I am learning German.' },
+        { requirement: 'Go', verdict: 'missing', evidence: '' },
+      ],
+      trace: { total_ms: 4000, facts_used: 12, input_tokens: 5000, output_tokens: 400, cost_usd: 0.0006 },
+    };
+    const c = await b.newContext({ viewport:{width:1280,height:900}, acceptDownloads: true });
+    const chatHistories = []; let fitBody = null;
+    await c.route('**/fit', r => { fitBody = JSON.parse(r.request().postData());
+      r.fulfill({ status:200, contentType:'application/json', body: JSON.stringify(fit) }); });
+    await c.route('**/chat', r => { chatHistories.push(JSON.parse(r.request().postData()).history);
+      r.fulfill({ status:200, contentType:'application/json', body: JSON.stringify({ reply:'ok' }) }); });
+    const pg = await c.newPage();
+    await pg.goto(`${B}/en/avatar`, { waitUntil:'networkidle' });
+    ok('job fit is not among the sample questions', (await pg.$$('.fit-suggestion')).length === 0);
+    await pg.click('.fit-icon-btn');
+    ok('dialog opens from the input-bar icon', await pg.isVisible('.fit-modal'));
+    ok('job ad capped at 6000 chars', (await pg.getAttribute('.fit-input', 'maxlength')) === '6000');
+    await pg.fill('.fit-input', 'too short');
+    ok('submit disabled under 80 chars', await pg.isDisabled('.fit-submit'));
+    await pg.keyboard.press('Escape');
+    ok('Escape closes the dialog', !(await pg.isVisible('.fit-modal')));
+    const jd = 'Senior DevOps engineer with AWS, Terraform and Go. German C1 required. '.repeat(3);
+    ok('job-fit icon sits inside the input bar', await pg.$eval('.fit-icon-btn', e => !!e.closest('form')));
+    await pg.click('.fit-icon-btn'); await pg.fill('.fit-input', jd); await pg.click('.fit-submit');
+    await pg.waitForSelector('.fit-card');
+    ok('sends job ad and language', fitBody && fitBody.lang === 'en' && fitBody.job_description === jd.trim());
+    ok('score line from final verdicts', (await pg.textContent('.fit-score')).includes('2 of 4 requirements met · 1 partly · 1 not in my background'));
+    ok('card says it is AI-generated', (await pg.textContent('.fit-note')).includes('Please verify key details'));
+    ok('missing item shows the fixed sentence', (await pg.textContent('.fit-missing')).includes('Not part of my experience so far.'));
+    const [dl] = await Promise.all([pg.waitForEvent('download'), pg.click('.fit-download')]);
+    const file = await dl.path(); const head = require('fs').readFileSync(file).subarray(0, 5).toString();
+    ok('download is a real PDF file', /^Muhammad-Salman-job-fit-\d{4}-\d{2}-\d{2}\.pdf$/.test(dl.suggestedFilename()) && head === '%PDF-', `${dl.suggestedFilename()} ${head}`);
+    await pg.fill('textarea:not(.fit-input)', 'next question'); await pg.keyboard.press('Enter');
+    await pg.waitForFunction(() => document.querySelectorAll('.avatar-msg-row').length >= 5);
+    const h = JSON.stringify(chatHistories[0] || []);
+    ok('job ad and result never sent as chat history', !h.includes('Senior DevOps') && !h.includes('requirements met'), h);
+    await c.close();
+  }
+
   await b.close();
   console.log(`\n================  ${pass} passed, ${fail} failed  ================`);
   process.exit(fail?1:0);
