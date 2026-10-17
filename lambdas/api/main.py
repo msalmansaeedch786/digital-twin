@@ -794,8 +794,9 @@ async def chat_endpoint(request: Request, chat_request: ChatRequest):
 # enough: in testing Nova Lite claimed "production Go experience" for a CV with
 # no Go in it, and gave Airflow "partial" from loosely related skills. So the
 # verdict is checked in code, where the model cannot talk its way past it:
-#   - keyword proof: a requirement can only be met/partial if one of its exact
-#     technology names appears in the facts retrieved for it
+#   - keyword proof: a requirement can only be met/partial if the technology it
+#     names appears somewhere in the knowledge base, and every chunk that names
+#     it is put in front of the judge
 #   - denial check: evidence that opens by denying the experience is "missing"
 #   - "missing" items carry no model text; the page shows a fixed sentence
 # There is no model-written summary either: the page derives it from the final
@@ -820,6 +821,12 @@ _DENIAL = re.compile(
     r"|das\s+(ist|gehört)\s+nicht\s+zu\s+meine)",
     re.IGNORECASE,
 )
+
+
+# Rule 3's "still learning is partial at most" is the one the model breaks most
+# often ("German is nice to have: met — I am actively learning German"), so it
+# is enforced here as well.
+_STILL_LEARNING = re.compile(r"\b(?:learning|studying|lerne|lernen|erlerne)\b", re.IGNORECASE)
 
 
 def _keyword_in_facts(keywords: list, facts_text: str) -> bool:
@@ -853,6 +860,32 @@ def _named_keywords(req: dict) -> list:
     text = str(req.get("text", "")).lower()
     named = [k for k in req["keywords"] if k.strip() and k.lower() in text]
     return named or req["keywords"]
+
+
+# The whole knowledge base, cached per warm container. It is small (~31 chunks),
+# so instead of hoping a similarity search surfaces the one chunk that proves a
+# skill, /fit can read every chunk for the exact word. A similarity search over
+# k=100 returns the full index for both stores (S3 Vectors and local pgvector)
+# with no extra IAM grant. Refreshed every 10 minutes so a data/ change reaches
+# warm containers without a redeploy.
+FIT_CORPUS_TTL_S = 600
+FIT_CORPUS_MAX = 100
+_fit_corpus: dict = {"at": 0.0, "texts": []}
+
+
+def _knowledge_base_texts() -> list:
+    now = time.monotonic()
+    if _fit_corpus["texts"] and now - _fit_corpus["at"] < FIT_CORPUS_TTL_S:
+        return _fit_corpus["texts"]
+    docs = _engine.vectorstore.similarity_search("professional experience, skills and languages", k=FIT_CORPUS_MAX)
+    texts = list(dict.fromkeys(d.page_content for d in docs))
+    if len(docs) >= FIT_CORPUS_MAX:
+        # Past this size the "is it anywhere in the data" check could miss a
+        # chunk and wrongly reject a real skill. Loud rather than silent.
+        logger.warning("Fit: knowledge base reached the corpus cap; keyword proof may be incomplete",
+                       extra={"cap": FIT_CORPUS_MAX})
+    _fit_corpus.update(at=now, texts=texts)
+    return texts
 
 
 # The model sometimes cites its own source ("as listed under Skills"). The page
@@ -987,37 +1020,43 @@ async def fit_endpoint(request: Request, fit_request: FitRequest):
 
         # 2. Facts per requirement, searched in parallel
         def search(req):
-            usage_chars = len(req["query"])
-            return usage_chars, _engine.vectorstore.similarity_search(req["query"], k=FIT_FACTS_PER_REQUIREMENT)
+            return len(req["query"]), _engine.vectorstore.similarity_search(req["query"], k=FIT_FACTS_PER_REQUIREMENT)
 
         with ThreadPoolExecutor(max_workers=5) as pool:
             results = list(pool.map(search, requirements))
         usage["embed_chars"] = sum(chars for chars, _ in results)
-        facts_used = len({d.page_content for _, docs in results for d in docs})
 
         # 3. Judge each requirement in its OWN call, in parallel. One call for
         # the whole list was tried first and shifted evidence by a row: Nova Lite
         # miscounted the ids, so the Terraform sentence landed under "Docker and
         # Kubernetes". A call that only ever sees one requirement and its own
         # facts cannot misplace its answer.
-        # A requirement's own top hits can miss its fact: "fluent English"
-        # retrieved the German-learning chunk, not "English (Full Professional)",
-        # and the twin then wrote about German. So any chunk retrieved for this
-        # job that names the requirement's keyword is added to its facts.
-        pool_docs = list({d.page_content: d for _, docs in results for d in docs}.values())
+        # A requirement's own top hits can miss its proof: live, "fluent English"
+        # retrieved the German-learning chunk and never "English (Full
+        # Professional)", so a real skill came back missing. Every chunk in the
+        # knowledge base that names the requirement's technology is therefore
+        # added to its facts, and the keyword proof below runs against the whole
+        # knowledge base too — so a real skill is always found, and one that is
+        # not in the data (Go, Snowflake) still cannot be claimed.
+        retrieved = list(dict.fromkeys(d.page_content for _, docs in results for d in docs))
+        try:
+            pool_texts = _knowledge_base_texts()
+        except Exception:
+            logger.warning("Fit: could not load the knowledge base; using retrieved facts only", exc_info=True)
+            pool_texts = retrieved
 
         def facts_for(req, docs):
             texts = [d.page_content for d in docs]
-            for d in pool_docs:
-                if len(texts) >= FIT_FACTS_PER_REQUIREMENT + 2:
+            for t in pool_texts:
+                if len(texts) >= FIT_FACTS_PER_REQUIREMENT + 5:
                     break
-                if d.page_content not in texts and _keyword_in_facts(_named_keywords(req), d.page_content):
-                    texts.append(d.page_content)
+                if t not in texts and _keyword_in_facts(_named_keywords(req), t):
+                    texts.append(t)
             return texts
 
         def judge(pair):
-            req, (_, docs) = pair
-            facts = "\n".join(f"- {' '.join(t.split())}" for t in facts_for(req, docs)) or "(no facts found)"
+            req, texts = pair
+            facts = "\n".join(f"- {' '.join(t.split())}" for t in texts) or "(no facts found)"
             local: dict = {}
             try:
                 raw_verdict = _llm_call(
@@ -1038,18 +1077,17 @@ async def fit_endpoint(request: Request, fit_request: FitRequest):
                 logger.warning("Fit: could not judge one requirement", exc_info=True)
                 return {}, local
 
+        facts_given = [facts_for(req, docs) for req, (_, docs) in zip(requirements, results)]
+        facts_used = len({t for texts in facts_given for t in texts})
+
         with ThreadPoolExecutor(max_workers=5) as pool:
-            judged = list(pool.map(judge, zip(requirements, results)))
+            judged = list(pool.map(judge, zip(requirements, facts_given)))
         for _, local in judged:
             usage["llm_in_tokens"] = usage.get("llm_in_tokens", 0) + local.get("llm_in_tokens", 0)
             usage["llm_out_tokens"] = usage.get("llm_out_tokens", 0) + local.get("llm_out_tokens", 0)
 
-        # Keyword proof runs against everything retrieved for this job, not just
-        # one requirement's top hits: the knowledge base is ~31 chunks, so the
-        # union covers most of it. Checking per requirement wrongly rejected
-        # "English" and "AWS" when their fact ranked just outside that
-        # requirement's top 4, while the union still has no "Go" to find.
-        all_facts = " ".join({d.page_content for _, docs in results for d in docs})
+        # Keyword proof: is the named technology anywhere in the knowledge base?
+        all_facts = " ".join(pool_texts)
         items, overruled = [], 0
         for req, (j, _) in zip(requirements, judged):
             verdict = j.get("verdict") if j.get("verdict") in FIT_VERDICTS else "missing"
@@ -1059,6 +1097,9 @@ async def fit_endpoint(request: Request, fit_request: FitRequest):
                 unproven = req["keywords"] and not _keyword_in_facts(_named_keywords(req), all_facts)
                 if not evidence or _DENIAL.search(evidence) or unproven:
                     verdict = "missing"
+                    overruled += 1
+                elif verdict == "met" and _STILL_LEARNING.search(evidence):
+                    verdict = "partial"
                     overruled += 1
             items.append(FitItem(
                 requirement=str(req["text"]).strip()[:200],
