@@ -1,5 +1,7 @@
 # Projects
 
+All my projects, newest first: AI Digital Twin (personal project, June 2026 - present), Mercedes-Benz AG OTR (April 2025 - present), MBition SWF GitLab CI Runners (July 2023 - January 2025), Porsche AG Cloud Infrastructure (January - June 2023), DealerMeter (March - April 2021), Vector Solutions (December 2019 - December 2020), Amway (September - December 2019), NorthBay Labs (July - September 2019), CodeFreak Programming Platform (January - June 2019) and Keyless Decentralized Network (August 2018 - January 2019).
+
 ## AI Digital Twin (personal project, this portfolio's chat avatar)
 Duration: June 2026 - Present
 Live: https://msalmansaeedch.de
