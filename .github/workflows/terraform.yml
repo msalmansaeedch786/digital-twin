@@ -14,13 +14,13 @@ on:
     branches:
       - main
 
-# Terraform holds a DynamoDB state lock for the length of a plan/apply, so two
+# Terraform holds a state lock (an S3 .tflock object) for the length of a plan/apply, so two
 # runs overlapping means the second dies on ConditionalCheckFailedException.
 # Two pushes a minute apart is enough to trigger it. Queue runs instead, and
 # never cancel one mid-apply: that would drop the lock with state half-written.
 concurrency:
-  # Keyed on the WORKFLOW, not the ref. Terraform holds a single DynamoDB state
-  # lock for the whole backend, so two runs on different refs collide just as
+  # Keyed on the WORKFLOW, not the ref. Terraform holds a single state lock (one
+  # S3 .tflock object) for the whole backend, so two runs on different refs collide just as
   # surely as two on the same one. That is not hypothetical: a push to main and a
   # pull_request plan started two seconds apart, landed in different groups
   # because this was once terraform-${{ github.ref }}, and the second died on

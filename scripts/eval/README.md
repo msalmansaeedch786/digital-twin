@@ -36,7 +36,7 @@ reworded answer is not a regression. The durable value is the saved replies in
 ## Gotchas
 
 - Pacing is bound by `@limiter.limit("20/minute")` per IP in `lambdas/api/main.py`,
-  not by the API Gateway stage (5 rps). Hence the 2.5s default `--delay`; a 429
+  not by the API Gateway stage (5 rps). Hence the 3.5s default `--delay`; a 429
   needs ~25s of backoff, not seconds.
 - `docs_retrieved` is **logged, not returned** by `/chat`. Pull it from Logs Insights
   on `/aws/lambda/digital-twin-api` for the run window and merge it into the run

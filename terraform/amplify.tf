@@ -39,7 +39,7 @@ resource "aws_amplify_app" "frontend" {
   iam_service_role_arn = aws_iam_role.amplify_role.arn
   platform             = "WEB_COMPUTE" # Required for Next.js SSR
 
-  # Next.js 14 Build Specification
+  # Next.js build specification
   build_spec = <<-EOT
     version: 1
     applications:
@@ -116,9 +116,9 @@ resource "aws_amplify_branch" "feature" {
   }
 }
 
-# Custom domain (e.g. salman.is-a.dev). The DNS records are hosted by the
-# domain provider (is-a.dev, via PR), so we DON'T wait for verification here —
-# otherwise `terraform apply` would block until the records are added manually.
+# Custom domain (msalmansaeedch.de). DNS is hosted at Porkbun, not Route53, so
+# we DON'T wait for verification here — otherwise `terraform apply` would block
+# until the validation records exist at the registrar.
 # After apply, read the required records with:
 #   aws amplify get-domain-association --app-id <id> --domain-name <domain>
 resource "aws_amplify_domain_association" "custom" {

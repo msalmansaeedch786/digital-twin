@@ -198,7 +198,7 @@ resource "aws_budgets_budget" "daily" {
 
 # ===========================================================================
 # Cost Anomaly Detection — the "fraud alert" for AWS spend. Learns your normal
-# daily pattern (~$0.85/day) and emails when spend deviates above it, regardless
+# daily pattern (a few cents a day since the October 2026 teardown) and emails when spend deviates above it, regardless
 # of the absolute monthly total. This is what catches "cost is higher than it
 # should be" without the false alarms a tight fixed budget would produce.
 # Detection runs ~daily (it is not real-time — the abuse alarm below is).
@@ -337,7 +337,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_api_errors" {
 
 resource "aws_cloudwatch_metric_alarm" "lambda_api_throttles" {
   alarm_name          = "${var.project_name}-api-throttles"
-  alarm_description   = "API Lambda is being throttled — reserved concurrency may be too low"
+  alarm_description   = "API Lambda is being throttled: the account-wide concurrency limit of 10 was hit (reserved concurrency cannot be set in this account; see the Cost Guardrail note)"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   metric_name         = "Throttles"

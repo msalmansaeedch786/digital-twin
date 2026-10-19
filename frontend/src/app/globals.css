@@ -29,14 +29,6 @@
   --badge-shadow: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.18));
   --dot-grid: rgba(15, 23, 42, 0.05);
 
-  /* Text drawn ON TOP of the accent gradient. The light-mode accents
-     (#0284c7 -> #4f46e5) are dark, so this must be white for legible contrast;
-     the dark-mode accents are bright cyan, so it flips to black below. */
-  --on-accent: #ffffff;
-  /* Solid-fill CTA gradient. Deliberately a shade deeper than --neon-cyan at
-     the start: the plain accent only reached 4.10:1 against white, below the
-     4.5:1 WCAG AA minimum for text at this size. */
-  --cta-gradient: linear-gradient(135deg, #0369a1, #4f46e5);
 }
 
 [data-theme='dark'] {
@@ -56,9 +48,6 @@
   --glass-highlight: rgba(255, 255, 255, 0.15);
   --glass-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.7);
 
-  /* Dark-mode accents are bright cyan, so text on top must be dark. */
-  --on-accent: #000000;
-  --cta-gradient: linear-gradient(135deg, #00f2fe, #4facfe);
 
   --orb-1-color: rgba(0, 242, 254, 0.4);
   --orb-2-color: rgba(79, 172, 254, 0.4);
@@ -531,152 +520,6 @@ p {
 }
 .project-link:hover { text-decoration: underline; }
 
-.project-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-}
-
-/* Floating AI Action Button (FAB) */
-.fab-container {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  z-index: 1000;
-}
-
-.fab-button {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
-  border: none;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 10px 30px var(--neon-purple-glow);
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.fab-button:hover {
-  transform: scale(1.1) rotate(10deg);
-}
-
-/* Chat Modal */
-.chat-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(5px);
-  z-index: 1001;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.chat-modal {
-  width: 90%;
-  max-width: 600px;
-  height: 80vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-header {
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid var(--glass-border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.chat-messages {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.message {
-  max-width: 85%;
-  padding: 1.2rem;
-  border-radius: 16px;
-  line-height: 1.6;
-  font-size: 0.95rem;
-}
-
-.message.user {
-  align-self: flex-end;
-  background: linear-gradient(135deg, rgba(0, 242, 254, 0.15), rgba(79, 172, 254, 0.15));
-  border: 1px solid var(--neon-purple-glow);
-  border-bottom-right-radius: 4px;
-}
-
-.message.bot {
-  align-self: flex-start;
-  background: rgba(100, 100, 100, 0.1);
-  border: 1px solid var(--glass-border);
-  border-bottom-left-radius: 4px;
-}
-
-.chat-input-area {
-  padding: 1.5rem 2rem;
-  border-top: 1px solid var(--glass-border);
-  display: flex;
-  gap: 1rem;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.chat-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: var(--text-primary);
-  font-family: 'Outfit', sans-serif;
-  font-size: 1rem;
-  outline: none;
-}
-
-.send-button {
-  background: var(--neon-cyan);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 0.6rem 1.2rem;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.send-button:disabled {
-  background: var(--glass-border);
-  color: var(--text-secondary);
-  cursor: not-allowed;
-}
-
-.typing span {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  background: var(--neon-cyan);
-  border-radius: 50%;
-  margin-right: 5px;
-  animation: typing 1.4s infinite ease-in-out both;
-}
-.typing span:nth-child(1) { animation-delay: -0.32s; }
-.typing span:nth-child(2) { animation-delay: -0.16s; }
-@keyframes typing {
-  0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
-  40% { transform: scale(1); opacity: 1; }
-}
-
 @keyframes pulse {
   0% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.5); opacity: 0.5; }
@@ -692,13 +535,6 @@ p {
   align-items: center;
   gap: 2rem;
   text-align: center;
-}
-
-.footer-line {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  letter-spacing: 0.5px;
 }
 
 /* Tier 1: navigation, so the page bottom is not a dead end */
@@ -736,13 +572,6 @@ p {
   .site-footer { padding: 2.5rem 1.25rem 2rem; gap: 1.6rem; }
   .footer-nav { gap: 1rem 1.2rem; }
 }
-
-.footer-line a {
-  color: var(--neon-cyan);
-  text-decoration: none;
-}
-
-.footer-line a:hover { text-decoration: underline; }
 
 .footer-socials {
   display: flex;

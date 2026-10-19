@@ -148,7 +148,7 @@ def get_local_database_url() -> str:
 # Per-stage timing
 #
 # The REPORT line only gives total invocation time, which cannot answer the
-# question that actually matters for tuning: is the ~950ms dominated by
+# question that actually matters for tuning: is the ~1.1 s dominated by
 # Bedrock generation or by the vector-store round trip? These hooks split the
 # chain into embed / search / generate and log the milliseconds alongside the
 # existing structured fields, so Logs Insights can aggregate them.
@@ -213,7 +213,7 @@ class StageTimer(BaseCallbackHandler):
     #
     # Two different calls land here: the query rewrite and the answer. They are
     # keyed by run_id rather than a single slot, because billing both to
-    # generate_ms would quietly break the "generation is ~84% of the time"
+    # generate_ms would quietly break the "generation is ~65% of the time"
     # reading that these metrics exist to give. The rewrite carries a tag. --
     def _llm_start(self, run_id, tags) -> None:
         self._started[("llm", run_id)] = (
@@ -579,7 +579,7 @@ app = FastAPI(
     openapi_url=None if IS_PRODUCTION else "/openapi.json",
 )
 
-# Rate limiter — 1 request per 3 seconds per IP address
+# Rate limiter — per IP: 20/minute on /chat, 5/minute on /fit (see the decorators)
 # Defense-in-depth: this is a second layer after API Gateway throttling
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter

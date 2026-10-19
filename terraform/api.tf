@@ -4,7 +4,7 @@
 
 locals {
   # The origins allowed to call the API: the Amplify branch domain, the custom
-  # domain (salman.is-a.dev) when set, and localhost for dev. Used for both the
+  # domain (msalmansaeedch.de, apex and www) when set, and localhost for dev. Used for both the
   # Lambda ALLOWED_ORIGINS env var and the API Gateway CORS config.
   amplify_origin = "https://${replace(var.git_branch, "/", "-")}.${aws_amplify_app.frontend.default_domain}"
   allowed_origins = concat(

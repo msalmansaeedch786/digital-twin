@@ -46,7 +46,9 @@ if [ ! -d venv ]; then
     source venv/bin/activate
     # A failed install used to leave a venv behind: the next run saw the
     # directory, skipped installing, and started a backend with no uvicorn.
-    if ! pip install -q -r requirements.txt; then
+    # requirements-local.txt too: Ollama, pgvector and python-dotenv are what the
+    # .env.example local modes need, and requirements.txt alone left them out.
+    if ! pip install -q -r requirements.txt -r requirements-local.txt; then
         echo -e "${RED}Dependency install failed — removing the half-built venv.${NC}"
         deactivate 2>/dev/null
         rm -rf venv

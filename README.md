@@ -39,7 +39,7 @@ The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline
 - **Serverless RAG Pipeline**: Combines Amazon Bedrock's Foundation Models (Titan Embeddings V2 & Nova Lite) with **Amazon S3 Vectors** for accurate responses grounded strictly in ingested documents, minimizing hallucination. No database and no VPC: every component is serverless and billed per request.
 - **IAM-Scoped Access, No Network Perimeter**: Every component authenticates with its own least-privilege IAM role rather than relying on network isolation. The API Lambda holds read-only access to the vector index and cannot write to it; ingestion can write but never serves traffic.
 - **Infrastructure as Code (IaC)**: 100% of the AWS infrastructure is codified in Terraform, allowing for reproducible and automated deployments.
-- **Event-Driven Data Ingestion**: Simply uploading a PDF or Text file to an S3 bucket automatically triggers an asynchronous Lambda pipeline that chunks, embeds, and stores the knowledge in the database.
+- **Event-Driven Data Ingestion**: Simply uploading a PDF or Text file to an S3 bucket automatically triggers an asynchronous Lambda pipeline that chunks, embeds, and stores the knowledge in the S3 Vectors index.
 - **Automated CI/CD Pipeline**: GitHub Actions builds the Lambda packages and runs `terraform plan` / `terraform apply` on every push to the deployment branch, using AWS OpenID Connect (OIDC) for passwordless, keyless deployments. Every change is gated on a bundle-contents check, an integration test against real S3 Vectors, and — after deploy — a 16-question retrieval comparison against a recorded baseline. A scheduled daily plan reports infrastructure drift.
 - **History-Aware Conversations**: Employs an LLM-driven query rewriting step that maintains context across long conversational threads.
 - **Bilingual (English / German)**: The portfolio and the twin are served under locale-segmented routes (`/en`, `/de`), both statically prerendered and edge-cached, with canonical + `hreflang` metadata and a generated `sitemap.xml`. The knowledge base stays English and a request carries a `lang` field. Language moves in both directions around retrieval: a non-English question is rewritten into English *before* embedding, so it matches the English vectors properly, and the answer is then generated back in the reader's language. An English question with no history skips that rewrite and pays no extra latency.
@@ -148,7 +148,7 @@ sequenceDiagram
     LB->>EMB: Embed rewritten query
     EMB-->>LB: Query vector [1024 dims]
 
-    LB->>DB: SELECT * FROM digital_twin_docs<br/>ORDER BY embedding <=> query_vector<br/>LIMIT 5
+    LB->>DB: QueryVectors (topK=5, cosine)<br/>on index digital-twin-docs
     DB-->>LB: Top 5 relevant text chunks
 
     LB->>LLM2: System prompt + retrieved facts + question
@@ -193,7 +193,7 @@ digital-twin/
 │   └── tests/                      # Playwright browser tests (i18n, chat, locale sweep)
 ├── data/                           # Knowledge-base source documents (synced to S3)
 ├── terraform/                      # Infrastructure as Code (references ../lambdas)
-│   ├── provider.tf                 # Provider + S3/DynamoDB remote state backend
+│   ├── provider.tf                 # Provider + S3 remote state backend (S3-native locking)
 │   ├── s3vectors.tf                # S3 Vectors bucket + index (1024-dim, cosine)
 │   ├── api.tf                      # API Lambda, API Gateway (HTTP API), EventBridge warm-up
 │   ├── lambda.tf                   # Ingestion Lambda, deployment bucket, S3 trigger
@@ -226,7 +226,7 @@ digital-twin/
 ### Prerequisites
 
 - An AWS Account. **Administrator access is only required for the initial bootstrap** (creating the OIDC provider and remote-state backend); ongoing deployments run through the scoped GitHub Actions OIDC role.
-- `Terraform` (>= 1.5.0)
+- `Terraform` 1.16.x (the exact version is pinned in `terraform/.terraform-version`)
 - `Python` **3.12** — the Lambda runtime. Not "3.12 or newer": the pinned dependencies have no wheels for 3.14 and `pydantic-core` 2.7.4 fails to build there, so a newer default interpreter produces a broken backend venv.
 - `Node.js` (>= 20.9 — required by Next.js 16)
 - `AWS CLI` configured with appropriate credentials.
@@ -384,7 +384,7 @@ Point the frontend at it with `NEXT_PUBLIC_API_URL=http://localhost:8000` in `fr
 ./scripts/verify_local.sh
 ```
 
-Ten prerequisite checks, then a real question with AWS credentials stripped from the environment. This path cannot be covered by CI — it needs Ollama and a local Postgres, neither of which belongs on a GitHub runner — so this script is the only thing between the capability and silent rot. It had been broken for a month before anyone noticed, because `main.py` never actually read `.env`.
+Eight prerequisite checks, then a real question with AWS credentials stripped from the environment. This path cannot be covered by CI — it needs Ollama and a local Postgres, neither of which belongs on a GitHub runner — so this script is the only thing between the capability and silent rot. It had been broken for a month before anyone noticed, because `main.py` never actually read `.env`.
 
 ### Frontend Tests
 

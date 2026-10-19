@@ -100,8 +100,9 @@ def main():
 
     # 3. Setup embeddings and PGVector. AI_PROVIDER must match whatever the API
     #    is configured with — vectors written by one model are not searchable by
-    #    another, and the dimensions differ (Titan v2 1024, bge-m3 1024,
-    #    nomic-embed-text 768), so mixing them corrupts the collection.
+    #    another. Titan v2 and bge-m3 are BOTH 1024-dimensional, so a mix would
+    #    not even error (nomic-embed-text, at 768, at least would) — it silently
+    #    corrupts the collection.
     provider = os.environ.get("AI_PROVIDER", "bedrock").lower()
     region = os.environ.get("AWS_REGION", "eu-central-1")
     if provider == "ollama":

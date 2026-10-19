@@ -18,7 +18,7 @@ output "s3_bucket_name" {
 }
 
 output "custom_domain_cert_validation_record" {
-  description = "ACM validation CNAME to add at the domain provider (is-a.dev) to issue the SSL cert"
+  description = "ACM validation CNAME to add at the DNS host (Porkbun) to issue the SSL cert"
   value       = var.custom_domain == "" ? null : aws_amplify_domain_association.custom[0].certificate_verification_dns_record
 }
 

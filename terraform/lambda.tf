@@ -183,7 +183,7 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
     lambda_function_arn = aws_lambda_function.ingestion.arn
     # ObjectRemoved:* covers both hard deletes and the DeleteMarkerCreated
     # events this versioned bucket emits on `aws s3 sync --delete`, so the
-    # Lambda can purge a deleted file's vectors from pgvector.
+    # Lambda can purge a deleted file's vectors from S3 Vectors.
     events        = ["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]
     filter_suffix = ""
   }
