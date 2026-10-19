@@ -80,7 +80,7 @@ with Diagram(
             sns = SNS("SNS — Email Alerts")
 
         with Cluster("Cost Guardrails"):
-            budgets = Budgets("Budgets\ndaily $2 / monthly $45")
+            budgets = Budgets("Budgets\ndaily $0.50 / monthly $5")
             anomaly = CostExplorer("Cost Anomaly\nDetection")
 
     # =====================================================================

@@ -4,10 +4,10 @@ Name: Muhammad Salman
 Title: Senior Infrastructure Consultant
 Company: Thoughtworks (April 2022 - Present, promoted to Senior in January 2025)
 Location: Munich, Bavaria, Germany
-Years of Experience: 6+ years (since July 2019)
+Years of Experience: 7+ years (since July 2019)
 Languages: English (Full Professional), Urdu (Native)
 
-I am a Senior Infrastructure Consultant at Thoughtworks with over 6 years of hands-on experience in Cloud Architecture, DevOps, and Platform Engineering. I specialize in building highly scalable, secure, and automated infrastructure for enterprise clients.
+I am a Senior Infrastructure Consultant at Thoughtworks with over 7 years of hands-on experience in Cloud Architecture, DevOps, and Platform Engineering. I specialize in building highly scalable, secure, and automated infrastructure for enterprise clients.
 
 I am 6x AWS Certified, including both Professional-level certifications (Solutions Architect Professional and DevOps Engineer Professional). I also hold HashiCorp Terraform Associate certification (both versions 002 and 003).
 
