@@ -1,5 +1,15 @@
 # Projects
 
+## AI Digital Twin (personal project, this portfolio's chat avatar)
+Duration: June 2026 - Present
+Live: https://msalmansaeedch.de
+Code: https://github.com/msalmansaeedch786/digital-twin
+- Designed and built a serverless RAG chatbot that answers questions about my career in English and German, grounded only in my own documents
+- Built 100% as Infrastructure as Code with Terraform on AWS, deployed by GitHub Actions through OIDC with no static credentials
+- Migrated the vector store from RDS PostgreSQL with pgvector to Amazon S3 Vectors, which removed the database and the VPC and cut the running cost by about 98%
+- Added an automatic circuit breaker against request floods, a retrieval regression suite, and a job-fit check that recruiters can use
+- Technologies: AWS Bedrock (Amazon Nova Lite, Amazon Titan Text Embeddings V2), Amazon S3 Vectors, AWS Lambda, Amazon API Gateway, AWS Amplify, Terraform, GitHub Actions, Python, FastAPI, LangChain, Next.js, Playwright
+
 ## Mercedes-Benz AG — OTR
 Duration: April 2025 - Present
 Client: Mercedes-Benz AG (via Thoughtworks)

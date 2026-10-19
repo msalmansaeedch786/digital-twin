@@ -1,0 +1,25 @@
+# The AI Digital Twin project (details)
+
+## What it is
+The AI Digital Twin is my personal project and the chat avatar on my portfolio at https://msalmansaeedch.de. Visitors and recruiters can ask it about my experience, skills and certifications, in English or German, and it answers in the first person using only facts I have written about myself. I started it in June 2026 and still develop it. The code is public at https://github.com/msalmansaeedch786/digital-twin.
+
+## Architecture
+- Retrieval-Augmented Generation (RAG): a question is turned into a vector with Amazon Titan Text Embeddings V2, the closest facts are found in Amazon S3 Vectors, and Amazon Nova Lite on AWS Bedrock writes the answer from those facts only.
+- Backend: Python 3.12 with FastAPI and LangChain, running on AWS Lambda (arm64) behind Amazon API Gateway (HTTP API).
+- Frontend: Next.js, hosted on AWS Amplify, in English and German.
+- Knowledge base: text files about me. Uploading a file to Amazon S3 triggers an ingestion Lambda that splits it into chunks, embeds them and stores them in S3 Vectors.
+- Everything is defined in Terraform and deployed by GitHub Actions using OIDC, so there are no static AWS credentials anywhere.
+- There is no database and no VPC: every component reaches its dependencies over IAM-authorised HTTPS, and each Lambda has its own least-privilege IAM role.
+
+## Key decisions and results
+- Moving to S3 Vectors (October 2026): the first version used RDS PostgreSQL with pgvector inside a private VPC with three PrivateLink endpoints. That network setup and the database were about 98% of the bill, while Bedrock itself cost almost nothing. Moving the vector store to Amazon S3 Vectors removed the database, the VPC and the endpoints, and cut the running cost by about 98%, from about $1.14 a day. Vector search became slower (12.6 ms to 64 ms), but that added only about 50 ms to a roughly 1.1 second answer.
+- I verified the migration with a retrieval regression suite of 16 questions in English and German, including 3 trick questions that have no answer in my data. The results were identical before and after the change.
+- Abuse protection: a CloudWatch alarm on request counts triggers a circuit-breaker Lambda through EventBridge, which closes the API at the front door during a request flood and reopens it automatically when the flood stops. It has absorbed floods of over 300,000 requests for a few cents.
+- Bilingual answers: German questions are translated to English for the search, because my facts are in English, and the answer is written back in the visitor's language.
+- Quality checks in CI: GitHub Actions checks the Lambda packages, runs an integration test against real S3 Vectors, runs browser tests with Playwright, and after every deploy re-runs the retrieval regression suite. A daily Terraform plan detects infrastructure drift.
+- Monitoring and cost control: CloudWatch alarms (including one for answers given without any retrieved facts), AWS Budgets, Cost Anomaly Detection and CloudTrail.
+
+## Features for visitors
+- "How this answer was made": under every answer, a visitor can see the steps it went through, how long each took, how many facts it used, and what that answer cost, typically about $0.0001.
+- Job-fit check: a recruiter pastes a job description and gets every requirement marked as met, partly met or not in my background, with evidence, and can download the result as a PDF. Code-level checks stop the AI from claiming technologies that are not in my data.
+- It can also run fully offline for development, with Ollama instead of Bedrock and PostgreSQL with pgvector instead of S3 Vectors.
