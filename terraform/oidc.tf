@@ -46,8 +46,12 @@ resource "aws_iam_role" "github_actions" {
 #      support resource-level scoping and only disclose metadata (low risk).
 #   2. Every mutating action is scoped to project-prefixed ARNs, mirroring the
 #      per-Lambda roles in iam.tf.
-#   3. Services whose *create* actions cannot be ARN-scoped by AWS (EC2/VPC, RDS,
-#      API Gateway, Amplify) are instead bounded by an aws:RequestedRegion guard.
+#   3. Services whose *create* actions cannot be ARN-scoped by AWS (API Gateway,
+#      Amplify) are bounded by region and account in the resource ARN instead.
+#      EC2/VPC and RDS rights were removed on 2026-10-20: the stack has had no VPC
+#      and no database since the S3 Vectors migration, so they only widened what a
+#      compromised deploy role could do. Re-adding a VPC or database means
+#      re-adding these grants deliberately.
 #   4. IAM is split so the role can manage project roles/policies WITHOUT being
 #      able to grant itself admin: iam:AttachRolePolicy is restricted to an
 #      allowlist that deliberately excludes AdministratorAccess, and iam:PassRole
@@ -65,8 +69,6 @@ locals {
   # itself (or a new role) admin; restricting the attachable set closes that path.
   gha_attachable_policies = [
     "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
-    "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess",
     "arn:aws:iam::aws:policy/AdministratorAccess-Amplify",
     "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.project_name}-*",
   ]
@@ -82,19 +84,18 @@ resource "aws_iam_policy" "github_actions_policy" {
       {
         Sid    = "TerraformStateAccess"
         Effect = "Allow"
+        # The state lock is an S3 .tflock object (use_lockfile in provider.tf),
+        # which is what s3:PutObject/DeleteObject here cover. The DynamoDB lock
+        # table grant went with the switch to S3-native locking.
         Action = [
           "s3:ListBucket",
           "s3:GetObject",
           "s3:PutObject",
-          "s3:DeleteObject",
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:DeleteItem"
+          "s3:DeleteObject"
         ]
         Resource = [
           "arn:aws:s3:::digital-twin-terraform-state-*",
-          "arn:aws:s3:::digital-twin-terraform-state-*/*",
-          "arn:aws:dynamodb:${var.aws_region}:${local.gha_account_id}:table/digital-twin-terraform-locks"
+          "arn:aws:s3:::digital-twin-terraform-state-*/*"
         ]
       },
 
@@ -103,9 +104,6 @@ resource "aws_iam_policy" "github_actions_policy" {
         Sid    = "ReadOnlyDiscovery"
         Effect = "Allow"
         Action = [
-          "ec2:Describe*",
-          "rds:Describe*",
-          "rds:List*",
           "lambda:List*",
           "lambda:GetAccountSettings",
           "s3:ListAllMyBuckets",
@@ -126,9 +124,6 @@ resource "aws_iam_policy" "github_actions_policy" {
           "sns:List*",
           "sns:GetTopicAttributes",
           "sns:GetSubscriptionAttributes",
-          "secretsmanager:Describe*",
-          "secretsmanager:List*",
-          "secretsmanager:GetResourcePolicy",
           "apigateway:GET",
           "cloudtrail:Describe*",
           "cloudtrail:Get*",
@@ -141,32 +136,14 @@ resource "aws_iam_policy" "github_actions_policy" {
           "amplify:List*",
           "amplify:Get*",
           # Amplify custom-domain setup calls these to detect whether the domain
-          # is Route53-hosted (salman.is-a.dev is external, so it finds none and
-          # falls back to manual DNS records). Read-only, account-level.
+          # is Route53-hosted (msalmansaeedch.de is at Porkbun, so it finds none
+          # and falls back to manual DNS records). Read-only, account-level.
           "route53:ListHostedZones",
           "route53:ListHostedZonesByName",
           "route53:GetHostedZone",
           "route53:ListResourceRecordSets"
         ]
         Resource = "*"
-      },
-
-      # --- EC2 / VPC: create actions can't be ARN-scoped; bound to the region ---
-      {
-        Sid       = "Ec2NetworkingManagement"
-        Effect    = "Allow"
-        Action    = ["ec2:*"]
-        Resource  = "*"
-        Condition = { StringEquals = { "aws:RequestedRegion" = var.aws_region } }
-      },
-
-      # --- RDS: resource-level perms are incomplete for create; bound to region ---
-      {
-        Sid       = "RdsManagement"
-        Effect    = "Allow"
-        Action    = ["rds:*"]
-        Resource  = "*"
-        Condition = { StringEquals = { "aws:RequestedRegion" = var.aws_region } }
       },
 
       # --- API Gateway: opaque generated api-ids; bound to region ---
@@ -231,8 +208,6 @@ resource "aws_iam_policy" "github_actions_policy" {
           "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/lambda/${var.project_name}-*:*",
           "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/apigateway/${var.project_name}*",
           "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/apigateway/${var.project_name}*:*",
-          "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/rds/instance/${var.project_name}-*",
-          "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/rds/instance/${var.project_name}-*:*",
           "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/cloudtrail/${var.project_name}*",
           "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/cloudtrail/${var.project_name}*:*",
           "arn:aws:logs:${var.aws_region}:${local.gha_account_id}:log-group:/aws/amplify/${aws_amplify_app.frontend.id}",

@@ -21,8 +21,8 @@ data "aws_iam_policy_document" "lambda_assume_role" {
 
 # ---------------------------------------------------------------------------
 # API LAMBDA ROLE — Minimum permissions for the chat API
-# Needs: Bedrock (invoke), Secrets Manager (read DB password), CloudWatch Logs, X-Ray, VPC
-# Does NOT need: S3 write
+# Needs: Bedrock (invoke), S3 Vectors (read), CloudWatch Logs
+# Does NOT need: any write to the vector index or S3
 # ---------------------------------------------------------------------------
 
 resource "aws_iam_role" "lambda_api" {
@@ -90,8 +90,8 @@ resource "aws_iam_role_policy_attachment" "api_custom" {
 
 # ---------------------------------------------------------------------------
 # INGESTION LAMBDA ROLE — Permissions for the data ingestion pipeline
-# Needs: S3 (read + delete objects), Bedrock (embeddings only), Secrets Manager, VPC, X-Ray
-# Does NOT need: Bedrock LLM (only embeddings), S3 write to deployment bucket
+# Needs: S3 (read objects), Bedrock (embeddings only), S3 Vectors (write), SQS (DLQ)
+# Does NOT need: Bedrock LLM (only embeddings), any S3 write or delete
 # ---------------------------------------------------------------------------
 
 resource "aws_iam_role" "lambda_ingestion" {
@@ -106,17 +106,21 @@ resource "aws_iam_role_policy_attachment" "ingestion_basic" {
 
 resource "aws_iam_policy" "lambda_ingestion_custom" {
   name        = "${var.project_name}-lambda-ingestion-policy"
-  description = "Least-privilege policy for the Ingestion Lambda: S3 read/delete + Bedrock embeddings + Secrets Manager"
+  description = "Least-privilege policy for the Ingestion Lambda: S3 read + Bedrock embeddings + S3 Vectors write"
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "S3ReadDeleteAccess"
+        # Read only. The function downloads the uploaded file and never writes
+        # or deletes in S3 — a deleted file reaches it as an ObjectRemoved event,
+        # and it purges that file's vectors, not the object. s3:DeleteObject was
+        # granted here and never used; removed 2026-10-20. ListBucket stays so a
+        # missing key is a 404 rather than an ambiguous 403.
+        Sid    = "S3ReadAccess"
         Effect = "Allow"
         Action = [
           "s3:GetObject",
-          "s3:DeleteObject",
           "s3:ListBucket"
         ]
         Resource = [
