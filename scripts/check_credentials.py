@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Fail if the twin and the portfolio disagree about which credentials are held.
 
-The same certification facts live in five files with nothing linking them:
+The same certification facts live in several files with nothing linking them:
 
     data/05_certifications.txt          what the twin retrieves and asserts
     data/01_professional_summary.txt    the "Nx AWS Certified" count
-    data/04_skills_and_tools.txt        the count again
-    frontend/.../portfolio-client.js    the badge cards a visitor sees
+    data/04_skills_and_tools.txt        the count again, written "Nx Certified"
     frontend/.../dictionaries/*.json    the count in three keys per locale
+    lambdas/api/main.py                 the count in the twin's own system prompt
 
 They drifted once, and the twin spent months claiming an AWS SysOps
 Administrator - Associate that was never earned while never mentioning the AI
@@ -36,7 +36,15 @@ COUNT_FILES = [
     CERTS_TXT,
     ROOT / "frontend" / "src" / "app" / "dictionaries" / "en.json",
     ROOT / "frontend" / "src" / "app" / "dictionaries" / "de.json",
+    # The system prompt introduces the twin as "6x AWS Certified" before any
+    # fact is retrieved, so it is a claim in its own right.
+    ROOT / "lambdas" / "api" / "main.py",
 ]
+
+# "6x AWS", "6x AWS-zertifiziert", and "6x Certified" — the last is how
+# data/04 writes it on the AWS line, which the original "Nx AWS" pattern
+# silently skipped, so that count could drift with nothing failing.
+COUNT_PATTERN = re.compile(r"(\d+)x\s+(?:AWS\b|Certified\b)")
 
 
 def normalise(title: str) -> str:
@@ -66,13 +74,13 @@ def certs_from_canonical() -> set[str]:
     return {normalise(c["title"]) for c in data["certifications"]}
 
 
-def aws_count_claims() -> list[tuple[Path, int, str]]:
-    """Every "Nx AWS ..." assertion, wherever it lives."""
+def aws_count_claims() -> list[tuple[Path, int, str, str]]:
+    """Every "Nx AWS ..." / "Nx Certified" assertion, wherever it lives."""
     found = []
     for path in COUNT_FILES:
         for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-            for m in re.finditer(r"(\d+)x AWS", line):
-                found.append((path, i, m.group(1)))
+            for m in COUNT_PATTERN.finditer(line):
+                found.append((path, i, m.group(1), m.group(0)))
     return found
 
 
@@ -96,12 +104,12 @@ def main() -> int:
         )
 
     actual_aws = sum(1 for c in data if c.startswith("aws certified"))
-    wrong = [(p, ln, n) for p, ln, n in aws_count_claims() if int(n) != actual_aws]
+    wrong = [(p, ln, txt) for p, ln, n, txt in aws_count_claims() if int(n) != actual_aws]
     if wrong:
         problems.append(
             f"data/ lists {actual_aws} AWS certifications, but these claim otherwise:\n"
             + "\n".join(
-                f"    - {p.relative_to(ROOT)}:{ln} says \"{n}x AWS\"" for p, ln, n in wrong
+                f"    - {p.relative_to(ROOT)}:{ln} says \"{txt}\"" for p, ln, txt in wrong
             )
         )
 

@@ -55,10 +55,25 @@ jobs:
       - name: Build
         run: npm run build
 
-      # The i18n suite greps the built chunks for a German dictionary string to
-      # prove the client bundle is still split. That only works against a real
-      # production build, which is why these run against `next start` rather than
-      # `next dev`.
+      # The dictionaries must stay server-side. A client component importing a
+      # locale helper from dictionaries/index.js instead of dictionaries/locales.js
+      # drags BOTH full dictionaries into every visitor's JavaScript, with no
+      # error anywhere. A phrase from each dictionary appearing in a built chunk
+      # is that regression. (This check used to be described here as part of the
+      # i18n suite; nothing actually ran it.)
+      - name: Dictionaries stay out of the browser bundle
+        run: |
+          leaked=$(grep -rlF -e "willkommen in meinem Portfolio" -e "welcome to my portfolio" .next/static/chunks/ || true)
+          if [ -n "$leaked" ]; then
+            echo "::error::A dictionary is in the client bundle: $leaked"
+            echo "A \"use client\" file probably imports from dictionaries/index.js; use dictionaries/locales.js."
+            exit 1
+          fi
+          echo "dictionaries are not in the client bundle"
+
+      # The browser suites run against `next start`, not `next dev`: the
+      # behaviour under test (static prerendering, metadata, the split bundle)
+      # only exists in a production build.
       - name: Start production server
         run: |
           npx next start -p 3100 &

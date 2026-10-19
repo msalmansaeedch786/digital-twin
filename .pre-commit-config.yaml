@@ -32,4 +32,4 @@ repos:
         entry: python3 scripts/check_credentials.py
         language: system
         pass_filenames: false
-        files: ^(data/0[145]_.*\.txt|frontend/src/app/(\[lang\]/portfolio-client\.js|dictionaries/.*\.json))$
+        files: ^(data/0[145]_.*\.txt|frontend/src/app/(\[lang\]/portfolio-client\.js|dictionaries/.*\.json)|lambdas/api/main\.py)$
