@@ -117,7 +117,8 @@ export default function PortfolioClient({ lang, dict }) {
   ], dict.experiences, "experiences");
 
   const projects = mergeBySlug([
-    { slug: "mercedes-otr", title: "Mercedes-Benz AG - OTR", date: "Apr 2025 - Present", tech: ["Kubernetes", "AWS", "AI Integration"] },
+    { slug: "digital-twin", title: "AI Digital Twin", date: "Jun 2026 - Present", tech: ["AWS Bedrock", "S3 Vectors", "Terraform", "Next.js"], url: "https://github.com/msalmansaeedch786/digital-twin" },
+    { slug: "mercedes-otr", title: "Mercedes-Benz AG - OTR", date: "Apr 2025 - Present", tech: ["Kubernetes", "AWS", "MCP", "DocumentDB"] },
     { slug: "mbition-runners", title: "MBition - SWF Gitlab CI Runners", date: "Jul 2023 - Jan 2025", tech: ["Terraform", "Packer", "AWS EC2"] },
     { slug: "porsche-infra", title: "Porsche AG - Cloud Infrastructure", date: "Jan 2023 - Jun 2023", tech: ["AWS", "Terraform", "GitHub Actions"] },
     { slug: "dealermeter", title: "DealerMeter", date: "Mar 2021 - Apr 2021", tech: ["AWS Lambda", "AWS Glue", "Athena"] },
@@ -312,10 +313,24 @@ export default function PortfolioClient({ lang, dict }) {
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
                 >
-                  <div style={{ padding: "2rem" }}>
+                  {/* Column flex so the link and tags can sit at the bottom: the
+                      descriptions differ in length, and tags placed straight
+                      after them landed at a different height on every card. */}
+                  <div style={{ padding: "2rem", display: "flex", flexDirection: "column", flex: 1 }}>
                     <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginBottom: "0.5rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "1px" }}>{project.date}</div>
                     <h3 style={{ margin: "0 0 1rem 0", color: "var(--neon-cyan)" }}>{project.title}</h3>
                     <p>{project.desc}</p>
+                    <div className="project-card-bottom">
+                    {project.url && (
+                      <a
+                        href={project.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="project-link"
+                      >
+                        <FiGithub size={15} /> {dict.common.viewCode}
+                      </a>
+                    )}
                     {project.tech && (
                       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "1rem" }}>
                         {project.tech.map((t, i) => (
@@ -325,6 +340,7 @@ export default function PortfolioClient({ lang, dict }) {
                         ))}
                       </div>
                     )}
+                    </div>
                   </div>
                 </motion.div>
               </Tilt>

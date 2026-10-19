@@ -513,6 +513,24 @@ p {
   height: 100%;
 }
 
+.project-card-bottom { margin-top: auto; }
+
+/* The grid stretches each Tilt wrapper to the row height; the card fills it so
+   every card in a row is the same height and the bottom-pinned tags line up. */
+.projects-grid > * { height: 100%; }
+
+.project-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--neon-cyan);
+  text-decoration: none;
+}
+.project-link:hover { text-decoration: underline; }
+
 .project-title {
   font-size: 1.3rem;
   font-weight: 600;

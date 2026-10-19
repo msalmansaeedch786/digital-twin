@@ -76,6 +76,9 @@
     }
   },
   "projects": {
+    "digital-twin": {
+      "desc": "Ein serverloser RAG-Chatbot, der Fragen zu meiner Laufbahn auf Englisch und Deutsch beantwortet – ausschließlich auf Basis meiner eigenen Dokumente. Vollständig mit Terraform auf AWS gebaut (Bedrock, S3 Vectors, Lambda, Amplify), mit CI/CD, automatischem Missbrauchsschutz und einem Job-Fit-Check für Recruiter. Es ist der Twin, mit dem du auf dieser Seite sprechen kannst."
+    },
     "mercedes-otr": {
       "desc": "Aufbau der Infrastruktur für KI- und Chatbot-Funktionen mit Model Context Protocol (MCP) Skills und Platypus. Konfiguration von Kubernetes-CSI-Treibern für persistenten Speicher und Absicherung des DocumentDB-Zugriffs über In-Database-Gateways."
     },
@@ -184,6 +187,7 @@
     "nav": "Fußzeile"
   },
   "common": {
-    "email": "E-Mail"
+    "email": "E-Mail",
+    "viewCode": "Code ansehen"
   }
 }
