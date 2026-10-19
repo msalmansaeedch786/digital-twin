@@ -3,7 +3,6 @@
 ## Thoughtworks — Senior Infrastructure Consultant (promoted January 2025)
 Duration: April 2022 - Present
 Location: Munich, Bavaria, Germany
-Total tenure: 4+ years
 
 ### Client: Mercedes-Benz AG — OTR (April 2025 - Present)
 - Engineered infrastructure for AI and Chatbot capabilities using Model Context Protocol (MCP) skills and Platypus

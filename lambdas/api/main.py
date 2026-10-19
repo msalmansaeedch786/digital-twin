@@ -4,6 +4,7 @@ import sys
 import json
 from concurrent.futures import ThreadPoolExecutor
 import time
+from datetime import date
 import logging
 from pathlib import Path
 from contextlib import asynccontextmanager
@@ -395,6 +396,25 @@ def _build_llm(region: str):
     )
 
 
+# When my professional career started (NorthBay Solutions, July 2019). Years of
+# experience are computed from this on every request instead of being written
+# into data/: a typed "6+ years" went stale silently, and an LLM cannot be
+# trusted to do the date arithmetic itself. The portfolio computes the same
+# number from CAREER_START in frontend/src/app/career.js — change both together.
+CAREER_START = (2019, 7)
+
+
+def _experience_years(today: Optional[date] = None) -> int:
+    today = today or date.today()
+    years = today.year - CAREER_START[0]
+    return years - 1 if today.month < CAREER_START[1] else years
+
+
+def _experience_fact() -> str:
+    return (f"Today is {date.today():%d %B %Y}. My professional career started in July "
+            f"{CAREER_START[0]}, so I have {_experience_years()}+ years of professional experience.")
+
+
 class AIEngine:
     """Encapsulates all AI components. Initialized once per Lambda container."""
 
@@ -501,14 +521,19 @@ class AIEngine:
                 "language the question was asked in. The facts below are in English; translate "
                 "them as needed. Keep company names, job titles, certification names and "
                 "technology names in their original form — do not translate 'AWS Certified "
-                "Solutions Architect', 'Thoughtworks', 'Kubernetes' and similar.\n\n"
+                "Solutions Architect', 'Thoughtworks', 'Kubernetes' and similar.\n"
+                "9. EXPERIENCE: {experience_fact} For any question about my years of "
+                "experience, use exactly this number.\n\n"
                 "Facts about Muhammad Salman:\n{context}"
             )
+            # experience_fact is a callable partial, evaluated each time the
+            # prompt is formatted: the chain is built once per warm container
+            # and can live for days, so a value fixed here would go stale too.
             qa_prompt = ChatPromptTemplate.from_messages([
                 ("system", system_prompt),
                 MessagesPlaceholder("chat_history"),
                 ("human", "{input}"),
-            ])
+            ]).partial(experience_fact=_experience_fact)
             question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
             self.rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
             self.is_ready = True
@@ -1056,7 +1081,9 @@ async def fit_endpoint(request: Request, fit_request: FitRequest):
 
         def judge(pair):
             req, texts = pair
-            facts = "\n".join(f"- {' '.join(t.split())}" for t in texts) or "(no facts found)"
+            # The experience line rides along with every requirement so "5+ years
+            # of AWS" is judged against today's count, not a number in data/.
+            facts = "\n".join([f"- {' '.join(t.split())}" for t in texts] + [f"- {_experience_fact()}"])
             local: dict = {}
             try:
                 raw_verdict = _llm_call(

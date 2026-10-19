@@ -8,13 +8,19 @@ import { FiGithub, FiLinkedin, FiYoutube } from "react-icons/fi";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { otherLocale } from "../dictionaries/locales";
+import { yearsOfExperience } from "../career";
 // Single source of truth: scripts/generate_certifications.py derives the list
 // in data/05_certifications.txt from this same file, so the twin and the badge
 // cards cannot disagree about which credentials are held.
 import certificationsData from "../certifications.json";
 
-export default function PortfolioClient({ lang, dict }) {
+export default function PortfolioClient({ lang, dict, experienceYears }) {
   const [theme, setTheme] = useState("light");
+  // Starts from the build-time value so server HTML and first paint agree (no
+  // hydration mismatch), then corrects itself in the rare case the build is
+  // older than the latest career anniversary.
+  const [years, setYears] = useState(experienceYears);
+  useEffect(() => { setYears(yearsOfExperience()); }, []);
   const [typed, setTyped] = useState("");
   const pathname = usePathname();
   const certifications = certificationsData.certifications;
@@ -191,7 +197,7 @@ export default function PortfolioClient({ lang, dict }) {
                 <span className="meta-chip"><Award size={15} /> {dict.hero.certBadge}</span>
               </div>
               <p style={{ maxWidth: "600px", fontSize: "1.15rem", marginBottom: "0.5rem", lineHeight: 1.7 }}>
-                {dict.hero.summary}</p>
+                {dict.hero.summary.replace("{years}", years)}</p>
               <div className="hero-contact">
                 <a href="mailto:msalmansaeedch786@gmail.com" className="contact-btn"><Mail size={18} /> {dict.common.email}</a>
                 <a href="https://github.com/msalmansaeedch" target="_blank" rel="noreferrer" className="contact-btn"><FiGithub size={18} /> GitHub</a>
