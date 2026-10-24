@@ -45,6 +45,7 @@ The system implements a robust **Retrieval-Augmented Generation (RAG)** pipeline
 - **Bilingual (English / German)**: The portfolio and the twin are served under locale-segmented routes (`/en`, `/de`), both statically prerendered and edge-cached, with canonical + `hreflang` metadata and a generated `sitemap.xml`. The knowledge base stays English and a request carries a `lang` field. Language moves in both directions around retrieval: a non-English question is rewritten into English *before* embedding, so it matches the English vectors properly, and the answer is then generated back in the reader's language. An English question with no history skips that rewrite and pays no extra latency.
 - **"How this answer was made"**: every reply can open a panel showing the steps it went through and how long each took, the English query that was actually searched, how many facts it drew on, and what that single answer cost (typically ~$0.0001), from Bedrock's own token counts.
 - **"How well do I fit your job?"**: a recruiter pastes a job description and gets each requirement as met, partly met or not in my background, with first-person evidence, and can download it as a PDF. Each requirement is judged separately against only the facts retrieved for it, and code-level checks overrule the model when it claims a technology that is not in the knowledge base.
+- **Voice mode**: visitors can talk to the twin and hear it answer in a natural voice (Amazon Polly generative voices, English and German), with the text appearing as it is spoken. Answers are spoken as a relay of chunks, each generated while the previous one plays, so the voice starts about 2–3 seconds after the question.
 - **Hardened Security**: Features rate limiting, payload sanitization, and IAM Least Privilege policies. There are no application credentials anywhere in the stack — no database password, no connection string, nothing to rotate or leak.
 
 ---
@@ -396,7 +397,7 @@ npm run build
 npx next start -p 3100 &
 
 npm run test:i18n        # locales, canonical/hreflang, language hint, toggle scroll
-npm run test:chat        # input, reader name, layout, answer trace, job fit + PDF download
+npm run test:chat        # input, reader name, layout, answer trace, job fit + PDF, voice mode
 npm run test:i18n:sweep  # prints every string identical in /en and /de
 ```
 
