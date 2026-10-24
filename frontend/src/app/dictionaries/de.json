@@ -181,7 +181,15 @@
     "fitMeta": "Ausgewertet in {s} · Kosten {cost}",
     "fitPrintTitle": "Muhammad Salman: Passung für diese Stelle",
     "fitPrintFooter": "Erstellt von meinem KI-Digital-Twin auf msalmansaeedch.de auf Basis meiner dokumentierten Erfahrung. Wichtige Angaben bitte prüfen.",
-    "fitNote": "KI-generiert auf Basis meiner dokumentierten Erfahrung. Wichtige Angaben bitte prüfen."
+    "fitNote": "KI-generiert auf Basis meiner dokumentierten Erfahrung. Wichtige Angaben bitte prüfen.",
+    "voiceModeButton": "Mit meinem Twin sprechen",
+    "voiceTapToTalk": "Tippen und mich etwas fragen",
+    "voiceListening": "Ich höre zu…",
+    "voiceThinking": "Ich denke nach…",
+    "voiceSpeaking": "Ich spreche…",
+    "voiceTapToStop": "Tippen zum Stoppen",
+    "voiceClose": "Sprachmodus schließen",
+    "voiceUnsupported": "Der Sprachmodus braucht Chrome, Edge oder Safari."
   },
   "footer": {
     "nav": "Fußzeile"

@@ -21,7 +21,7 @@ data "aws_iam_policy_document" "lambda_assume_role" {
 
 # ---------------------------------------------------------------------------
 # API LAMBDA ROLE — Minimum permissions for the chat API
-# Needs: Bedrock (invoke), S3 Vectors (read), CloudWatch Logs
+# Needs: Bedrock (invoke), S3 Vectors (read), Polly (speech), CloudWatch Logs
 # Does NOT need: any write to the vector index or S3
 # ---------------------------------------------------------------------------
 
@@ -78,6 +78,15 @@ resource "aws_iam_policy" "lambda_api_custom" {
           "s3vectors:GetVectors"
         ]
         Resource = [aws_s3vectors_index.documents.index_arn]
+      },
+      {
+        # Voice mode: /speak turns an answer into speech with Polly's generative
+        # voices. SynthesizeSpeech has no resource to scope to beyond lexicons,
+        # which this does not use, so it can only be granted on "*".
+        Sid      = "PollySpeech"
+        Effect   = "Allow"
+        Action   = ["polly:SynthesizeSpeech"]
+        Resource = "*"
       }
     ]
   })

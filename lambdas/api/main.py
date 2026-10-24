@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import json
+import base64
 from concurrent.futures import ThreadPoolExecutor
 import time
 from datetime import date
@@ -523,7 +524,11 @@ class AIEngine:
                 "technology names in their original form — do not translate 'AWS Certified "
                 "Solutions Architect', 'Thoughtworks', 'Kubernetes' and similar.\n"
                 "9. EXPERIENCE: {experience_fact} For any question about my years of "
-                "experience, use exactly this number.\n\n"
+                "experience, use exactly this number.\n"
+                "10. LEVELS: Never overstate a level of skill. Use exactly the level the facts "
+                "give. If the facts say you are learning something — German, for example — say "
+                "you are learning it; never say you speak it, know it or have it. A question like "
+                "'Do you speak German?' gets 'I'm learning German', not 'Yes'.\n\n"
                 "Facts about Muhammad Salman:\n{context}"
             )
             # experience_fact is a callable partial, evaluated each time the
@@ -1162,6 +1167,103 @@ async def fit_endpoint(request: Request, fit_request: FitRequest):
         "lang": fit_request.lang,
     })
     return FitResponse(items=items, trace=trace)
+
+
+# ===========================================================================
+# Voice mode — the twin's answer, spoken in a natural voice
+#
+# The chat page's voice mode sends each reply here and plays the returned MP3.
+# It is a separate call from /chat on purpose: /chat stays exactly as it is, the
+# text answer appears straight away, and if speech fails the page falls back to
+# the browser's own voice instead of losing the answer.
+#
+# Amazon Polly's generative engine, in the same region as everything else, so
+# no audio or text leaves eu-central-1. $30 per million characters (AWS Price
+# List API, eu-central-1, checked 2026-10-20): a typical ~400-character answer
+# is about $0.012. Amazon Nova Sonic would give a true speech-to-speech
+# conversation, but it is not offered in Frankfurt and needs a bidirectional
+# stream that API Gateway's HTTP API cannot carry.
+# ===========================================================================
+
+_VOICES = {
+    # Male voices, chosen by the owner after listening to the generative set.
+    "en": (os.environ.get("VOICE_EN", "Matthew"), "en-US"),
+    "de": (os.environ.get("VOICE_DE", "Daniel"), "de-DE"),
+}
+_POLLY_GENERATIVE_PER_CHAR = 30 / 1_000_000
+SPEAK_MAX_CHARS = 1500  # well under Polly generative's 3000; a spoken answer longer than this is a lecture
+
+_polly_client = None
+
+
+def _get_polly_client():
+    """Built on first use, like the s3vectors client, so local runs without AWS
+    never resolve a credential chain they do not need."""
+    global _polly_client
+    if _polly_client is None:
+        _polly_client = boto3.client("polly", region_name=os.environ.get("AWS_REGION", "eu-central-1"),
+                                     config=_boto_config)
+    return _polly_client
+
+
+def _speakable(markdown: str) -> str:
+    """Turn a chat reply into something that sounds right when read aloud:
+    markdown symbols are read out literally otherwise ("asterisk asterisk")."""
+    t = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", markdown)        # [text](url) -> text
+    t = re.sub(r"https?://\S+", "", t)                            # bare URLs are noise when spoken
+    t = re.sub(r"[*_`#>]+", "", t)                                # emphasis, code, headings, quotes
+    t = re.sub(r"^\s*(?:[-•]|\d+\.)\s+", "", t, flags=re.M)        # list markers
+    t = re.sub(r"\s*\n+\s*", ". ", t)                              # line breaks become pauses
+    t = re.sub(r"([.:!?])\s*\.", r"\1", t)                       # no ":." or ".." after a line break
+    t = re.sub(r"\s{2,}", " ", t).strip()
+    if len(t) > SPEAK_MAX_CHARS:
+        cut = t[:SPEAK_MAX_CHARS]
+        t = cut[:cut.rfind(". ") + 1] or cut
+    return t
+
+
+class SpeakRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=4000)
+    lang: Literal["en", "de"] = "en"
+
+
+class SpeakResponse(BaseModel):
+    audio_base64: str   # MP3
+    voice: str
+    characters: int
+    cost_usd: float
+
+
+@app.post("/speak", response_model=SpeakResponse)
+@limiter.limit("20/minute")  # one per answer, so the same budget as /chat
+def speak_endpoint(request: Request, speak_request: SpeakRequest):
+    # A plain def, not async: Polly is a blocking boto3 call, and FastAPI runs a
+    # sync endpoint in its thread pool, so one slow synthesis does not hold up
+    # every other request on the event loop the way an async def would.
+    if AI_PROVIDER != "bedrock":
+        # Local no-AWS mode has no Polly; the page falls back to browser speech.
+        raise HTTPException(status_code=503, detail="Natural voice is not available in local mode.")
+    text = _speakable(speak_request.text)
+    if not text:
+        raise HTTPException(status_code=422, detail="Nothing to speak.")
+    voice, language_code = _VOICES[speak_request.lang]
+    started = time.perf_counter()
+    try:
+        result = _get_polly_client().synthesize_speech(
+            Engine="generative", VoiceId=voice, LanguageCode=language_code,
+            OutputFormat="mp3", Text=text,
+        )
+        audio = result["AudioStream"].read()
+    except Exception:
+        logger.error("Speech synthesis failed", exc_info=True, extra={"chars": len(text), "lang": speak_request.lang})
+        raise HTTPException(status_code=502, detail="Could not generate speech.")
+    cost = round(len(text) * _POLLY_GENERATIVE_PER_CHAR, 6)
+    # Lengths and timing only, never the text.
+    logger.info("Speech generated", extra={"chars": len(text), "audio_bytes": len(audio), "voice": voice,
+                                           "speak_ms": round((time.perf_counter() - started) * 1000, 1),
+                                           "cost_usd": cost, "lang": speak_request.lang})
+    return SpeakResponse(audio_base64=base64.b64encode(audio).decode(), voice=voice,
+                         characters=len(text), cost_usd=cost)
 
 
 @app.get("/health")

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Home, Volume2, VolumeX, Briefcase } from "lucide-react";
+import { Mic, MicOff, Home, Volume2, VolumeX, Briefcase, AudioLines, X } from "lucide-react";
 import Link from "next/link";
 import { otherLocale } from "../../dictionaries/locales";
 import ReactMarkdown from "react-markdown";
@@ -289,6 +289,14 @@ export default function AvatarClient({ lang, dict }) {
   const rootRef = useRef(null);
   const textareaRef = useRef(null);
 
+  // Voice mode: open/closed, which step it is in, and what to show as text.
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [voicePhase, setVoicePhase] = useState("idle"); // idle | listening | thinking | speaking
+  const [voiceText, setVoiceText] = useState("");
+  const voiceRecognitionRef = useRef(null);
+  const voiceAudioRef = useRef(null);
+  const voiceRunRef = useRef(0);
+
   // Job fit: the paste dialog and its text.
   const [fitOpen, setFitOpen] = useState(false);
   const [fitText, setFitText] = useState("");
@@ -461,8 +469,10 @@ export default function AvatarClient({ lang, dict }) {
     window.speechSynthesis.speak(utterance);
   };
 
-  const handleSendText = async (text) => {
-    if (!text.trim()) return;
+  // In voice mode the caller speaks the reply itself (natural voice via
+  // /speak), so `voice` skips the browser voice and returns the reply text.
+  const handleSendText = async (text, { voice = false } = {}) => {
+    if (!text.trim()) return null;
 
     const userMsg = text.trim();
     setInputText("");
@@ -491,24 +501,173 @@ export default function AvatarClient({ lang, dict }) {
       const data = await response.json();
       // trace is optional: an older API (or a local run) may not send it.
       setMessages(prev => [...prev, { role: "bot", content: data.reply, trace: data.trace }]);
+      if (voice) {
+        setIsSpeaking(false);
+        return data.reply;
+      }
       if (!isMuted) {
         speak(data.reply);
       } else {
         setIsSpeaking(false);
       }
+      return data.reply;
     } catch (error) {
       console.error(error);
       const errorMsg = error.message === "RATE_LIMIT"
         ? dict.avatar.rateLimited
         : dict.avatar.connectionError;
       setMessages(prev => [...prev, { role: "bot", content: errorMsg, uiOnly: true }]);
+      if (voice) {
+        setIsSpeaking(false);
+        return errorMsg;
+      }
       if (!isMuted) {
         speak(errorMsg);
       } else {
         setIsSpeaking(false);
       }
+      return null;
     }
   };
+
+  // ---- Voice mode: talk to the twin, hear it answer in a natural voice ----
+  // listen (browser speech recognition) -> /chat, same as typing -> /speak
+  // (Amazon Polly) -> play. If /speak fails the browser voice reads the answer
+  // instead, so a reply is never lost to a speech error.
+  // The natural voice takes ~1.5 s per 100 characters to generate. Asking for
+  // the whole answer at once meant 3-9 s of silence. Instead the answer is cut
+  // into chunks — the first sentence alone, then ~250-character groups — and
+  // played as a relay: the next chunk is generated while the current one plays.
+  // One request at a time on purpose: two in parallel were served one after the
+  // other locally, and on Lambda a second concurrent call wakes a cold container.
+  const speechChunks = (text) => {
+    // Line breaks count as boundaries too: list answers ("I hold:\n- ...\n- ...")
+    // have no full stops, and were otherwise spoken as one slow block.
+    const sentences = text.split(/\n+/).flatMap(line =>
+      line.match(/[^.!?]+[.!?]+(?=\s|$)|[^.!?]+$/g) || []).map(x => x.trim()).filter(Boolean);
+    if (!sentences.length) return [text];
+    const chunks = [];
+    for (const sentence of sentences) {
+      const last = chunks[chunks.length - 1];
+      // The first chunk stays one sentence (fast to start). The second is kept
+      // to ~120 characters so it is generated before a short first chunk ends
+      // (a 30-character opener plays for ~2 s); from the third on, playback is
+      // far longer than generation, so ~250-character groups never leave a gap.
+      const limit = chunks.length === 2 ? 120 : 250;
+      if (chunks.length > 1 && last.length + sentence.length < limit) chunks[chunks.length - 1] = `${last}\n${sentence}`;
+      else if (chunks.length === 1 && last.length < 20) chunks[0] = `${last}\n${sentence}`;
+      else chunks.push(sentence);
+    }
+    return chunks;
+  };
+
+  const fetchSpeech = async (text) => {
+    const res = await fetch(`${apiBase()}/speak`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, lang }),
+    });
+    if (!res.ok) throw new Error(`speak ${res.status}`);
+    return (await res.json()).audio_base64;
+  };
+
+  // What the voice-mode panel shows for a chunk: no markdown symbols, list
+  // markers as bullets.
+  const displayable = (text) => text.split("\n")
+    .map(line => line.replace(/\*\*|__|`/g, "").replace(/^\s*[-*]\s+/, "• ")).join("\n");
+
+  // Plays one chunk and reveals its words in step with the audio, so the text
+  // appears as it is spoken rather than all at once before the voice starts.
+  // Word timing is estimated from the clip's progress (currentTime / duration):
+  // exact timing would need Polly speech marks, a second billed call per chunk.
+  const playClip = (base64, run, chunkText, shownBefore) => new Promise((resolve, reject) => {
+    if (voiceRunRef.current !== run) return resolve(false);   // stopped meanwhile
+    const audio = new Audio(`data:audio/mpeg;base64,${base64}`);
+    voiceAudioRef.current = audio;
+    const words = displayable(chunkText).split(/(\s+)/);      // keeps the spaces
+    const prefix = shownBefore ? `${shownBefore}\n` : "";
+    const timer = setInterval(() => {
+      if (voiceRunRef.current !== run) return clearInterval(timer);
+      const fraction = audio.duration ? audio.currentTime / audio.duration : 0;
+      const count = Math.max(1, Math.ceil(fraction * words.length));
+      setVoiceText(prefix + words.slice(0, count).join(""));
+    }, 60);
+    const finish = () => { clearInterval(timer); setVoiceText(prefix + words.join("")); };
+    audio.onended = () => { finish(); resolve(true); };
+    audio.onerror = () => { finish(); reject(new Error("audio playback failed")); };
+    audio.play().then(() => setVoicePhase("speaking")).catch(err => { finish(); reject(err); });
+  });
+
+  const playAnswer = async (reply) => {
+    const run = ++voiceRunRef.current;
+    const chunks = speechChunks(reply);
+    let shown = "";
+    try {
+      let next = fetchSpeech(chunks[0]);
+      for (let i = 0; i < chunks.length; i++) {
+        const audio = await next;
+        if (voiceRunRef.current !== run) return;
+        // start generating the following chunk while this one plays
+        next = i + 1 < chunks.length ? fetchSpeech(chunks[i + 1]) : null;
+        if (!(await playClip(audio, run, chunks[i], shown))) return;
+        shown = (shown ? `${shown}\n` : "") + displayable(chunks[i]);
+      }
+      if (voiceRunRef.current === run) setVoicePhase("idle");
+    } catch (error) {
+      console.error(error);
+      if (voiceRunRef.current !== run) return;
+      // Fallback: the browser's own voice, with the whole answer shown at once.
+      setVoiceText(reply.replace(/\*\*|__|`/g, ""));
+      if (!window.speechSynthesis) { setVoicePhase("idle"); return; }
+      setVoicePhase("speaking");
+      const u = new SpeechSynthesisUtterance(reply);
+      u.lang = lang === "de" ? "de-DE" : "en-US";
+      u.onend = () => setVoicePhase("idle");
+      u.onerror = () => setVoicePhase("idle");
+      window.speechSynthesis.speak(u);
+    }
+  };
+
+  const stopVoice = () => {
+    voiceRunRef.current++;                         // cancels any clip still queued
+    voiceRecognitionRef.current?.abort();
+    voiceAudioRef.current?.pause();
+    window.speechSynthesis?.cancel();
+    setVoicePhase("idle");
+  };
+
+  const voiceTap = () => {
+    if (voicePhase === "listening") { voiceRecognitionRef.current?.stop(); return; }
+    if (voicePhase === "speaking") { stopVoice(); return; }
+    if (voicePhase !== "idle") return;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { setVoiceText(dict.avatar.voiceUnsupported); return; }
+    const rec = new SR();
+    rec.lang = lang === "de" ? "de-DE" : "en-US";
+    rec.interimResults = true;
+    rec.continuous = false;   // stops by itself when the visitor stops talking
+    let heard = "";
+    rec.onresult = (e) => {
+      heard = Array.from(e.results).map(r => r[0].transcript).join("");
+      setVoiceText(heard);
+    };
+    rec.onerror = () => setVoicePhase("idle");
+    rec.onend = async () => {
+      const question = heard.trim().slice(0, MAX_MESSAGE_CHARS);
+      if (!question) { setVoicePhase("idle"); return; }
+      setVoicePhase("thinking");
+      const reply = await handleSendText(question, { voice: true });
+      if (reply) { setVoiceText(""); await playAnswer(reply); }
+      else setVoicePhase("idle");
+    };
+    voiceRecognitionRef.current = rec;
+    setVoiceText("");
+    setVoicePhase("listening");
+    window.speechSynthesis?.cancel();
+    rec.start();
+  };
+
+  const closeVoice = () => { stopVoice(); setVoiceOpen(false); setVoiceText(""); };
 
   // Enter sends, Shift+Enter inserts a newline. isComposing guards IME input:
   // mid-composition Enter commits the candidate word and must not send.
@@ -814,7 +973,18 @@ export default function AvatarClient({ lang, dict }) {
               and deliberately not mixed in with the sample questions. */}
           <button
             type="button"
-            className="fit-icon-btn"
+            className="fit-icon-btn voice-open-btn"
+            onClick={() => setVoiceOpen(true)}
+            disabled={isSpeaking}
+            aria-label={dict.avatar.voiceModeButton}
+            title={dict.avatar.voiceModeButton}
+          >
+            <AudioLines size={20} />
+          </button>
+
+          <button
+            type="button"
+            className="fit-icon-btn fit-open-btn"
             onClick={() => setFitOpen(true)}
             disabled={isSpeaking}
             aria-label={dict.avatar.fitButton}
@@ -875,6 +1045,33 @@ export default function AvatarClient({ lang, dict }) {
       <div style={{ textAlign: "center", paddingBottom: "1rem", color: "rgba(255,255,255,0.3)", fontSize: "0.75rem", zIndex: 10 }}>
         {dict.avatar.disclaimer}
       </div>
+
+      {voiceOpen && (
+        <div className="voice-backdrop" role="dialog" aria-modal="true" aria-label={dict.avatar.voiceModeButton}>
+          <button type="button" className="voice-close" onClick={closeVoice} aria-label={dict.avatar.voiceClose}>
+            <X size={22} />
+          </button>
+          <div className={`voice-avatar voice-${voicePhase}`}>
+            <img src="/salman-avatar.jpg" alt="" />
+          </div>
+          <div className="voice-title">{dict.avatar.title}</div>
+          <div className="voice-status" aria-live="polite">
+            {{ idle: dict.avatar.voiceTapToTalk, listening: dict.avatar.voiceListening,
+               thinking: dict.avatar.voiceThinking, speaking: dict.avatar.voiceSpeaking }[voicePhase]}
+          </div>
+          <div className="voice-text">{voiceText}</div>
+          <button
+            type="button"
+            className={`voice-talk voice-talk-${voicePhase}`}
+            onClick={voiceTap}
+            disabled={voicePhase === "thinking"}
+            aria-label={voicePhase === "idle" ? dict.avatar.voiceTapToTalk : dict.avatar.voiceTapToStop}
+          >
+            {voicePhase === "idle" ? <Mic size={34} /> : voicePhase === "thinking" ? <span className="voice-dots">•••</span> : <span className="voice-stop" />}
+          </button>
+          <div className="voice-hint">{voicePhase === "idle" ? "" : voicePhase === "thinking" ? "" : dict.avatar.voiceTapToStop}</div>
+        </div>
+      )}
 
       {fitOpen && (
         <div

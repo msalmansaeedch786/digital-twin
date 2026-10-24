@@ -188,7 +188,7 @@ const ok=(n,c,x='')=>{c?(pass++,console.log(`  PASS  ${n}`)):(fail++,console.log
     const pg = await c.newPage();
     await pg.goto(`${B}/en/avatar`, { waitUntil:'networkidle' });
     ok('job fit is not among the sample questions', (await pg.$$('.fit-suggestion')).length === 0);
-    await pg.click('.fit-icon-btn');
+    await pg.click('.fit-open-btn');
     ok('dialog opens from the input-bar icon', await pg.isVisible('.fit-modal'));
     ok('job ad capped at 6000 chars', (await pg.getAttribute('.fit-input', 'maxlength')) === '6000');
     await pg.fill('.fit-input', 'too short');
@@ -196,8 +196,8 @@ const ok=(n,c,x='')=>{c?(pass++,console.log(`  PASS  ${n}`)):(fail++,console.log
     await pg.keyboard.press('Escape');
     ok('Escape closes the dialog', !(await pg.isVisible('.fit-modal')));
     const jd = 'Senior DevOps engineer with AWS, Terraform and Go. German C1 required. '.repeat(3);
-    ok('job-fit icon sits inside the input bar', await pg.$eval('.fit-icon-btn', e => !!e.closest('form')));
-    await pg.click('.fit-icon-btn'); await pg.fill('.fit-input', jd); await pg.click('.fit-submit');
+    ok('job-fit icon sits inside the input bar', await pg.$eval('.fit-open-btn', e => !!e.closest('form')));
+    await pg.click('.fit-open-btn'); await pg.fill('.fit-input', jd); await pg.click('.fit-submit');
     await pg.waitForSelector('.fit-card');
     ok('sends job ad and language', fitBody && fitBody.lang === 'en' && fitBody.job_description === jd.trim());
     ok('score line from final verdicts', (await pg.textContent('.fit-score')).includes('2 of 4 requirements met · 1 partly · 1 not in my background'));
@@ -210,6 +210,50 @@ const ok=(n,c,x='')=>{c?(pass++,console.log(`  PASS  ${n}`)):(fail++,console.log
     await pg.waitForFunction(() => document.querySelectorAll('.avatar-msg-row').length >= 5);
     const h = JSON.stringify(chatHistories[0] || []);
     ok('job ad and result never sent as chat history', !h.includes('Senior DevOps') && !h.includes('requirements met'), h);
+    await c.close();
+  }
+
+  console.log('\n=== 10. Voice mode: listen, answer, speak in a relay, close ===');
+  // The microphone and the speaker are stubbed: a fake recogniser "hears" one
+  // question, and a fake Audio "plays" each clip in 50 ms. What is under test is
+  // the page's own logic — the reply is spoken in pieces, one /speak request at
+  // a time (two at once wake a cold Lambda), and the exchange lands in the chat.
+  {
+    const c = await b.newContext({ viewport:{width:1280,height:900} });
+    await c.addInitScript(() => {
+      class FakeSR { start() { setTimeout(() => { this.onresult?.({ results: [[{ transcript: 'What do you do?' }]] }); setTimeout(() => this.onend?.(), 100); }, 100); } stop() { this.onend?.(); } abort() {} }
+      window.SpeechRecognition = FakeSR; window.webkitSpeechRecognition = FakeSR;
+      // Each fake clip 'plays' for 400 ms with a moving currentTime, like real audio.
+      window.Audio = class { constructor(src) { this.src = src; this.duration = 0.4; this.currentTime = 0; } play() { const t0 = performance.now(); this._i = setInterval(() => { this.currentTime = Math.min(this.duration, (performance.now() - t0) / 1000); }, 20); this._t = setTimeout(() => { clearInterval(this._i); this.currentTime = this.duration; this.onended?.(); }, 400); return Promise.resolve(); } pause() { clearInterval(this._i); clearTimeout(this._t); } };
+    });
+    const reply = 'I am a Senior Infrastructure Consultant at Thoughtworks.\n\n- I build AWS platforms with Terraform.\n- I run Kubernetes on EKS.\n\nWould you like to hear more about a project?';
+    await c.route('**/chat', r => r.fulfill({ status:200, contentType:'application/json', body: JSON.stringify({ reply }) }));
+    const speakBodies = []; let inFlight = 0, maxInFlight = 0;
+    await c.route('**/speak', async r => {
+      speakBodies.push(JSON.parse(r.request().postData()));
+      maxInFlight = Math.max(maxInFlight, ++inFlight);
+      await new Promise(res => setTimeout(res, 150));
+      inFlight--;
+      r.fulfill({ status:200, contentType:'application/json', body: JSON.stringify({ audio_base64: 'AAAA', voice: 'Ruth', characters: 10, cost_usd: 0.0003 }) });
+    });
+    const pg = await c.newPage();
+    await pg.goto(`${B}/en/avatar`, { waitUntil:'networkidle' });
+    await pg.click('.voice-open-btn');
+    ok('voice mode opens', await pg.isVisible('.voice-backdrop'));
+    await pg.click('.voice-talk');
+    await pg.waitForSelector('.voice-speaking', { timeout: 15000 });
+    const midSpeech = await pg.textContent('.voice-text');
+    ok('text appears while speaking, not all at once', midSpeech.length > 0 && !midSpeech.includes('Would you like'), JSON.stringify(midSpeech));
+    await pg.waitForFunction(() => document.querySelector('.voice-status')?.textContent.includes('Tap'), null, { timeout: 15000 });
+    ok('reply spoken in pieces, the whole of it', speakBodies.length >= 2 && speakBodies.map(x => x.text).join(' ').includes('Would you like to hear more'), `${speakBodies.length} /speak calls`);
+    ok('first piece is just the opening sentence', speakBodies[0]?.text === 'I am a Senior Infrastructure Consultant at Thoughtworks.', JSON.stringify(speakBodies[0]));
+    ok('never two speech requests at once', maxInFlight === 1, `max in flight ${maxInFlight}`);
+    ok('speech asked for in the page language', speakBodies.every(x => x.lang === 'en'));
+    const finalText = await pg.textContent('.voice-text');
+    ok('whole answer shown once spoken, without markdown', finalText.includes('Senior Infrastructure Consultant') && finalText.includes('Would you like') && !finalText.includes('**'), JSON.stringify(finalText));
+    await pg.click('.voice-close');
+    ok('close returns to the chat', !(await pg.isVisible('.voice-backdrop')));
+    ok('the exchange is kept in the chat', (await pg.$$eval('.avatar-msg-row', n => n.length)) === 3);
     await c.close();
   }
 
